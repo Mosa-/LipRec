@@ -3,8 +3,7 @@
 #include <ros/ros.h>
 #include <std_msgs/String.h>
 #include <std_srvs/Empty.h>
-#include <geometry_msgs/Twist.h>
-#include <metralabs_msgs/IDAndFloat.h>
+
 #include <image_transport/image_transport.h>
 #include <cv_bridge/cv_bridge.h>
 #include <sensor_msgs/image_encodings.h>
@@ -14,6 +13,23 @@
 using namespace std_msgs;
 using namespace std;
 using namespace ros;
+
+void imageCallback(const sensor_msgs::ImageConstPtr& msg){
+	cv_bridge::CvImagePtr cv_ptr;
+	try
+	{
+		//now cv_ptr is the matrix, do not forget "TYPE_" before "16UC1"
+		cv_ptr = cv_bridge::toCvCopy(msg, sensor_msgs::image_encodings::MONO16);
+	}
+	catch (cv_bridge::Exception& e)
+	{
+		ROS_ERROR("cv_bridge exception: %s", e.what());
+		return;
+	}
+
+	cv::imshow("view2", cv_ptr->image);
+}
+
 
 int main(int argc, char **argv)
 {
@@ -36,9 +52,7 @@ int main(int argc, char **argv)
    */
 	ros::NodeHandle n;
 
-	Publisher base_cmd_vel = n.advertise<geometry_msgs::Twist>("/cmd_vel_in/sci", 3);
-	Publisher arm_vel_pub = n.advertise<geometry_msgs::Twist>("/schunk/moveArmVelocity", 3);
-	Publisher gripper_pub = n.advertise<metralabs_msgs::IDAndFloat>("/schunk/move_position", 1);
+	Subscriber camImage = n.subscribe("/camera/rgb/image_raw", 1, imageCallback);
 
 	cv::Mat img;
 	cv::namedWindow("view");
@@ -46,6 +60,9 @@ int main(int argc, char **argv)
 
 	img = cv::imread("/home/felix/catkin_ws/src/liprec/src/berserk.jpeg", CV_LOAD_IMAGE_ANYDEPTH | CV_LOAD_IMAGE_ANYCOLOR);
 	cv::imshow("view", img);
+
+	cv::namedWindow("view2");
+	cv::startWindowThread();
 
 
 //	  ros::Subscriber sub2 = n.subscribe("/rqt_ccg/configparameter", 1, configParameter);
@@ -65,6 +82,8 @@ int main(int argc, char **argv)
    */
   ros::spin();
   cv::destroyWindow("view");
+  cv::destroyWindow("view2");
+
 
   return 0;
 }

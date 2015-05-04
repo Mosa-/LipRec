@@ -10,6 +10,8 @@ find_package(catkin REQUIRED COMPONENTS
   std_msgs
   message_generation
   OpenCV
+  cv_bridge
+  image_transport
 )
 
 ## Generate added messages and services with any dependencies listed here
