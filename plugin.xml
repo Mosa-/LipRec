@@ -1,0 +1,12 @@
+<library path="lib/librqt_liprec">
+	<class name="rqt_liprec/LipRec" type="rqt_liprec::LipRec" base_class_type="rqt_gui_cpp::Plugin">
+		<description>
+			Display lips recognition.
+		</description>
+	<qtgui>
+		<label>LipRec</label>
+		<icon type="theme">applications-other</icon>
+		<statustip>Display lips recognition.</statustip>
+	</qtgui>
+	</class>
+</library>

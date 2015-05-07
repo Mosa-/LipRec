@@ -1,6 +1,6 @@
 <?xml version="1.0"?>
 <package>
-  <name>liprec</name>
+  <name>rqt_liprec</name>
   <version>0.0.0</version>
   <description>The liprec package</description>
 
@@ -46,11 +46,16 @@
   <run_depend>roscpp</run_depend>
   <run_depend>rospy</run_depend>
   <run_depend>std_msgs</run_depend>
+  <build_depend>rqt_gui</build_depend>
+  <build_depend>rqt_gui_cpp</build_depend>
+  <build_depend>rqt_gui_py</build_depend>
+  <run_depend>rqt_gui</run_depend>
+  <run_depend>rqt_gui_cpp</run_depend>
+  <run_depend>rqt_gui_py</run_depend>
 
+	
+	<export>
+		<rqt_gui plugin="${prefix}/plugin.xml"/>
+	</export>
 
-  <!-- The export tag contains other, unspecified, tags -->
-  <export>
-    <!-- Other tools can request additional information be placed here -->
-
-  </export>
 </package>
