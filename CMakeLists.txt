@@ -17,6 +17,8 @@ find_package(catkin REQUIRED COMPONENTS
   rqt_gui_py
 )
 
+find_package(OpenCV REQUIRED)
+
 find_package(Qt4 COMPONENTS QtCore QtGui REQUIRED)
 
 include(${QT_USE_FILE})

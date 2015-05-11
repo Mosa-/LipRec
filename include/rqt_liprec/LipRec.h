@@ -7,6 +7,7 @@
 #include <QStringList>
 #include <QIcon>
 #include <QMessageBox>
+#include <QImage>
 
 #include <string>
 #include <stdlib.h>
@@ -18,6 +19,7 @@
 
 #include <image_transport/image_transport.h>
 #include <cv_bridge/cv_bridge.h>
+#include <cv.h>
 #include <sensor_msgs/image_encodings.h>
 #include <opencv2/imgproc/imgproc.hpp>
 #include <opencv2/highgui/highgui.hpp>
@@ -42,7 +44,6 @@ public:
   void imageCallback(const sensor_msgs::ImageConstPtr& msg);
 
 
-
 private:
   Ui_Form ui_;
   QWidget* widget_;
@@ -52,7 +53,11 @@ private:
 
   void setupModel();
 
-private slots:
+public slots:
+	void getCamPic(QImage img);
+
+signals:
+	void updateCam(QImage img);
 
 
 };

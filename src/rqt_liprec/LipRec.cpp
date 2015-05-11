@@ -26,28 +26,9 @@ void LipRec::initPlugin(qt_gui_cpp::PluginContext& context)
 	// add widget to the user interface
 	context.addWidget(widget_);
 
-	camImage = getNodeHandle().subscribe("/liprecKinect/rgb/image_raw", 1, &LipRec::imageCallback, this);
+	camImage = getNodeHandle().subscribe("/liprecKinect/rgb/image_raw", 10, &LipRec::imageCallback, this);
 
-	cv::Mat img;
-	cv::namedWindow("view");
-	cv::startWindowThread();
-
-	img = cv::imread("/home/felix/catkin_ws/src/liprec/src/rqt_liprec/berserk.jpeg", CV_LOAD_IMAGE_ANYDEPTH | CV_LOAD_IMAGE_ANYCOLOR);
-	cv::imshow("view", img);
-
-	cv::namedWindow("view2");
-	cv::startWindowThread();
-
-
-
-    /**
-     * ros::spin() will enter a loop, pumping callbacks.  With this version, all
-     * callbacks will be called from within this thread (the main one).  ros::spin()
-     * will exit when Ctrl-C is pressed, or the node is shutdown by the master.
-     */
-	cv::destroyWindow("view");
-    cv::destroyWindow("view2");
-
+	QObject::connect(this, SIGNAL(updateCam(QImage)), this, SLOT(getCamPic(QImage)));
 }
 
 void LipRec::shutdownPlugin()
@@ -80,16 +61,12 @@ void triggerConfiguration()
 
 void LipRec::imageCallback(const sensor_msgs::ImageConstPtr& msg){
 	cv::Mat img;
-	cv::namedWindow("view");
-	cv::startWindowThread();
 
-	img = cv::imread("/home/felix/catkin_ws/src/liprec/src/rqt_liprec/berserk.jpeg", CV_LOAD_IMAGE_ANYDEPTH | CV_LOAD_IMAGE_ANYCOLOR);
-	cv::imshow("view", img);
 	cv_bridge::CvImagePtr cv_ptr;
 	try
 	{
 		//now cv_ptr is the matrix, do not forget "TYPE_" before "16UC1"
-		cv_ptr = cv_bridge::toCvCopy(msg, sensor_msgs::image_encodings::BGR16);
+		cv_ptr = cv_bridge::toCvCopy(msg, sensor_msgs::image_encodings::MONO8);
 	}
 	catch (cv_bridge::Exception& e)
 	{
@@ -97,7 +74,19 @@ void LipRec::imageCallback(const sensor_msgs::ImageConstPtr& msg){
 		return;
 	}
 
-	cv::imshow("view2", cv_ptr->image);
+	img = cv_ptr->image;
+
+    QImage dest((const uchar *) img.data, img.cols, img.rows, img.step, QImage::Format_Indexed8);
+    dest.bits(); // enforce deep copy, see documentation
+
+	emit updateCam(dest);
+}
+
+void LipRec::getCamPic(QImage img){
+
+    QPixmap pixMap;
+    pixMap.convertFromImage(img,Qt::ColorOnly);
+    ui_.lbl_cam->setPixmap(pixMap);
 }
 
 }
