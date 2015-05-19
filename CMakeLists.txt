@@ -8,6 +8,7 @@ find_package(catkin REQUIRED COMPONENTS
   roscpp
   rospy
   std_msgs
+  geometry_msgs
   message_generation
   OpenCV
   cv_bridge
@@ -41,18 +42,26 @@ set(rqt_liprec_UIS
 )
 
 
+add_message_files(
+  FILES
+  PointCloud.msg
+)
+
 catkin_python_setup()
 generate_messages(
   DEPENDENCIES
    std_msgs
+   geometry_msgs
+   sensor_msgs
 )
 
 catkin_package(
   INCLUDE_DIRS include ${rqt_liprec_INCLUDE_DIRECTORIES}
   LIBRARIES ${PROJECT_NAME}
-  CATKIN_DEPENDS rospy rqt_gui rqt_gui_cpp rqt_gui_py
+  CATKIN_DEPENDS rospy rqt_gui rqt_gui_cpp rqt_gui_py message_runtime
   #DEPENDS system_lib
 )
+
 
 
 qt4_wrap_cpp(rqt_liprec_MOCS ${rqt_liprec_HDRS})

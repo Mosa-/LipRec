@@ -8,6 +8,7 @@
 #include <QIcon>
 #include <QMessageBox>
 #include <QImage>
+#include <QPainter>
 
 #include <string>
 #include <stdlib.h>
@@ -24,6 +25,7 @@
 #include <opencv2/imgproc/imgproc.hpp>
 #include <opencv2/highgui/highgui.hpp>
 
+#include "rqt_liprec/PointCloud.h"
 
 using namespace std_msgs;
 using namespace std;
@@ -42,6 +44,8 @@ public:
   virtual void saveSettings(qt_gui_cpp::Settings& plugin_settings, qt_gui_cpp::Settings& instance_settings) const;
   virtual void restoreSettings(const qt_gui_cpp::Settings& plugin_settings, const qt_gui_cpp::Settings& instance_settings);
   void imageCallback(const sensor_msgs::ImageConstPtr& msg);
+  void faceROICallback(const sensor_msgs::RegionOfInterestConstPtr& msg);
+  void mouthROICallback(const sensor_msgs::RegionOfInterestConstPtr& msg);
 
 
 private:
@@ -49,15 +53,26 @@ private:
   QWidget* widget_;
 
   ros::Subscriber camImage;
+  ros::Subscriber faceROISub;
+  ros::Subscriber mouthROISub;
 
+  sensor_msgs::RegionOfInterest faceROI;
+  sensor_msgs::RegionOfInterest mouthROI;
+
+  bool faceROI_detected;
+  bool mouthROI_detected;
+
+  void drawRectangle(IplImage* iplImg, sensor_msgs::RegionOfInterest& roi);
+  IplImage* cutROIfromImage(IplImage& src, sensor_msgs::RegionOfInterest& roi);
+  QPixmap getPixmap(IplImage& iplImg);
 
   void setupModel();
 
 public slots:
-	void getCamPic(QImage img);
+	void getCamPic(cv::Mat img);
 
 signals:
-	void updateCam(QImage img);
+	void updateCam(cv::Mat img);
 
 
 };

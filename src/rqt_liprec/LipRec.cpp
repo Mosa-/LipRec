@@ -26,9 +26,14 @@ void LipRec::initPlugin(qt_gui_cpp::PluginContext& context)
 	// add widget to the user interface
 	context.addWidget(widget_);
 
+	qRegisterMetaType<cv::Mat>("cv::Mat");
+
 	camImage = getNodeHandle().subscribe("/liprecKinect/rgb/image_raw", 10, &LipRec::imageCallback, this);
 
-	QObject::connect(this, SIGNAL(updateCam(QImage)), this, SLOT(getCamPic(QImage)));
+	faceROISub = getNodeHandle().subscribe("/face_detection/faceROI", 10, &LipRec::faceROICallback, this);
+	mouthROISub = getNodeHandle().subscribe("/face_detection/mouthROI", 10, &LipRec::mouthROICallback, this);
+
+	QObject::connect(this, SIGNAL(updateCam(cv::Mat)), this, SLOT(getCamPic(cv::Mat)));
 }
 
 void LipRec::shutdownPlugin()
@@ -76,18 +81,77 @@ void LipRec::imageCallback(const sensor_msgs::ImageConstPtr& msg){
 
 	img = cv_ptr->image;
 
-    QImage dest((const uchar *) img.data, img.cols, img.rows, img.step, QImage::Format_Indexed8);
-    dest.bits(); // enforce deep copy, see documentation
-
-	emit updateCam(dest);
+	emit updateCam(img);
 }
 
-void LipRec::getCamPic(QImage img){
+void LipRec::faceROICallback(const sensor_msgs::RegionOfInterestConstPtr& msg){
+	faceROI = *msg;
+	faceROI_detected = true;
+}
+void LipRec::mouthROICallback(const sensor_msgs::RegionOfInterestConstPtr& msg){
+	mouthROI = *msg;
+	mouthROI_detected = true;
+}
 
-    QPixmap pixMap;
-    pixMap.convertFromImage(img,Qt::ColorOnly);
+void LipRec::getCamPic(cv::Mat img){
+
+	IplImage iplImg = img;
+
+	if(faceROI_detected){
+		drawRectangle(&iplImg, faceROI);
+		faceROI_detected = false;
+	}
+
+	if(mouthROI_detected){
+
+		mouthROI_detected = false;
+	}
+
+
+    QPixmap pixMap = getPixmap(iplImg);
+
     ui_.lbl_cam->setPixmap(pixMap);
+
+    IplImage *img2 = cutROIfromImage(iplImg, mouthROI);
+
+    pixMap = getPixmap(*img2);
+
+    pixMap = pixMap.scaled(ui_.lbl_lips->maximumWidth(), ui_.lbl_lips->maximumHeight(), Qt::KeepAspectRatio, Qt::SmoothTransformation);
+
+    ui_.lbl_lips->setPixmap(pixMap);
 }
+
+
+void LipRec::drawRectangle(IplImage* iplImg, sensor_msgs::RegionOfInterest& roi){
+	cvRectangle(iplImg, cvPoint(roi.x_offset, roi.y_offset),
+			cvPoint(roi.x_offset + roi.width, roi.y_offset+ roi.height),
+			CV_RGB(255, 0, 0), 2, 8, 0);
+}
+
+IplImage* LipRec::cutROIfromImage(IplImage& src, sensor_msgs::RegionOfInterest& roi){
+	cvSetImageROI(&src, cvRect(roi.x_offset, roi.y_offset, roi.width, roi.height));
+	IplImage *img = cvCreateImage(cvGetSize(&src),
+			src.depth,
+			src.nChannels);
+
+	/* copy subimage */
+	cvCopy(&src, img, NULL);
+
+	/* always reset the Region of Interest */
+	cvResetImageROI(&src);
+
+	return img;
+}
+
+QPixmap LipRec::getPixmap(IplImage& iplImg){
+	QPixmap pixMap;
+	QImage dest((const uchar *) iplImg.imageData, iplImg.width, iplImg.height, QImage::Format_Indexed8);
+	dest.bits(); // enforce deep copy, see documentation
+	pixMap.convertFromImage(dest,Qt::ColorOnly);
+
+	return pixMap;
+}
+
 
 }
 PLUGINLIB_DECLARE_CLASS(rqt_liprec, LipRec, rqt_liprec::LipRec, rqt_gui_cpp::Plugin)
