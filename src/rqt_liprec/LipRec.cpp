@@ -12,6 +12,8 @@ LipRec::LipRec()
 
   // give QObjects reasonable names
   setObjectName("rqt_liprec");
+  showFaceROI = 1;
+  showMouthROI = 1;
 }
 
 
@@ -32,6 +34,13 @@ void LipRec::initPlugin(qt_gui_cpp::PluginContext& context)
 
 	faceROISub = getNodeHandle().subscribe("/face_detection/faceROI", 10, &LipRec::faceROICallback, this);
 	mouthROISub = getNodeHandle().subscribe("/face_detection/mouthROI", 10, &LipRec::mouthROICallback, this);
+
+	getNodeHandle().getParam("faceROI", showFaceROI);
+	getNodeHandle().getParam("mouthROI", showMouthROI);
+
+	ROS_INFO("faceROI %d", showFaceROI);
+	ROS_INFO("mouthROI %d", showMouthROI);
+
 
 	QObject::connect(this, SIGNAL(updateCam(cv::Mat)), this, SLOT(getCamPic(cv::Mat)));
 }
@@ -98,12 +107,16 @@ void LipRec::getCamPic(cv::Mat img){
 	IplImage iplImg = img;
 
 	if(faceROI_detected){
-		drawRectangle(&iplImg, faceROI);
+		if(showFaceROI){
+			drawRectangle(&iplImg, faceROI);
+		}
 		faceROI_detected = false;
 	}
 
 	if(mouthROI_detected){
-
+		if(showMouthROI){
+			drawRectangle(&iplImg, mouthROI);
+		}
 		mouthROI_detected = false;
 	}
 

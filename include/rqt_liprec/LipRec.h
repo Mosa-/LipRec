@@ -62,6 +62,9 @@ private:
   bool faceROI_detected;
   bool mouthROI_detected;
 
+  int showFaceROI;
+  int showMouthROI;
+
   void drawRectangle(IplImage* iplImg, sensor_msgs::RegionOfInterest& roi);
   IplImage* cutROIfromImage(IplImage& src, sensor_msgs::RegionOfInterest& roi);
   QPixmap getPixmap(IplImage& iplImg);
