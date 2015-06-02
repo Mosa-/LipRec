@@ -64,6 +64,7 @@ private:
 
   int showFaceROI;
   int showMouthROI;
+  int blackBorder;
 
   void drawRectangle(IplImage* iplImg, sensor_msgs::RegionOfInterest& roi);
   IplImage* cutROIfromImage(IplImage& src, sensor_msgs::RegionOfInterest& roi);

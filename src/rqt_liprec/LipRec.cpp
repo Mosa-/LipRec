@@ -14,6 +14,7 @@ LipRec::LipRec()
   setObjectName("rqt_liprec");
   showFaceROI = 1;
   showMouthROI = 1;
+  blackBorder = 1;
 }
 
 
@@ -35,12 +36,13 @@ void LipRec::initPlugin(qt_gui_cpp::PluginContext& context)
 	faceROISub = getNodeHandle().subscribe("/face_detection/faceROI", 10, &LipRec::faceROICallback, this);
 	mouthROISub = getNodeHandle().subscribe("/face_detection/mouthROI", 10, &LipRec::mouthROICallback, this);
 
-	getNodeHandle().getParam("faceROI", showFaceROI);
-	getNodeHandle().getParam("mouthROI", showMouthROI);
+	showFaceROI = argv[0].toInt();
+	showMouthROI = argv[1].toInt();
+	blackBorder = argv[2].toInt();
 
-	ROS_INFO("faceROI %d", showFaceROI);
-	ROS_INFO("mouthROI %d", showMouthROI);
-
+	ROS_INFO("Show FaceROI: %s",argv[0].toStdString().c_str());
+	ROS_INFO("Show MouthROI: %s",argv[1].toStdString().c_str());
+	ROS_INFO("BlackBorder: %s",argv[2].toStdString().c_str());
 
 	QObject::connect(this, SIGNAL(updateCam(cv::Mat)), this, SLOT(getCamPic(cv::Mat)));
 }
@@ -136,9 +138,16 @@ void LipRec::getCamPic(cv::Mat img){
 
 
 void LipRec::drawRectangle(IplImage* iplImg, sensor_msgs::RegionOfInterest& roi){
-	cvRectangle(iplImg, cvPoint(roi.x_offset, roi.y_offset),
-			cvPoint(roi.x_offset + roi.width, roi.y_offset+ roi.height),
-			CV_RGB(255, 0, 0), 2, 8, 0);
+
+	if(blackBorder==1){
+		cvRectangle(iplImg, cvPoint(roi.x_offset, roi.y_offset),
+				cvPoint(roi.x_offset + roi.width, roi.y_offset+ roi.height),
+				CV_RGB(0, 0, 0), 2, 8, 0);
+	}else{
+		cvRectangle(iplImg, cvPoint(roi.x_offset, roi.y_offset),
+				cvPoint(roi.x_offset + roi.width, roi.y_offset+ roi.height),
+				CV_RGB(255, 255, 255), 2, 8, 0);
+	}
 }
 
 IplImage* LipRec::cutROIfromImage(IplImage& src, sensor_msgs::RegionOfInterest& roi){
