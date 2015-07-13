@@ -5,6 +5,7 @@
 #include <ui_liprec.h>
 #include <QWidget>
 #include <QStringList>
+#include <QList>
 #include <QIcon>
 #include <QMessageBox>
 #include <QImage>
@@ -22,14 +23,16 @@
 #include <cv_bridge/cv_bridge.h>
 #include <cv.h>
 #include <sensor_msgs/image_encodings.h>
+#include "opencv2/video/tracking.hpp"
 #include <opencv2/imgproc/imgproc.hpp>
 #include <opencv2/highgui/highgui.hpp>
 
-#include "rqt_liprec/PointCloud.h"
+#include <time.h>
 
 using namespace std_msgs;
 using namespace std;
 using namespace ros;
+using namespace cv;
 
 namespace rqt_liprec {
 
@@ -66,9 +69,15 @@ private:
   int showMouthROI;
   int blackBorder;
 
-  void drawRectangle(IplImage* iplImg, sensor_msgs::RegionOfInterest& roi);
-  IplImage* cutROIfromImage(IplImage& src, sensor_msgs::RegionOfInterest& roi);
-  QPixmap getPixmap(IplImage& iplImg);
+  double MHI_DURATION;
+  int NO_CYCLIC_FRAME;
+  QList<Mat> frameBuffer;
+  int last;
+  Mat mhi;
+
+  void drawRectangle(Mat& iplImg, sensor_msgs::RegionOfInterest& roi);
+  Mat cutROIfromImage(Mat& src, sensor_msgs::RegionOfInterest& roi);
+  QPixmap getPixmap(cv::Mat& iplImg);
 
   void setupModel();
 
