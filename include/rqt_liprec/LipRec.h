@@ -65,8 +65,6 @@ private:
   bool faceROI_detected;
   bool mouthROI_detected;
 
-  int showFaceROI;
-  int showMouthROI;
   int blackBorder;
 
   double MHI_DURATION;
@@ -78,6 +76,9 @@ private:
   void drawRectangle(Mat& iplImg, sensor_msgs::RegionOfInterest& roi);
   Mat cutROIfromImage(Mat& src, sensor_msgs::RegionOfInterest& roi);
   QPixmap getPixmap(cv::Mat& iplImg);
+  void drawFaceMouthROI(Mat& img);
+  Mat showLips(Mat& img);
+  void createMotionHistoryImage(Mat& img);
 
   void setupModel();
 
@@ -86,6 +87,9 @@ public slots:
 
 signals:
 	void updateCam(cv::Mat img);
+
+private slots:
+
 
 
 };

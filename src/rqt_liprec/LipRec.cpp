@@ -6,16 +6,12 @@ namespace rqt_liprec {
 
 LipRec::LipRec()
   : rqt_gui_cpp::Plugin()
-  ,showFaceROI(1), showMouthROI(1), blackBorder(0), widget_(0)
+  , last(0), blackBorder(0), widget_(0)
 {
   // Constructor is called first before initPlugin function, needless to say.
 
   // give QObjects reasonable names
   setObjectName("rqt_liprec");
-
-  MHI_DURATION = 1;
-  NO_CYCLIC_FRAME = 4;
-  last = 0;
 }
 
 
@@ -40,14 +36,22 @@ void LipRec::initPlugin(qt_gui_cpp::PluginContext& context)
 	if(argv.size() != 3){
 		ROS_INFO("Three arguments necessary!");
 	}else{
-		showFaceROI = argv[0].toInt();
-		showMouthROI = argv[1].toInt();
+		int showFaceROI = argv[0].toInt();
+		int showMouthROI = argv[1].toInt();
 		blackBorder = argv[2].toInt();
+		if(showFaceROI == 1)
+			ui_.cbFaceROI->setChecked(true);
+
+		if(showMouthROI == 1)
+			ui_.cbMouthROI->setChecked(true);
+
 		ROS_INFO("Show FaceROI: %s",argv[0].toStdString().c_str());
 		ROS_INFO("Show MouthROI: %s",argv[1].toStdString().c_str());
 		ROS_INFO("BlackBorder: %s",argv[2].toStdString().c_str());
 	}
 
+	MHI_DURATION = ui_.dsbMHIDuration->value();
+	NO_CYCLIC_FRAME = ui_.sbMHIFC->value();
 
 	QObject::connect(this, SIGNAL(updateCam(cv::Mat)), this, SLOT(getCamPic(cv::Mat)));
 }
@@ -109,79 +113,88 @@ void LipRec::mouthROICallback(const sensor_msgs::RegionOfInterestConstPtr& msg){
 	mouthROI_detected = true;
 }
 
+
 void LipRec::getCamPic(cv::Mat img){
 
+	MHI_DURATION = ui_.dsbMHIDuration->value();
+	NO_CYCLIC_FRAME = ui_.sbMHIFC->value();
+
+	this->drawFaceMouthROI(img);
+
+    QPixmap pixMap = getPixmap(img);
+    ui_.lbl_cam->setPixmap(pixMap);
+
+    Mat mouthImg = this->showLips(img);
+
+    this->createMotionHistoryImage(mouthImg);
+
+//	faceROI_detected = false;
+//	mouthROI_detected = false;
+}
+
+void LipRec::drawFaceMouthROI(Mat& img){
 	if(faceROI_detected){
-		if(showFaceROI == 1){
+		if(ui_.cbFaceROI->isChecked()){
 			drawRectangle(img, faceROI);
 		}
-		faceROI_detected = false;
 	}
 
 	if(mouthROI_detected){
-		if(showMouthROI == 1){
+		if(ui_.cbMouthROI->isChecked()){
 			drawRectangle(img, mouthROI);
 		}
-		mouthROI_detected = false;
+	}
+}
+
+Mat LipRec::showLips(Mat& img){
+  Mat mouthImg = cutROIfromImage(img, mouthROI);
+  QPixmap pixMap;
+	if(ui_.cbLips->isChecked()){
+		pixMap = getPixmap(mouthImg);
+		pixMap = pixMap.scaled(ui_.lbl_lips->maximumWidth(), ui_.lbl_lips->maximumHeight(), Qt::KeepAspectRatio, Qt::SmoothTransformation);
+		ui_.lbl_lips->setPixmap(pixMap);
+	}else{
+		QPixmap empty;
+		ui_.lbl_lips->setPixmap(empty);
 	}
 
-    QPixmap pixMap = getPixmap(img);
+	return mouthImg;
+}
 
-    ui_.lbl_cam->setPixmap(pixMap);
+void LipRec::createMotionHistoryImage(Mat& img){
+	if(mouthROI_detected && ui_.cbMHI->isChecked()){
+		QPixmap pixMap;
+		double timestamp = (double) clock()/CLOCKS_PER_SEC;
+		Size size = Size(img.size().width, img.size().height);
+		int i, idx1 = last, idx2;
+		Mat silh = Mat::zeros(size, CV_8UC3);
 
-    Mat mouthImg = cutROIfromImage(img, mouthROI);
-
-    pixMap = getPixmap(mouthImg);
-
-
-    pixMap = pixMap.scaled(ui_.lbl_lips->maximumWidth(), ui_.lbl_lips->maximumHeight(), Qt::KeepAspectRatio, Qt::SmoothTransformation);
-
-    ui_.lbl_lips->setPixmap(pixMap);
-
-
-    // GEHT NUR WENN LIPPEN ERKENNT LOGISCH BRABS
-
-    //MHI
-    double timestamp = (double) clock()/CLOCKS_PER_SEC;
-    ROS_INFO("ma schauen %d, %d", mouthImg.size().width, mouthImg.size().height);
-    Size size = Size(pixMap.width(), pixMap.height());
-    int i, idx1 = last, idx2;
-    Mat silh;
-
-    if(mhi.empty()){
-
-    	for (int var = 0; var < NO_CYCLIC_FRAME; ++var) {
-    		frameBuffer.append(Mat(size,CV_8UC3, Scalar(0,0,0)));
-    	    ROS_INFO("test %d %d %d", frameBuffer[var].cols, frameBuffer[var].rows, frameBuffer[var].size().height);
-
+		if(mhi.empty()){
+			for (int var = 0; var < NO_CYCLIC_FRAME; ++var) {
+				Mat tmp = Mat::zeros(size, CV_8UC3);
+				frameBuffer.append(img);
+			}
+			mhi.release();
+			mhi = Mat(size, CV_32FC1, Scalar(0,0,0));
 		}
 
+		frameBuffer[last] = img;
 
-    	mhi.release();
-    	mhi = Mat(size, CV_32FC1, Scalar(0,0,0));
+		idx2 = (last+1) % NO_CYCLIC_FRAME;
+		last = idx2;
 
-    }
+		absdiff(frameBuffer.at(idx1), frameBuffer.at(idx2), silh);
 
+		updateMotionHistory(silh, mhi, timestamp, MHI_DURATION);
+		pixMap = getPixmap(silh);
 
-    //cv::cvtColor(mouthImg, frameBuffer[last], CV_BGR2GRAY);
-    ROS_INFO("test %d %d", frameBuffer[last].cols, frameBuffer[last].rows);
-    //frameBuffer[last] = mouthImg;
+		pixMap = pixMap.scaled(ui_.lbl_lips->maximumWidth(), ui_.lbl_lips->maximumHeight(), Qt::KeepAspectRatio, Qt::SmoothTransformation);
 
-    idx2 = (last+1) % NO_CYCLIC_FRAME;
-    last = idx2;
-
-
-    silh = frameBuffer.at(idx2);
-    absdiff(frameBuffer.at(idx1), frameBuffer.at(idx2), silh);
-
-    //cvThreshold(silh, silh, 1, 1, CV_THRESH_BINARY);
-    //updateMotionHistory(silh, mhi, timestamp, MHI_DURATION);
-    pixMap = getPixmap(silh);
-
-    pixMap = pixMap.scaled(ui_.lbl_lips->maximumWidth(), ui_.lbl_lips->maximumHeight(), Qt::KeepAspectRatio, Qt::SmoothTransformation);
-
-    ui_.lbl_rec_word->setPixmap(pixMap);
-
+		ui_.lbl_MHI->setPixmap(pixMap);
+	}else{
+		QPixmap empty;
+		ui_.lbl_MHI->setPixmap(empty);
+	}
 }
 
 
@@ -202,7 +215,6 @@ void LipRec::drawRectangle(Mat& iplImg, sensor_msgs::RegionOfInterest& roi){
 Mat LipRec::cutROIfromImage(Mat& src, sensor_msgs::RegionOfInterest& roi){
 	Rect mouthROI(roi.x_offset, roi.y_offset, roi.width, roi.height);
 	Mat mouth = src(mouthROI).clone();
-    ROS_INFO("kleienr goes %d, %d", mouth.size().width, mouth.size().height);
 	return mouth;
 }
 
@@ -212,7 +224,6 @@ QPixmap LipRec::getPixmap(cv::Mat& iplImg){
 	pixMap.convertFromImage(dest,Qt::ColorOnly);
 	return pixMap;
 }
-
 
 }
 PLUGINLIB_DECLARE_CLASS(rqt_liprec, LipRec, rqt_liprec::LipRec, rqt_gui_cpp::Plugin)
