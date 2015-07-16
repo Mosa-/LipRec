@@ -10,6 +10,7 @@
 #include <QMessageBox>
 #include <QImage>
 #include <QPainter>
+#include <QTimer>
 
 #include <string>
 #include <stdlib.h>
@@ -62,6 +63,8 @@ private:
   sensor_msgs::RegionOfInterest faceROI;
   sensor_msgs::RegionOfInterest mouthROI;
 
+  QTimer faceROITimer;
+  QTimer mouthROITimer;
   bool faceROI_detected;
   bool mouthROI_detected;
 
@@ -72,6 +75,8 @@ private:
   QList<Mat> frameBuffer;
   int last;
   Mat mhi;
+
+  int timeoutROIdetection;
 
   void drawRectangle(Mat& iplImg, sensor_msgs::RegionOfInterest& roi);
   Mat cutROIfromImage(Mat& src, sensor_msgs::RegionOfInterest& roi);
@@ -89,6 +94,8 @@ signals:
 	void updateCam(cv::Mat img);
 
 private slots:
+	void faceROItimeout();
+	void mouthROItimeout();
 
 
 

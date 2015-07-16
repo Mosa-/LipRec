@@ -6,7 +6,7 @@ namespace rqt_liprec {
 
 LipRec::LipRec()
   : rqt_gui_cpp::Plugin()
-  , last(0), blackBorder(0), widget_(0)
+  , last(0), timeoutROIdetection(500), blackBorder(0), widget_(0)
 {
   // Constructor is called first before initPlugin function, needless to say.
 
@@ -52,6 +52,12 @@ void LipRec::initPlugin(qt_gui_cpp::PluginContext& context)
 
 	MHI_DURATION = ui_.dsbMHIDuration->value();
 	NO_CYCLIC_FRAME = ui_.sbMHIFC->value();
+
+	QObject::connect(&faceROITimer, SIGNAL(timeout()), this, SLOT(faceROItimeout()));
+	QObject::connect(&mouthROITimer, SIGNAL(timeout()), this, SLOT(mouthROItimeout()));
+
+	faceROITimer.start(timeoutROIdetection);
+	mouthROITimer.start(timeoutROIdetection);
 
 	QObject::connect(this, SIGNAL(updateCam(cv::Mat)), this, SLOT(getCamPic(cv::Mat)));
 }
@@ -105,10 +111,12 @@ void LipRec::imageCallback(const sensor_msgs::ImageConstPtr& msg){
 }
 
 void LipRec::faceROICallback(const sensor_msgs::RegionOfInterestConstPtr& msg){
+	faceROITimer.start(timeoutROIdetection);
 	faceROI = *msg;
 	faceROI_detected = true;
 }
 void LipRec::mouthROICallback(const sensor_msgs::RegionOfInterestConstPtr& msg){
+	mouthROITimer.start(timeoutROIdetection);
 	mouthROI = *msg;
 	mouthROI_detected = true;
 }
@@ -127,9 +135,6 @@ void LipRec::getCamPic(cv::Mat img){
     Mat mouthImg = this->showLips(img);
 
     this->createMotionHistoryImage(mouthImg);
-
-//	faceROI_detected = false;
-//	mouthROI_detected = false;
 }
 
 void LipRec::drawFaceMouthROI(Mat& img){
@@ -186,6 +191,9 @@ void LipRec::createMotionHistoryImage(Mat& img){
 		absdiff(frameBuffer.at(idx1), frameBuffer.at(idx2), silh);
 
 		updateMotionHistory(silh, mhi, timestamp, MHI_DURATION);
+		if(ui_.cbMHIBinarization->isChecked())
+			threshold(silh,silh,ui_.dsbMHIThreshold->value(),255,cv::THRESH_BINARY);
+
 		pixMap = getPixmap(silh);
 
 		pixMap = pixMap.scaled(ui_.lbl_lips->maximumWidth(), ui_.lbl_lips->maximumHeight(), Qt::KeepAspectRatio, Qt::SmoothTransformation);
@@ -223,6 +231,13 @@ QPixmap LipRec::getPixmap(cv::Mat& iplImg){
 	QImage dest((const uchar *) iplImg.data, iplImg.cols, iplImg.rows, iplImg.step, QImage::Format_Indexed8);
 	pixMap.convertFromImage(dest,Qt::ColorOnly);
 	return pixMap;
+}
+
+void LipRec::faceROItimeout(){
+	faceROI_detected = false;
+}
+void LipRec::mouthROItimeout(){
+	mouthROI_detected = false;
 }
 
 }
