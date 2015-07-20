@@ -60,6 +60,7 @@ void LipRec::initPlugin(qt_gui_cpp::PluginContext& context)
 	mouthROITimer.start(timeoutROIdetection);
 
 	QObject::connect(this, SIGNAL(updateCam(cv::Mat)), this, SLOT(getCamPic(cv::Mat)));
+
 }
 
 void LipRec::shutdownPlugin()
@@ -126,6 +127,9 @@ void LipRec::getCamPic(cv::Mat img){
 
 	MHI_DURATION = ui_.dsbMHIDuration->value();
 	NO_CYCLIC_FRAME = ui_.sbMHIFC->value();
+	int currentFrame = 0;
+
+
 
 	this->drawFaceMouthROI(img);
 
@@ -134,7 +138,29 @@ void LipRec::getCamPic(cv::Mat img){
 
     Mat mouthImg = this->showLips(img);
 
-    this->createMotionHistoryImage(mouthImg);
+	currentFrame = updateFrameBuffer(mouthImg);
+
+	int pixelDifference = 0;
+	if(!frameBuffer.empty()){
+		for (int i = 0; i < mouthImg.cols; ++i) {
+			for (int j = 0; j < mouthImg.rows; ++j) {
+				if(frameBuffer[last].cols == 0){
+					pixelDifference += abs( 255- frameBuffer[currentFrame].at<uchar>(j,i));
+				}else{
+					pixelDifference += abs(frameBuffer[last].at<uchar>(j,i) - frameBuffer[currentFrame].at<uchar>(j,i));
+				}
+			}
+		}
+	}
+
+	double d = pixelDifference / ((double) mouthImg.cols*mouthImg.rows);
+	ui_.lcdPixelWiseDiff->display(QString::number(d,'f',2));
+	//ROS_INFO("difference %f", d);
+
+
+    this->createMotionHistoryImage(mouthImg, currentFrame);
+
+	last = currentFrame;
 }
 
 void LipRec::drawFaceMouthROI(Mat& img){
@@ -166,29 +192,36 @@ Mat LipRec::showLips(Mat& img){
 	return mouthImg;
 }
 
-void LipRec::createMotionHistoryImage(Mat& img){
+
+int LipRec::updateFrameBuffer(Mat& img){
+	Size size = Size(img.size().width, img.size().height);
+	int currentFrame = 0;
+	if(frameBuffer.empty()){
+		for (int var = 0; var < NO_CYCLIC_FRAME; ++var) {
+			frameBuffer.append(img);
+		}
+	}else{
+		currentFrame = (last+1) % NO_CYCLIC_FRAME;
+		frameBuffer[currentFrame] = img;
+	}
+
+	return currentFrame;
+}
+
+
+void LipRec::createMotionHistoryImage(Mat& img, int currentFrame){
 	if(mouthROI_detected && ui_.cbMHI->isChecked()){
 		QPixmap pixMap;
 		double timestamp = (double) clock()/CLOCKS_PER_SEC;
 		Size size = Size(img.size().width, img.size().height);
-		int i, idx1 = last, idx2;
 		Mat silh = Mat::zeros(size, CV_8UC3);
 
 		if(mhi.empty()){
-			for (int var = 0; var < NO_CYCLIC_FRAME; ++var) {
-				Mat tmp = Mat::zeros(size, CV_8UC3);
-				frameBuffer.append(img);
-			}
 			mhi.release();
 			mhi = Mat(size, CV_32FC1, Scalar(0,0,0));
 		}
 
-		frameBuffer[last] = img;
-
-		idx2 = (last+1) % NO_CYCLIC_FRAME;
-		last = idx2;
-
-		absdiff(frameBuffer.at(idx1), frameBuffer.at(idx2), silh);
+		absdiff(frameBuffer.at(last), frameBuffer.at(currentFrame), silh);
 
 		updateMotionHistory(silh, mhi, timestamp, MHI_DURATION);
 		if(ui_.cbMHIBinarization->isChecked())

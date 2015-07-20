@@ -83,7 +83,8 @@ private:
   QPixmap getPixmap(cv::Mat& iplImg);
   void drawFaceMouthROI(Mat& img);
   Mat showLips(Mat& img);
-  void createMotionHistoryImage(Mat& img);
+  int updateFrameBuffer(Mat& img);
+  void createMotionHistoryImage(Mat& img, int currentFrame);
 
   void setupModel();
 
