@@ -140,22 +140,29 @@ void LipRec::getCamPic(cv::Mat img){
 
 	currentFrame = updateFrameBuffer(mouthImg);
 
+	//temporal segmentation
+	//1.squared mean difference
 	int pixelDifference = 0;
 	if(!frameBuffer.empty()){
 		for (int i = 0; i < mouthImg.cols; ++i) {
 			for (int j = 0; j < mouthImg.rows; ++j) {
 				if(frameBuffer[last].cols == 0){
-					pixelDifference += abs( 255- frameBuffer[currentFrame].at<uchar>(j,i));
+					pixelDifference += 255- frameBuffer[currentFrame].at<uchar>(j,i);
 				}else{
-					pixelDifference += abs(frameBuffer[last].at<uchar>(j,i) - frameBuffer[currentFrame].at<uchar>(j,i));
+					pixelDifference += frameBuffer[last].at<uchar>(j,i) - frameBuffer[currentFrame].at<uchar>(j,i);
 				}
 			}
 		}
 	}
 
-	double d = pixelDifference / ((double) mouthImg.cols*mouthImg.rows);
+	double d = pow(pixelDifference / ((double) mouthImg.cols*mouthImg.rows),2);
+
+	//2. moving average smoothing
+
+
 	ui_.lcdPixelWiseDiff->display(QString::number(d,'f',2));
 	//ROS_INFO("difference %f", d);
+	//temporal segmentation
 
 
     this->createMotionHistoryImage(mouthImg, currentFrame);
@@ -221,17 +228,20 @@ void LipRec::createMotionHistoryImage(Mat& img, int currentFrame){
 			mhi = Mat(size, CV_32FC1, Scalar(0,0,0));
 		}
 
-		absdiff(frameBuffer.at(last), frameBuffer.at(currentFrame), silh);
+		if(frameBuffer.at(last).cols == frameBuffer.at(currentFrame).cols
+				&& frameBuffer.at(last).rows == frameBuffer.at(currentFrame).rows){
+			absdiff(frameBuffer.at(last), frameBuffer.at(currentFrame), silh);
 
-		updateMotionHistory(silh, mhi, timestamp, MHI_DURATION);
-		if(ui_.cbMHIBinarization->isChecked())
-			threshold(silh,silh,ui_.dsbMHIThreshold->value(),255,cv::THRESH_BINARY);
+			updateMotionHistory(silh, mhi, timestamp, MHI_DURATION);
+			if(ui_.cbMHIBinarization->isChecked())
+				threshold(silh,silh,ui_.dsbMHIThreshold->value(),255,cv::THRESH_BINARY);
 
-		pixMap = getPixmap(silh);
+			pixMap = getPixmap(silh);
 
-		pixMap = pixMap.scaled(ui_.lbl_lips->maximumWidth(), ui_.lbl_lips->maximumHeight(), Qt::KeepAspectRatio, Qt::SmoothTransformation);
+			pixMap = pixMap.scaled(ui_.lbl_lips->maximumWidth(), ui_.lbl_lips->maximumHeight(), Qt::KeepAspectRatio, Qt::SmoothTransformation);
 
-		ui_.lbl_MHI->setPixmap(pixMap);
+			ui_.lbl_MHI->setPixmap(pixMap);
+		}
 	}else{
 		QPixmap empty;
 		ui_.lbl_MHI->setPixmap(empty);
