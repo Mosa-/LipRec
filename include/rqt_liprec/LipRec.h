@@ -37,6 +37,13 @@ using namespace cv;
 
 namespace rqt_liprec {
 
+typedef enum{
+	Idle,
+	StartFrame,
+	Utterance,
+	EndFrame
+}DetectStartEndFrame;
+
 class LipRec
   : public rqt_gui_cpp::Plugin
 {
@@ -76,6 +83,10 @@ private:
   int last;
   Mat mhi;
 
+  DetectStartEndFrame stateDetectionStartEndFrame;
+  QList<Mat> utterance;
+
+
   int timeoutROIdetection;
 
   void drawRectangle(Mat& iplImg, sensor_msgs::RegionOfInterest& roi);
@@ -84,7 +95,8 @@ private:
   void drawFaceMouthROI(Mat& img);
   Mat showLips(Mat& img);
   int updateFrameBuffer(Mat& img);
-  void createMotionHistoryImage(Mat& img, int currentFrame);
+  void createMotionHistoryImage(Mat& img);
+  Mat createImageAbsDiff(int currentFrame);
 
   void setupModel();
 

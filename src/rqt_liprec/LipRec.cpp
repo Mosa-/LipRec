@@ -6,7 +6,7 @@ namespace rqt_liprec {
 
 LipRec::LipRec()
   : rqt_gui_cpp::Plugin()
-  , last(0), timeoutROIdetection(500), blackBorder(0), widget_(0)
+  , last(0), timeoutROIdetection(500), blackBorder(0), widget_(0), stateDetectionStartEndFrame(Idle)
 {
   // Constructor is called first before initPlugin function, needless to say.
 
@@ -129,8 +129,6 @@ void LipRec::getCamPic(cv::Mat img){
 	NO_CYCLIC_FRAME = ui_.sbMHIFC->value();
 	int currentFrame = 0;
 
-
-
 	this->drawFaceMouthROI(img);
 
     QPixmap pixMap = getPixmap(img);
@@ -165,10 +163,81 @@ void LipRec::getCamPic(cv::Mat img){
 	//temporal segmentation
 
 
-    this->createMotionHistoryImage(mouthImg, currentFrame);
+	Mat imageAbsDiff = createImageAbsDiff(currentFrame);
+
+	int activation = (int) d;
+
+	switch (stateDetectionStartEndFrame) {
+		case Idle:
+			utterance.clear();
+			ROS_INFO("Enter state Idle: %d", activation);
+
+			if(activation > 0){
+
+				stateDetectionStartEndFrame = StartFrame;
+			}else{
+
+			}
+
+			break;
+		case StartFrame:
+			ROS_INFO("Enter state StartFrame: %d", activation);
+
+			if(activation < 1){
+
+				stateDetectionStartEndFrame = Utterance;
+			}else{
+
+			}
+			break;
+		case Utterance:
+			ROS_INFO("Enter state Utterance: %d", activation);
+			if(activation < 1){
+
+				stateDetectionStartEndFrame = Idle;
+			}else if(activation > 0){
+				stateDetectionStartEndFrame = EndFrame;
+			}
+			break;
+		case EndFrame:
+			ROS_INFO("Enter state EndFrame: %d", activation);
+			if(activation < 1){
+
+				stateDetectionStartEndFrame = Idle;
+				utterance.append(imageAbsDiff);
+				ROS_INFO("Uterrance %d", utterance.size());
+			}else{
+
+			}
+			break;
+		default:
+			break;
+	}
+
+
+	if(stateDetectionStartEndFrame == StartFrame || stateDetectionStartEndFrame == Utterance || stateDetectionStartEndFrame == EndFrame){
+		utterance.append(imageAbsDiff);
+	}
+
+
+
+	if(!imageAbsDiff.empty()){
+		this->createMotionHistoryImage(imageAbsDiff);
+	}
 
 	last = currentFrame;
 }
+
+Mat LipRec::createImageAbsDiff(int currentFrame){
+	Mat silh;
+	if(frameBuffer.at(last).cols == frameBuffer.at(currentFrame).cols
+				&& frameBuffer.at(last).rows == frameBuffer.at(currentFrame).rows){
+
+			absdiff(frameBuffer.at(last), frameBuffer.at(currentFrame), silh);
+	}
+	return silh;
+}
+
 
 void LipRec::drawFaceMouthROI(Mat& img){
 	if(faceROI_detected){
@@ -216,11 +285,11 @@ int LipRec::updateFrameBuffer(Mat& img){
 }
 
 
-void LipRec::createMotionHistoryImage(Mat& img, int currentFrame){
+void LipRec::createMotionHistoryImage(Mat& imageAbsDiff){
 	if(mouthROI_detected && ui_.cbMHI->isChecked()){
 		QPixmap pixMap;
 		double timestamp = (double) clock()/CLOCKS_PER_SEC;
-		Size size = Size(img.size().width, img.size().height);
+		Size size = Size(imageAbsDiff.size().width, imageAbsDiff.size().height);
 		Mat silh = Mat::zeros(size, CV_8UC3);
 
 		if(mhi.empty()){
@@ -228,23 +297,26 @@ void LipRec::createMotionHistoryImage(Mat& img, int currentFrame){
 			mhi = Mat(size, CV_32FC1, Scalar(0,0,0));
 		}
 
-		if(frameBuffer.at(last).cols == frameBuffer.at(currentFrame).cols
-				&& frameBuffer.at(last).rows == frameBuffer.at(currentFrame).rows){
-			absdiff(frameBuffer.at(last), frameBuffer.at(currentFrame), silh);
+		pixMap = getPixmap(imageAbsDiff);
+		pixMap = pixMap.scaled(ui_.lbl_lips->maximumWidth(), ui_.lbl_lips->maximumHeight(), Qt::KeepAspectRatio, Qt::SmoothTransformation);
+		ui_.lbl_rec_phonem->setPixmap(pixMap);
 
-			updateMotionHistory(silh, mhi, timestamp, MHI_DURATION);
-			if(ui_.cbMHIBinarization->isChecked())
-				threshold(silh,silh,ui_.dsbMHIThreshold->value(),255,cv::THRESH_BINARY);
+		if(ui_.cbMHIBinarization->isChecked())
+			threshold(imageAbsDiff,imageAbsDiff,ui_.dsbMHIThreshold->value(),1,cv::THRESH_BINARY);
 
-			pixMap = getPixmap(silh);
+		updateMotionHistory(imageAbsDiff, mhi, timestamp, MHI_DURATION);
+		Mat mask;
+		mhi.convertTo(mask, CV_8UC1, 255.0/MHI_DURATION, (MHI_DURATION-timestamp)*255.0/MHI_DURATION );
 
-			pixMap = pixMap.scaled(ui_.lbl_lips->maximumWidth(), ui_.lbl_lips->maximumHeight(), Qt::KeepAspectRatio, Qt::SmoothTransformation);
+		pixMap = getPixmap(mask);
+		pixMap = pixMap.scaled(ui_.lbl_lips->maximumWidth(), ui_.lbl_lips->maximumHeight(), Qt::KeepAspectRatio, Qt::SmoothTransformation);
 
-			ui_.lbl_MHI->setPixmap(pixMap);
-		}
+		ui_.lbl_MHI->setPixmap(pixMap);
+
 	}else{
 		QPixmap empty;
 		ui_.lbl_MHI->setPixmap(empty);
+		ui_.lbl_rec_phonem->setPixmap(empty);
 	}
 }
 
