@@ -85,13 +85,14 @@ private:
 
   DetectStartEndFrame stateDetectionStartEndFrame;
   QList<Mat> utterance;
+  int utteranceCounter;
 
 
   int timeoutROIdetection;
 
   void drawRectangle(Mat& iplImg, sensor_msgs::RegionOfInterest& roi);
   Mat cutROIfromImage(Mat& src, sensor_msgs::RegionOfInterest& roi);
-  QPixmap getPixmap(cv::Mat& iplImg);
+  QPixmap getPixmap(Mat& iplImg);
   void drawFaceMouthROI(Mat& img);
   Mat showLips(Mat& img);
   int updateFrameBuffer(Mat& img);

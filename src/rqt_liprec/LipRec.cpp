@@ -145,7 +145,7 @@ void LipRec::getCamPic(cv::Mat img){
 		for (int i = 0; i < mouthImg.cols; ++i) {
 			for (int j = 0; j < mouthImg.rows; ++j) {
 				if(frameBuffer[last].cols == 0){
-					pixelDifference += 255- frameBuffer[currentFrame].at<uchar>(j,i);
+					pixelDifference += 0- frameBuffer[currentFrame].at<uchar>(j,i);
 				}else{
 					pixelDifference += frameBuffer[last].at<uchar>(j,i) - frameBuffer[currentFrame].at<uchar>(j,i);
 				}
@@ -159,7 +159,7 @@ void LipRec::getCamPic(cv::Mat img){
 
 
 	ui_.lcdPixelWiseDiff->display(QString::number(d,'f',2));
-	//ROS_INFO("difference %f", d);
+	ROS_INFO("difference %f", d);
 	//temporal segmentation
 
 
@@ -170,6 +170,7 @@ void LipRec::getCamPic(cv::Mat img){
 	switch (stateDetectionStartEndFrame) {
 		case Idle:
 			utterance.clear();
+			utteranceCounter = 0;
 			ROS_INFO("Enter state Idle: %d", activation);
 
 			if(activation > 0){
@@ -194,7 +195,11 @@ void LipRec::getCamPic(cv::Mat img){
 			ROS_INFO("Enter state Utterance: %d", activation);
 			if(activation < 1){
 
-				stateDetectionStartEndFrame = Idle;
+				if(utteranceCounter > 5){
+					stateDetectionStartEndFrame = Idle;
+				}
+				utteranceCounter++;
+
 			}else if(activation > 0){
 				stateDetectionStartEndFrame = EndFrame;
 			}
@@ -206,6 +211,37 @@ void LipRec::getCamPic(cv::Mat img){
 				stateDetectionStartEndFrame = Idle;
 				utterance.append(imageAbsDiff);
 				ROS_INFO("Uterrance %d", utterance.size());
+
+				//1. Generate weighted DOFs
+				for (int i = 0; i < utterance.size(); ++i) {
+
+					for (int k = 0; k < utterance.at(i).cols; ++k) {
+						for (int j = 0; j < utterance.at(i).rows; ++j) {
+							utterance[i].at<uchar>(j,k) = utterance[i].at<uchar>(j,k) * (i+1);
+						}
+					}
+
+				}
+
+				Size size = Size(imageAbsDiff.size().width, imageAbsDiff.size().height);
+				Mat mt = Mat::zeros(size, CV_8UC3);
+
+				//2. take max pixel intensity value
+				for (int i = 0; i < utterance.size(); ++i) {
+
+					for (int k = 0; k < utterance.at(i).cols; ++k) {
+						for (int j = 0; j < utterance.at(i).rows; ++j) {
+							if(mt.at<uchar>(j,k) < utterance[i].at<uchar>(j,k)){
+								mt.at<uchar>(j,k) = utterance[i].at<uchar>(j,k);
+							}
+						}
+					}
+				}
+
+				QPixmap pixMap = getPixmap(mt);
+				pixMap = pixMap.scaled(ui_.lbl_lips->maximumWidth(), ui_.lbl_lips->maximumHeight(), Qt::KeepAspectRatio, Qt::SmoothTransformation);
+				ui_.lbl_rec_word->setPixmap(pixMap);
+
 			}else{
 
 			}
@@ -214,11 +250,9 @@ void LipRec::getCamPic(cv::Mat img){
 			break;
 	}
 
-
 	if(stateDetectionStartEndFrame == StartFrame || stateDetectionStartEndFrame == Utterance || stateDetectionStartEndFrame == EndFrame){
 		utterance.append(imageAbsDiff);
 	}
-
 
 
 	if(!imageAbsDiff.empty()){
@@ -270,7 +304,6 @@ Mat LipRec::showLips(Mat& img){
 
 
 int LipRec::updateFrameBuffer(Mat& img){
-	Size size = Size(img.size().width, img.size().height);
 	int currentFrame = 0;
 	if(frameBuffer.empty()){
 		for (int var = 0; var < NO_CYCLIC_FRAME; ++var) {
@@ -292,7 +325,7 @@ void LipRec::createMotionHistoryImage(Mat& imageAbsDiff){
 		Size size = Size(imageAbsDiff.size().width, imageAbsDiff.size().height);
 		Mat silh = Mat::zeros(size, CV_8UC3);
 
-		if(mhi.empty()){
+		if(mhi.empty() || imageAbsDiff.size != mhi.size){
 			mhi.release();
 			mhi = Mat(size, CV_32FC1, Scalar(0,0,0));
 		}
@@ -317,22 +350,22 @@ void LipRec::createMotionHistoryImage(Mat& imageAbsDiff){
 		QPixmap empty;
 		ui_.lbl_MHI->setPixmap(empty);
 		ui_.lbl_rec_phonem->setPixmap(empty);
+		ui_.lbl_rec_word->setPixmap(empty);
 	}
 }
 
 
 void LipRec::drawRectangle(Mat& iplImg, sensor_msgs::RegionOfInterest& roi){
 
+	Scalar color;
 	if(blackBorder==1){
-		rectangle(iplImg, Point(roi.x_offset, roi.y_offset),
-				Point(roi.x_offset + roi.width, roi.y_offset+ roi.height),
-				Scalar(0,0,0),2,8,0 );
-
+		color = Scalar(0,0,0);
 	}else{
-		rectangle(iplImg, Point(roi.x_offset, roi.y_offset),
-				Point(roi.x_offset + roi.width, roi.y_offset+ roi.height),
-				Scalar(255, 255, 255), 2, 8, 0);
+		color = Scalar(255, 255, 255);
 	}
+	rectangle(iplImg, Point(roi.x_offset, roi.y_offset),
+			Point(roi.x_offset + roi.width, roi.y_offset+ roi.height),
+			color, 2, 8, 0);
 }
 
 Mat LipRec::cutROIfromImage(Mat& src, sensor_msgs::RegionOfInterest& roi){
@@ -341,7 +374,7 @@ Mat LipRec::cutROIfromImage(Mat& src, sensor_msgs::RegionOfInterest& roi){
 	return mouth;
 }
 
-QPixmap LipRec::getPixmap(cv::Mat& iplImg){
+QPixmap LipRec::getPixmap(Mat& iplImg){
 	QPixmap pixMap;
 	QImage dest((const uchar *) iplImg.data, iplImg.cols, iplImg.rows, iplImg.step, QImage::Format_Indexed8);
 	pixMap.convertFromImage(dest,Qt::ColorOnly);
