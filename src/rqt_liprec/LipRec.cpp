@@ -28,7 +28,8 @@ void LipRec::initPlugin(qt_gui_cpp::PluginContext& context)
 
 	qRegisterMetaType<cv::Mat>("cv::Mat");
 
-	camImage = getNodeHandle().subscribe("/liprecKinect/rgb/image_raw", 10, &LipRec::imageCallback, this);
+	//camImage = getNodeHandle().subscribe("/liprecKinect/rgb/image_raw", 10, &LipRec::imageCallback, this);
+	camImage2 = getNodeHandle().subscribe("/kinect2/qhd/image_mono_rect", 100, &LipRec::imageCallback2, this);
 
 	faceROISub = getNodeHandle().subscribe("/face_detection/faceROI", 10, &LipRec::faceROICallback, this);
 	mouthROISub = getNodeHandle().subscribe("/face_detection/mouthROI", 10, &LipRec::mouthROICallback, this);
@@ -111,6 +112,26 @@ void LipRec::imageCallback(const sensor_msgs::ImageConstPtr& msg){
 	emit updateCam(img);
 }
 
+void LipRec::imageCallback2(const sensor_msgs::ImageConstPtr& msg){
+	cv::Mat img;
+
+	cv_bridge::CvImagePtr cv_ptr;
+	try
+	{
+		//now cv_ptr is the matrix, do not forget "TYPE_" before "16UC1"
+		cv_ptr = cv_bridge::toCvCopy(msg, sensor_msgs::image_encodings::TYPE_8UC1);
+	}
+	catch (cv_bridge::Exception& e)
+	{
+		ROS_ERROR("cv_bridge exception: %s", e.what());
+		return;
+	}
+
+	img = cv_ptr->image;
+
+	emit updateCam(img);
+}
+
 void LipRec::faceROICallback(const sensor_msgs::RegionOfInterestConstPtr& msg){
 	faceROITimer.start(timeoutROIdetection);
 	faceROI = *msg;
@@ -134,7 +155,20 @@ void LipRec::getCamPic(cv::Mat img){
     QPixmap pixMap = getPixmap(img);
     ui_.lbl_cam->setPixmap(pixMap);
 
-    Mat mouthImg = this->showLips(img);
+    Mat mouthImg = cutROIfromImage(img, mouthROI);
+
+	if(ui_.rbGHE->isChecked()){
+		equalizeHist(mouthImg, mouthImg);
+	}else if(ui_.rbAHE->isChecked()){
+		Ptr<CLAHE> clahe = createCLAHE(ui_.sbClipLimit->value(),Size(ui_.sbSize->value(),ui_.sbSize->value()));
+		clahe->apply(mouthImg, mouthImg);
+	}else if(ui_.rbNRF->isChecked()){
+
+	}else if(ui_.rbGLAPOW->isChecked()){
+
+	}
+
+    this->showLips(mouthImg);
 
 	currentFrame = updateFrameBuffer(mouthImg);
 
@@ -287,9 +321,8 @@ void LipRec::drawFaceMouthROI(Mat& img){
 	}
 }
 
-Mat LipRec::showLips(Mat& img){
-  Mat mouthImg = cutROIfromImage(img, mouthROI);
-  QPixmap pixMap;
+void LipRec::showLips(Mat& mouthImg){
+	QPixmap pixMap;
 	if(ui_.cbLips->isChecked()){
 		pixMap = getPixmap(mouthImg);
 		pixMap = pixMap.scaled(ui_.lbl_lips->maximumWidth(), ui_.lbl_lips->maximumHeight(), Qt::KeepAspectRatio, Qt::SmoothTransformation);
@@ -299,7 +332,6 @@ Mat LipRec::showLips(Mat& img){
 		ui_.lbl_lips->setPixmap(empty);
 	}
 
-	return mouthImg;
 }
 
 

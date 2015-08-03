@@ -55,6 +55,7 @@ public:
   virtual void saveSettings(qt_gui_cpp::Settings& plugin_settings, qt_gui_cpp::Settings& instance_settings) const;
   virtual void restoreSettings(const qt_gui_cpp::Settings& plugin_settings, const qt_gui_cpp::Settings& instance_settings);
   void imageCallback(const sensor_msgs::ImageConstPtr& msg);
+  void imageCallback2(const sensor_msgs::ImageConstPtr& msg);
   void faceROICallback(const sensor_msgs::RegionOfInterestConstPtr& msg);
   void mouthROICallback(const sensor_msgs::RegionOfInterestConstPtr& msg);
 
@@ -64,6 +65,7 @@ private:
   QWidget* widget_;
 
   ros::Subscriber camImage;
+  ros::Subscriber camImage2;
   ros::Subscriber faceROISub;
   ros::Subscriber mouthROISub;
 
@@ -94,7 +96,7 @@ private:
   Mat cutROIfromImage(Mat& src, sensor_msgs::RegionOfInterest& roi);
   QPixmap getPixmap(Mat& iplImg);
   void drawFaceMouthROI(Mat& img);
-  Mat showLips(Mat& img);
+  void showLips(Mat& mouthImg);
   int updateFrameBuffer(Mat& img);
   void createMotionHistoryImage(Mat& img);
   Mat createImageAbsDiff(int currentFrame);
