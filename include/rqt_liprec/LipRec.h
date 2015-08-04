@@ -87,7 +87,7 @@ private:
 
   DetectStartEndFrame stateDetectionStartEndFrame;
   QList<Mat> utterance;
-  int utteranceCounter;
+  int silenceCounter;
 
 
   int timeoutROIdetection;
