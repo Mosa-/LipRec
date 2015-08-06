@@ -208,7 +208,7 @@ void LipRec::getCamPic(cv::Mat img){
 		//2. moving average smoothing
 
 		ui_.lcdPixelWiseDiff->display(QString::number(d,'f',0));
-		ROS_INFO("difference %d", QString::number(d,'f',0).toInt());
+		//ROS_INFO("difference %d", QString::number(d,'f',0).toInt());
 		//temporal segmentation
 
 		imageAbsDiff = createImageAbsDiff(currentFrame);
@@ -220,10 +220,9 @@ void LipRec::getCamPic(cv::Mat img){
 		case Idle:
 			utterance.clear();
 			silenceCounter = 0;
-			ROS_INFO("Enter state Idle: %d", activation);
+			//ROS_INFO("Enter state Idle: %d", activation);
 
 			if(activation > ui_.sbST->value()){
-
 				stateDetectionStartEndFrame = Utterance;
 			}else{
 
@@ -231,9 +230,8 @@ void LipRec::getCamPic(cv::Mat img){
 
 			break;
 		case Utterance:
-			ROS_INFO("Enter state Utterance: %d", activation);
+			//ROS_INFO("Enter state Utterance: %d", activation);
 			if(activation == ui_.sbST->value() && silenceCounter == ui_.sbNoSF->value()){
-				ROS_INFO("TRUETAIN");
 
 				stateDetectionStartEndFrame = Idle;
 				Mat uLast = imageAbsDiff;
@@ -241,10 +239,13 @@ void LipRec::getCamPic(cv::Mat img){
 					uLast = utterance.last();
 				}
 
+				// only add imageAbsDiff if the last DOF-image has the same size
 				if(uLast.cols == imageAbsDiff.cols && uLast.rows == imageAbsDiff.rows){
 					utterance.append(imageAbsDiff);
 				}
 				ROS_INFO("Uterrance %d", utterance.size());
+
+				//printMat(utterance);
 
 				//1. Generate weighted DOFs
 				for (int i = 0; i < utterance.size(); ++i) {
@@ -252,7 +253,12 @@ void LipRec::getCamPic(cv::Mat img){
 					if(!utterance.at(i).empty()){
 						for (int k = 0; k < utterance.at(i).cols; ++k) {
 							for (int j = 0; j < utterance.at(i).rows; ++j) {
-								utterance[i].at<uchar>(j,k) = utterance[i].at<uchar>(j,k) * (i+1);
+								//if(utterance[i].at<uchar>(j,k) > 1){
+//									utterance[i].at<uchar>(j,k) = utterance[i].at<uchar>(j,k) * (i+1);
+//									if(utterance[i].at<uchar>(j,k) >255){
+//										utterance[i].at<uchar>(j,k) = 255;
+//									}
+								//}
 							}
 						}
 					}
@@ -260,7 +266,8 @@ void LipRec::getCamPic(cv::Mat img){
 				}
 
 				Size size = Size(imageAbsDiff.size().width, imageAbsDiff.size().height);
-				Mat mt = Mat::zeros(size, CV_8UC3);
+				Mat mt(imageAbsDiff.rows, imageAbsDiff.cols, CV_8UC1, Scalar(0));
+
 
 				//2. take max pixel intensity value
 				for (int i = 0; i < utterance.size(); ++i) {
@@ -277,15 +284,10 @@ void LipRec::getCamPic(cv::Mat img){
 					}
 				}
 
-				QPixmap pixMap = getPixmap(mt);
+				pixMap = getPixmap(mt);
 				pixMap = pixMap.scaled(ui_.lbl_lips->maximumWidth(), ui_.lbl_lips->maximumHeight(), Qt::KeepAspectRatio, Qt::SmoothTransformation);
 				ui_.lbl_rec_word->setPixmap(pixMap);
 
-
-//				if(utteranceCounter > 5){
-//					stateDetectionStartEndFrame = Idle;
-//				}
-//				utteranceCounter++;
 
 			}else if(activation == ui_.sbST->value()){
 				silenceCounter++;
@@ -307,113 +309,6 @@ void LipRec::getCamPic(cv::Mat img){
 			utterance.append(imageAbsDiff);
 		}
 	}
-
-//	switch (stateDetectionStartEndFrame) {
-//		case Idle:
-//			utterance.clear();
-//			utteranceCounter = 0;
-//			ROS_INFO("Enter state Idle: %d", activation);
-//
-//			if(activation > 0){
-//
-//				stateDetectionStartEndFrame = StartFrame;
-//			}else{
-//
-//			}
-//
-//			break;
-//		case StartFrame:
-//			ROS_INFO("Enter state StartFrame: %d", activation);
-//
-//			if(activation < 1){
-//
-//				stateDetectionStartEndFrame = Utterance;
-//			}else{
-//
-//			}
-//			break;
-//		case Utterance:
-//			ROS_INFO("Enter state Utterance: %d", activation);
-//			if(activation < 1){
-//
-//				if(utteranceCounter > 5){
-//					stateDetectionStartEndFrame = Idle;
-//				}
-//				utteranceCounter++;
-//
-//			}else if(activation > 0){
-//				stateDetectionStartEndFrame = EndFrame;
-//			}
-//			break;
-//		case EndFrame:
-//			ROS_INFO("Enter state EndFrame: %d", activation);
-//			if(activation < 1){
-//
-//				stateDetectionStartEndFrame = Idle;
-//				Mat uLast = imageAbsDiff;
-//				if(!utterance.isEmpty()){
-//					uLast = utterance.last();
-//				}
-//
-//				if(uLast.cols == imageAbsDiff.cols && uLast.rows == imageAbsDiff.rows){
-//					utterance.append(imageAbsDiff);
-//				}
-//				ROS_INFO("Uterrance %d", utterance.size());
-//
-//				//1. Generate weighted DOFs
-//				for (int i = 0; i < utterance.size(); ++i) {
-//
-//					if(!utterance.at(i).empty()){
-//						for (int k = 0; k < utterance.at(i).cols; ++k) {
-//							for (int j = 0; j < utterance.at(i).rows; ++j) {
-//								utterance[i].at<uchar>(j,k) = utterance[i].at<uchar>(j,k) * (i+1);
-//							}
-//						}
-//					}
-//
-//				}
-//
-//				Size size = Size(imageAbsDiff.size().width, imageAbsDiff.size().height);
-//				Mat mt = Mat::zeros(size, CV_8UC3);
-//
-//				//2. take max pixel intensity value
-//				for (int i = 0; i < utterance.size(); ++i) {
-//
-//					if(!utterance.at(i).empty()){
-//
-//						for (int k = 0; k < utterance.at(i).cols; ++k) {
-//							for (int j = 0; j < utterance.at(i).rows; ++j) {
-//								if(mt.at<uchar>(j,k) < utterance[i].at<uchar>(j,k)){
-//									mt.at<uchar>(j,k) = utterance[i].at<uchar>(j,k);
-//								}
-//							}
-//						}
-//					}
-//				}
-//
-//				QPixmap pixMap = getPixmap(mt);
-//				pixMap = pixMap.scaled(ui_.lbl_lips->maximumWidth(), ui_.lbl_lips->maximumHeight(), Qt::KeepAspectRatio, Qt::SmoothTransformation);
-//				ui_.lbl_rec_word->setPixmap(pixMap);
-//
-//			}else{
-//
-//			}
-//			break;
-//		default:
-//			break;
-//	}
-//
-//	if(stateDetectionStartEndFrame == StartFrame || stateDetectionStartEndFrame == Utterance || stateDetectionStartEndFrame == EndFrame){
-//		Mat uLast = imageAbsDiff;
-//		if(!utterance.isEmpty()){
-//			uLast = utterance.last();
-//		}
-//
-//		if(uLast.cols == imageAbsDiff.cols && uLast.rows == imageAbsDiff.rows){
-//			utterance.append(imageAbsDiff);
-//		}
-//	}
-
 
 	if(!imageAbsDiff.empty()){
 		this->createMotionHistoryImage(imageAbsDiff);
@@ -457,7 +352,7 @@ void LipRec::showLips(Mat& mouthImg){
 }
 
 
-int LipRec::updateFrameBuffer(Mat& img){
+int LipRec::updateFrameBuffer(Mat img){
 	int currentFrame = 0;
 	if(frameBuffer.empty()){
 		for (int var = 0; var < NO_CYCLIC_FRAME; ++var) {
@@ -477,7 +372,8 @@ void LipRec::createMotionHistoryImage(Mat& imageAbsDiff){
 		QPixmap pixMap;
 		double timestamp = (double) clock()/CLOCKS_PER_SEC;
 		Size size = Size(imageAbsDiff.size().width, imageAbsDiff.size().height);
-		Mat silh = Mat::zeros(size, CV_8UC3);
+		Mat silh = Mat::zeros(size, CV_8UC1);
+
 
 		if(mhi.empty() || imageAbsDiff.size != mhi.size){
 			mhi.release();
@@ -489,9 +385,9 @@ void LipRec::createMotionHistoryImage(Mat& imageAbsDiff){
 		ui_.lbl_rec_phonem->setPixmap(pixMap);
 
 		if(ui_.cbMHIBinarization->isChecked())
-			threshold(imageAbsDiff,imageAbsDiff,ui_.dsbMHIThreshold->value(),1,cv::THRESH_BINARY);
+			threshold(imageAbsDiff,silh,ui_.dsbMHIThreshold->value(),1,cv::THRESH_BINARY);
 
-		updateMotionHistory(imageAbsDiff, mhi, timestamp, MHI_DURATION);
+		updateMotionHistory(silh, mhi, timestamp, MHI_DURATION);
 		Mat mask;
 		mhi.convertTo(mask, CV_8UC1, 255.0/MHI_DURATION, (MHI_DURATION-timestamp)*255.0/MHI_DURATION );
 
@@ -540,6 +436,17 @@ void LipRec::faceROItimeout(){
 }
 void LipRec::mouthROItimeout(){
 	mouthROI_detected = false;
+}
+
+void LipRec::printMat(Mat& data){
+	ROS_INFO("<1==============printMat================1>");
+	for (int i = 0; i < data.cols; ++i) {
+		for (int j = 0; j < data.rows; ++j) {
+				ROS_INFO("Pixelvalue(%d,%d): %d", j,i,data.at<uchar>(j,i));
+		}
+	}
+	ROS_INFO("<2==============printMat================2>");
+
 }
 
 }

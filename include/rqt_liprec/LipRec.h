@@ -97,9 +97,10 @@ private:
   QPixmap getPixmap(Mat& iplImg);
   void drawFaceMouthROI(Mat& img);
   void showLips(Mat& mouthImg);
-  int updateFrameBuffer(Mat& img);
+  int updateFrameBuffer(Mat img);
   void createMotionHistoryImage(Mat& img);
   Mat createImageAbsDiff(int currentFrame);
+  void printMat(Mat& data);
 
   void setupModel();
 
