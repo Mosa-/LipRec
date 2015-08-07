@@ -39,9 +39,7 @@ namespace rqt_liprec {
 
 typedef enum{
 	Idle,
-	StartFrame,
 	Utterance,
-	EndFrame
 }DetectStartEndFrame;
 
 class LipRec
@@ -55,7 +53,6 @@ public:
   virtual void saveSettings(qt_gui_cpp::Settings& plugin_settings, qt_gui_cpp::Settings& instance_settings) const;
   virtual void restoreSettings(const qt_gui_cpp::Settings& plugin_settings, const qt_gui_cpp::Settings& instance_settings);
   void imageCallback(const sensor_msgs::ImageConstPtr& msg);
-  void imageCallback2(const sensor_msgs::ImageConstPtr& msg);
   void faceROICallback(const sensor_msgs::RegionOfInterestConstPtr& msg);
   void mouthROICallback(const sensor_msgs::RegionOfInterestConstPtr& msg);
 
@@ -89,17 +86,37 @@ private:
   QList<Mat> utterance;
   int silenceCounter;
 
-
   int timeoutROIdetection;
 
-  void drawRectangle(Mat& iplImg, sensor_msgs::RegionOfInterest& roi);
-  Mat cutROIfromImage(Mat& src, sensor_msgs::RegionOfInterest& roi);
-  QPixmap getPixmap(Mat& iplImg);
   void drawFaceMouthROI(Mat& img);
+  void drawRectangle(Mat& iplImg, sensor_msgs::RegionOfInterest& roi);
+
+  //Class ImageProcessing
+  QPixmap getPixmap(Mat& iplImg);
+
+  //Class ImageProcessing
+  Mat cutROIfromImage(Mat& src, sensor_msgs::RegionOfInterest& roi);
+
+  //Class ImageProcessing
+  void applyHistogramForLightCorrection(Mat& mat);
+  //Class ImageProcessing
+  void applyBlur(Mat& mat);
+
   void showLips(Mat& mouthImg);
+
   int updateFrameBuffer(Mat img);
-  void createMotionHistoryImage(Mat& img);
+
+  //Class ImageProcessing
+  int generatePixelDifference(Mat& mat, int currentFrame);
+  //Class ImageProcessing
   Mat createImageAbsDiff(int currentFrame);
+
+  void changeLipActivationState(int activation, Mat& imageAbsDiff);
+
+  //Class ImageProcessing
+  void createMotionHistoryImage(Mat& img);
+
+
   void printMat(Mat& data);
 
   void setupModel();

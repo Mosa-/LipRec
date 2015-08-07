@@ -29,7 +29,7 @@ void LipRec::initPlugin(qt_gui_cpp::PluginContext& context)
 	qRegisterMetaType<cv::Mat>("cv::Mat");
 
 	//camImage = getNodeHandle().subscribe("/liprecKinect/rgb/image_raw", 10, &LipRec::imageCallback, this);
-	camImage2 = getNodeHandle().subscribe("/kinect2/qhd/image_mono_rect", 100, &LipRec::imageCallback2, this);
+	camImage2 = getNodeHandle().subscribe("/kinect2/qhd/image_mono", 100, &LipRec::imageCallback, this);
 
 	faceROISub = getNodeHandle().subscribe("/face_detection/faceROI", 10, &LipRec::faceROICallback, this);
 	mouthROISub = getNodeHandle().subscribe("/face_detection/mouthROI", 10, &LipRec::mouthROICallback, this);
@@ -61,7 +61,6 @@ void LipRec::initPlugin(qt_gui_cpp::PluginContext& context)
 	mouthROITimer.start(timeoutROIdetection);
 
 	QObject::connect(this, SIGNAL(updateCam(cv::Mat)), this, SLOT(getCamPic(cv::Mat)));
-
 }
 
 void LipRec::shutdownPlugin()
@@ -98,27 +97,6 @@ void LipRec::imageCallback(const sensor_msgs::ImageConstPtr& msg){
 	cv_bridge::CvImagePtr cv_ptr;
 	try
 	{
-		//now cv_ptr is the matrix, do not forget "TYPE_" before "16UC1"
-		cv_ptr = cv_bridge::toCvCopy(msg, sensor_msgs::image_encodings::MONO8);
-	}
-	catch (cv_bridge::Exception& e)
-	{
-		ROS_ERROR("cv_bridge exception: %s", e.what());
-		return;
-	}
-
-	img = cv_ptr->image;
-
-	emit updateCam(img);
-}
-
-void LipRec::imageCallback2(const sensor_msgs::ImageConstPtr& msg){
-	cv::Mat img;
-
-	cv_bridge::CvImagePtr cv_ptr;
-	try
-	{
-		//now cv_ptr is the matrix, do not forget "TYPE_" before "16UC1"
 		cv_ptr = cv_bridge::toCvCopy(msg, sensor_msgs::image_encodings::TYPE_8UC1);
 	}
 	catch (cv_bridge::Exception& e)
@@ -143,7 +121,6 @@ void LipRec::mouthROICallback(const sensor_msgs::RegionOfInterestConstPtr& msg){
 	mouthROI_detected = true;
 }
 
-
 void LipRec::getCamPic(cv::Mat img){
 
 	MHI_DURATION = ui_.dsbMHIDuration->value();
@@ -157,26 +134,9 @@ void LipRec::getCamPic(cv::Mat img){
 
     Mat mouthImg = cutROIfromImage(img, mouthROI);
 
-	if(ui_.rbGHE->isChecked()){
-		equalizeHist(mouthImg, mouthImg);
-	}else if(ui_.rbAHE->isChecked()){
-		Ptr<CLAHE> clahe = createCLAHE(ui_.sbClipLimit->value(),Size(ui_.sbSize->value(),ui_.sbSize->value()));
-		clahe->apply(mouthImg, mouthImg);
-	}
+    this->applyHistogramForLightCorrection(mouthImg);
 
-
-	int sbMaskValue = ui_.sbMask->value();
-	if(sbMaskValue%2 == 0){
-		sbMaskValue += 1;
-	}
-	if(ui_.rbBlur->isChecked()){
-		blur(mouthImg, mouthImg,Size(sbMaskValue,sbMaskValue), Point(-1,-1));
-	}else if(ui_.rbMedian->isChecked()){
-		medianBlur(mouthImg, mouthImg, sbMaskValue);
-	}else if(ui_.rbGaussian->isChecked()){
-		GaussianBlur(mouthImg, mouthImg, Size(sbMaskValue,sbMaskValue),0,0);
-	}
-
+    this->applyBlur(mouthImg);
 
     this->showLips(mouthImg);
 
@@ -188,39 +148,148 @@ void LipRec::getCamPic(cv::Mat img){
 				&& frameBuffer.at(last).rows == frameBuffer.at(currentFrame).rows){
 
 		//temporal segmentation
-		//1.squared mean difference
-		int pixelDifference = 0;
-		if(!frameBuffer.empty()){
-			for (int i = 0; i < mouthImg.cols; ++i) {
-				for (int j = 0; j < mouthImg.rows; ++j) {
-					if(frameBuffer[last].cols == 0){
-						pixelDifference += 0- frameBuffer[currentFrame].at<uchar>(j,i);
-					}else{
-						pixelDifference += abs(frameBuffer[last].at<uchar>(j,i) - frameBuffer[currentFrame].at<uchar>(j,i));
-					}
-				}
-			}
-		}
-
-//		d = pow(pixelDifference / ((double) mouthImg.cols*mouthImg.rows),2);
-		d = pixelDifference / ((double) mouthImg.cols*mouthImg.rows);
-
-		//2. moving average smoothing
+		d = this->generatePixelDifference(mouthImg, currentFrame);
 
 		ui_.lcdPixelWiseDiff->display(QString::number(d,'f',0));
-		//ROS_INFO("difference %d", QString::number(d,'f',0).toInt());
-		//temporal segmentation
 
 		imageAbsDiff = createImageAbsDiff(currentFrame);
 	}
 
+	//temporal segmentation
 	int activation = QString::number(d,'f',0).toInt();
 
+	this->changeLipActivationState(activation, imageAbsDiff);
+
+	if(!imageAbsDiff.empty()){
+		this->createMotionHistoryImage(imageAbsDiff);
+	}
+
+	last = currentFrame;
+}
+
+void LipRec::drawFaceMouthROI(Mat& img){
+	if(faceROI_detected){
+		if(ui_.cbFaceROI->isChecked()){
+			drawRectangle(img, faceROI);
+		}
+	}
+
+	if(mouthROI_detected){
+		if(ui_.cbMouthROI->isChecked()){
+			drawRectangle(img, mouthROI);
+		}
+	}
+}
+
+void LipRec::drawRectangle(Mat& iplImg, sensor_msgs::RegionOfInterest& roi){
+
+	Scalar color;
+	if(blackBorder==1){
+		color = Scalar(0,0,0);
+	}else{
+		color = Scalar(255, 255, 255);
+	}
+	rectangle(iplImg, Point(roi.x_offset, roi.y_offset),
+			Point(roi.x_offset + roi.width, roi.y_offset+ roi.height),
+			color, 2, 8, 0);
+}
+
+QPixmap LipRec::getPixmap(Mat& iplImg){
+	QPixmap pixMap;
+	QImage dest((const uchar *) iplImg.data, iplImg.cols, iplImg.rows, iplImg.step, QImage::Format_Indexed8);
+	pixMap.convertFromImage(dest,Qt::ColorOnly);
+	return pixMap;
+}
+
+Mat LipRec::cutROIfromImage(Mat& src, sensor_msgs::RegionOfInterest& roi){
+	Rect mouthROI(roi.x_offset, roi.y_offset, roi.width, roi.height);
+	Mat mouth = src(mouthROI).clone();
+	return mouth;
+}
+
+void LipRec::applyHistogramForLightCorrection(Mat& mat){
+	if(ui_.rbGHE->isChecked()){
+		equalizeHist(mat, mat);
+	}else if(ui_.rbAHE->isChecked()){
+		Ptr<CLAHE> clahe = createCLAHE(ui_.sbClipLimit->value(),Size(ui_.sbSize->value(),ui_.sbSize->value()));
+		clahe->apply(mat, mat);
+	}
+}
+
+void LipRec::applyBlur(Mat& mat){
+	int sbMaskValue = ui_.sbMask->value();
+	if(sbMaskValue%2 == 0){
+		sbMaskValue += 1;
+	}
+	if(ui_.rbBlur->isChecked()){
+		blur(mat, mat,Size(sbMaskValue,sbMaskValue), Point(-1,-1));
+	}else if(ui_.rbMedian->isChecked()){
+		medianBlur(mat, mat, sbMaskValue);
+	}else if(ui_.rbGaussian->isChecked()){
+		GaussianBlur(mat, mat, Size(sbMaskValue,sbMaskValue),0,0);
+	}
+}
+
+void LipRec::showLips(Mat& mouthImg){
+	QPixmap pixMap;
+	if(ui_.cbLips->isChecked()){
+		pixMap = getPixmap(mouthImg);
+		pixMap = pixMap.scaled(ui_.lbl_lips->maximumWidth(), ui_.lbl_lips->maximumHeight(), Qt::KeepAspectRatio, Qt::SmoothTransformation);
+		ui_.lbl_lips->setPixmap(pixMap);
+	}else{
+		QPixmap empty;
+		ui_.lbl_lips->setPixmap(empty);
+	}
+}
+
+int LipRec::updateFrameBuffer(Mat img){
+	int currentFrame = 0;
+	if(frameBuffer.empty()){
+		for (int var = 0; var < NO_CYCLIC_FRAME; ++var) {
+			frameBuffer.append(img);
+		}
+	}else{
+		currentFrame = (last+1) % NO_CYCLIC_FRAME;
+		frameBuffer[currentFrame] = img;
+	}
+
+	return currentFrame;
+}
+
+int LipRec::generatePixelDifference(Mat& mat, int currentFrame){
+	//1.squared mean difference
+	double d = 0;
+
+	int pixelDifference = 0;
+	if(!frameBuffer.empty()){
+		for (int i = 0; i < mat.cols; ++i) {
+			for (int j = 0; j < mat.rows; ++j) {
+				if(frameBuffer[last].cols == 0){
+					pixelDifference += 0- frameBuffer[currentFrame].at<uchar>(j,i);
+				}else{
+					pixelDifference += abs(frameBuffer[last].at<uchar>(j,i) - frameBuffer[currentFrame].at<uchar>(j,i));
+				}
+			}
+		}
+	}
+
+	//d = pow(pixelDifference / ((double) mouthImg.cols*mouthImg.rows),2);
+	d = pixelDifference / ((double) mat.cols*mat.rows);
+	return d;
+}
+
+Mat LipRec::createImageAbsDiff(int currentFrame){
+	Mat silh;
+	absdiff(frameBuffer.at(last), frameBuffer.at(currentFrame), silh);
+	return silh;
+}
+
+void LipRec::changeLipActivationState(int activation, Mat& imageAbsDiff){
+	QPixmap pixMap;
 	switch (stateDetectionStartEndFrame) {
 		case Idle:
 			utterance.clear();
 			silenceCounter = 0;
-			//ROS_INFO("Enter state Idle: %d", activation);
 
 			if(activation > ui_.sbST->value()){
 				stateDetectionStartEndFrame = Utterance;
@@ -230,7 +299,6 @@ void LipRec::getCamPic(cv::Mat img){
 
 			break;
 		case Utterance:
-			//ROS_INFO("Enter state Utterance: %d", activation);
 			if(activation == ui_.sbST->value() && silenceCounter == ui_.sbNoSF->value()){
 
 				stateDetectionStartEndFrame = Idle;
@@ -243,9 +311,7 @@ void LipRec::getCamPic(cv::Mat img){
 				if(uLast.cols == imageAbsDiff.cols && uLast.rows == imageAbsDiff.rows){
 					utterance.append(imageAbsDiff);
 				}
-				ROS_INFO("Uterrance %d", utterance.size());
-
-				//printMat(utterance);
+				ui_.lcdUtterance->display(QString::number(utterance.size(),'f',0));
 
 				//1. Generate weighted DOFs
 				for (int i = 0; i < utterance.size(); ++i) {
@@ -253,16 +319,14 @@ void LipRec::getCamPic(cv::Mat img){
 					if(!utterance.at(i).empty()){
 						for (int k = 0; k < utterance.at(i).cols; ++k) {
 							for (int j = 0; j < utterance.at(i).rows; ++j) {
-								//if(utterance[i].at<uchar>(j,k) > 1){
-//									utterance[i].at<uchar>(j,k) = utterance[i].at<uchar>(j,k) * (i+1);
-//									if(utterance[i].at<uchar>(j,k) >255){
-//										utterance[i].at<uchar>(j,k) = 255;
-//									}
-								//}
+								utterance[i].at<uchar>(j,k) = utterance[i].at<uchar>(j,k) * (ui_.sbDOFboost->value());
+								if(utterance[i].at<uchar>(j,k) >255){
+									utterance[i].at<uchar>(j,k) = 255;
+								}
+
 							}
 						}
 					}
-
 				}
 
 				Size size = Size(imageAbsDiff.size().width, imageAbsDiff.size().height);
@@ -293,79 +357,20 @@ void LipRec::getCamPic(cv::Mat img){
 				silenceCounter++;
 			}else{
 				silenceCounter = 0;
+				Mat uLast = imageAbsDiff;
+				if(!utterance.isEmpty()){
+					uLast = utterance.last();
+				}
+
+				if(uLast.cols == imageAbsDiff.cols && uLast.rows == imageAbsDiff.rows){
+					utterance.append(imageAbsDiff);
+				}
 			}
 			break;
 		default:
 			break;
 	}
-
-	if(stateDetectionStartEndFrame == StartFrame || stateDetectionStartEndFrame == Utterance || stateDetectionStartEndFrame == EndFrame){
-		Mat uLast = imageAbsDiff;
-		if(!utterance.isEmpty()){
-			uLast = utterance.last();
-		}
-
-		if(uLast.cols == imageAbsDiff.cols && uLast.rows == imageAbsDiff.rows){
-			utterance.append(imageAbsDiff);
-		}
-	}
-
-	if(!imageAbsDiff.empty()){
-		this->createMotionHistoryImage(imageAbsDiff);
-	}
-
-	last = currentFrame;
 }
-
-Mat LipRec::createImageAbsDiff(int currentFrame){
-	Mat silh;
-	absdiff(frameBuffer.at(last), frameBuffer.at(currentFrame), silh);
-	return silh;
-}
-
-
-void LipRec::drawFaceMouthROI(Mat& img){
-	if(faceROI_detected){
-		if(ui_.cbFaceROI->isChecked()){
-			drawRectangle(img, faceROI);
-		}
-	}
-
-	if(mouthROI_detected){
-		if(ui_.cbMouthROI->isChecked()){
-			drawRectangle(img, mouthROI);
-		}
-	}
-}
-
-void LipRec::showLips(Mat& mouthImg){
-	QPixmap pixMap;
-	if(ui_.cbLips->isChecked()){
-		pixMap = getPixmap(mouthImg);
-		pixMap = pixMap.scaled(ui_.lbl_lips->maximumWidth(), ui_.lbl_lips->maximumHeight(), Qt::KeepAspectRatio, Qt::SmoothTransformation);
-		ui_.lbl_lips->setPixmap(pixMap);
-	}else{
-		QPixmap empty;
-		ui_.lbl_lips->setPixmap(empty);
-	}
-
-}
-
-
-int LipRec::updateFrameBuffer(Mat img){
-	int currentFrame = 0;
-	if(frameBuffer.empty()){
-		for (int var = 0; var < NO_CYCLIC_FRAME; ++var) {
-			frameBuffer.append(img);
-		}
-	}else{
-		currentFrame = (last+1) % NO_CYCLIC_FRAME;
-		frameBuffer[currentFrame] = img;
-	}
-
-	return currentFrame;
-}
-
 
 void LipRec::createMotionHistoryImage(Mat& imageAbsDiff){
 	if(mouthROI_detected && ui_.cbMHI->isChecked()){
@@ -404,32 +409,6 @@ void LipRec::createMotionHistoryImage(Mat& imageAbsDiff){
 	}
 }
 
-
-void LipRec::drawRectangle(Mat& iplImg, sensor_msgs::RegionOfInterest& roi){
-
-	Scalar color;
-	if(blackBorder==1){
-		color = Scalar(0,0,0);
-	}else{
-		color = Scalar(255, 255, 255);
-	}
-	rectangle(iplImg, Point(roi.x_offset, roi.y_offset),
-			Point(roi.x_offset + roi.width, roi.y_offset+ roi.height),
-			color, 2, 8, 0);
-}
-
-Mat LipRec::cutROIfromImage(Mat& src, sensor_msgs::RegionOfInterest& roi){
-	Rect mouthROI(roi.x_offset, roi.y_offset, roi.width, roi.height);
-	Mat mouth = src(mouthROI).clone();
-	return mouth;
-}
-
-QPixmap LipRec::getPixmap(Mat& iplImg){
-	QPixmap pixMap;
-	QImage dest((const uchar *) iplImg.data, iplImg.cols, iplImg.rows, iplImg.step, QImage::Format_Indexed8);
-	pixMap.convertFromImage(dest,Qt::ColorOnly);
-	return pixMap;
-}
 
 void LipRec::faceROItimeout(){
 	faceROI_detected = false;
