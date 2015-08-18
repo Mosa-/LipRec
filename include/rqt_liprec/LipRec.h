@@ -30,6 +30,8 @@
 
 #include <time.h>
 
+#include "rqt_liprec/ImageProcessing.h"
+
 using namespace std_msgs;
 using namespace std;
 using namespace ros;
@@ -88,33 +90,35 @@ private:
 
   int timeoutROIdetection;
 
+  ImageProcessing imageProcessing;
+
   void drawFaceMouthROI(Mat& img);
   void drawRectangle(Mat& iplImg, sensor_msgs::RegionOfInterest& roi);
 
-  //Class ImageProcessing
-  QPixmap getPixmap(Mat& iplImg);
-
-  //Class ImageProcessing
-  Mat cutROIfromImage(Mat& src, sensor_msgs::RegionOfInterest& roi);
-
-  //Class ImageProcessing
-  void applyHistogramForLightCorrection(Mat& mat);
-  //Class ImageProcessing
-  void applyBlur(Mat& mat);
+//  //Class ImageProcessing
+//  Mat cutROIfromImage(Mat& src, sensor_msgs::RegionOfInterest& roi);
+//
+//  //Class ImageProcessing
+//  void applyHistogramForLightCorrection(Mat& mat);
+//  //Class ImageProcessing
+//  void applyBlur(Mat& mat);
 
   void showLips(Mat& mouthImg);
 
   int updateFrameBuffer(Mat img);
 
-  //Class ImageProcessing
-  int generatePixelDifference(Mat& mat, int currentFrame);
-  //Class ImageProcessing
-  Mat createImageAbsDiff(int currentFrame);
+//  //Class ImageProcessing
+//  int generatePixelDifference(Mat& mat, int currentFrame);
+//  //Class ImageProcessing
+//  Mat createImageAbsDiff(int currentFrame);
 
   void changeLipActivationState(int activation, Mat& imageAbsDiff);
 
-  //Class ImageProcessing
-  void createMotionHistoryImage(Mat& img);
+//  //Class ImageProcessing
+//  void createMotionHistoryImage(Mat& img);
+//
+//  //Class ImageProcessing
+//  QPixmap getPixmap(Mat iplImg);
 
 
   void printMat(Mat& data);
