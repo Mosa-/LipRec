@@ -39,6 +39,7 @@ class ImageProcessing {
 public:
 	ImageProcessing();
 	virtual ~ImageProcessing();
+	void drawRectangle(Mat& iplImg, sensor_msgs::RegionOfInterest& roi, Scalar color);
 	Mat cutROIfromImage(Mat& src, sensor_msgs::RegionOfInterest& roi);
 	void applyHistogramForLightCorrectionGHE(Mat& mat);
 	void applyHistogramForLightCorrectionAHE(Mat& mat, int clipLimit, Size size);
@@ -47,7 +48,6 @@ public:
 	Mat createImageAbsDiff(Mat& currentFrame, Mat& lastFrame);
 	Mat createMotionHistoryImage(Mat& img, Mat& mhi, bool binarization, double binarThreshold, double mhiDuration);
 	QPixmap getPixmap(Mat iplImg);
-
 };
 
 #endif /* IMAGEPROCESSING_H_ */

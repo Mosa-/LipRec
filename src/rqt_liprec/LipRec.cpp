@@ -143,10 +143,6 @@ void LipRec::getCamPic(cv::Mat img){
 
 	BlurType blur;
 
-	int sbMaskValue = ui_.sbMask->value();
-	if(sbMaskValue%2 == 0){
-		sbMaskValue += 1;
-	}
 	if(ui_.rbBlur->isChecked()){
 		blur = BLUR;
 	}else if(ui_.rbMedian->isChecked()){
@@ -205,30 +201,24 @@ void LipRec::getCamPic(cv::Mat img){
 }
 
 void LipRec::drawFaceMouthROI(Mat& img){
-	if(faceROI_detected){
-		if(ui_.cbFaceROI->isChecked()){
-			drawRectangle(img, faceROI);
-		}
-	}
-
-	if(mouthROI_detected){
-		if(ui_.cbMouthROI->isChecked()){
-			drawRectangle(img, mouthROI);
-		}
-	}
-}
-
-void LipRec::drawRectangle(Mat& iplImg, sensor_msgs::RegionOfInterest& roi){
-
 	Scalar color;
 	if(blackBorder==1){
 		color = Scalar(0,0,0);
 	}else{
 		color = Scalar(255, 255, 255);
 	}
-	rectangle(iplImg, Point(roi.x_offset, roi.y_offset),
-			Point(roi.x_offset + roi.width, roi.y_offset+ roi.height),
-			color, 2, 8, 0);
+
+	if(faceROI_detected){
+		if(ui_.cbFaceROI->isChecked()){
+			imageProcessing.drawRectangle(img, faceROI, color);
+		}
+	}
+
+	if(mouthROI_detected){
+		if(ui_.cbMouthROI->isChecked()){
+			imageProcessing.drawRectangle(img, mouthROI, color);
+		}
+	}
 }
 
 void LipRec::showLips(Mat& mouthImg){
@@ -293,7 +283,7 @@ void LipRec::changeLipActivationState(int activation, Mat& imageAbsDiff){
 						for (int k = 0; k < utterance.at(i).cols; ++k) {
 							for (int j = 0; j < utterance.at(i).rows; ++j) {
 								utterance[i].at<uchar>(j,k) = utterance[i].at<uchar>(j,k) * (ui_.sbDOFboost->value());
-								if(utterance[i].at<uchar>(j,k) >255){
+								if(utterance[i].at<uchar>(j,k) > 255){
 									utterance[i].at<uchar>(j,k) = 255;
 								}
 

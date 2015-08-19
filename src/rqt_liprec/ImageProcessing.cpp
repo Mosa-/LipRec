@@ -9,6 +9,12 @@ ImageProcessing::~ImageProcessing() {
 	// TODO Auto-generated destructor stub
 }
 
+void ImageProcessing::drawRectangle(Mat& iplImg, sensor_msgs::RegionOfInterest& roi, Scalar color){
+
+	rectangle(iplImg, Point(roi.x_offset, roi.y_offset),
+			Point(roi.x_offset + roi.width, roi.y_offset+ roi.height),
+			color, 2, 8, 0);
+}
 
 Mat ImageProcessing::cutROIfromImage(Mat& src, sensor_msgs::RegionOfInterest& roi){
 	Rect mouthROI(roi.x_offset, roi.y_offset, roi.width, roi.height);
