@@ -262,7 +262,7 @@ void LipRec::changeLipActivationState(int activation, Mat& imageAbsDiff){
 
 			break;
 		case Utterance:
-			if(activation == ui_.sbST->value() && silenceCounter == ui_.sbNoSF->value()){
+			if(activation <= ui_.sbST->value() && silenceCounter == ui_.sbNoSF->value()){
 
 				stateDetectionStartEndFrame = Idle;
 				Mat uLast = imageAbsDiff;
@@ -316,7 +316,7 @@ void LipRec::changeLipActivationState(int activation, Mat& imageAbsDiff){
 				ui_.lbl_rec_word->setPixmap(pixMap);
 
 
-			}else if(activation == ui_.sbST->value()){
+			}else if(activation <= ui_.sbST->value()){
 				silenceCounter++;
 			}else{
 				silenceCounter = 0;

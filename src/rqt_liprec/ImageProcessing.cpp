@@ -93,6 +93,7 @@ Mat ImageProcessing::createMotionHistoryImage(Mat& img, Mat& mhi, bool binarizat
 QPixmap ImageProcessing::getPixmap(Mat iplImg){
 	QPixmap pixMap;
 	QImage dest((const uchar *) iplImg.data, iplImg.cols, iplImg.rows, iplImg.step, QImage::Format_Indexed8);
+	dest.bits();
 	pixMap.convertFromImage(dest,Qt::ColorOnly);
 	return pixMap;
 }

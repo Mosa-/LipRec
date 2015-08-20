@@ -56,7 +56,7 @@ generate_messages(
 )
 
 catkin_package(
-  INCLUDE_DIRS include ${rqt_liprec_INCLUDE_DIRECTORIES}
+  INCLUDE_DIRS include
   LIBRARIES ${PROJECT_NAME}
   CATKIN_DEPENDS rospy rqt_gui rqt_gui_cpp rqt_gui_py message_runtime
   #DEPENDS system_lib

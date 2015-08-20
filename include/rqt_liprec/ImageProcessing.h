@@ -1,8 +1,7 @@
 #ifndef IMAGEPROCESSING_H_
 #define IMAGEPROCESSING_H_
 
-#include <rqt_gui_cpp/plugin.h>
-#include <ui_liprec.h>
+
 #include <QWidget>
 #include <QStringList>
 #include <QList>
