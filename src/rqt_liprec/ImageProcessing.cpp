@@ -16,11 +16,19 @@ void ImageProcessing::drawRectangle(Mat& iplImg, sensor_msgs::RegionOfInterest& 
 			color, 2, 8, 0);
 }
 
-Mat ImageProcessing::cutROIfromImage(Mat& src, sensor_msgs::RegionOfInterest& roi){
+void ImageProcessing::cutROIfromImage(Mat& src, Mat& out, sensor_msgs::RegionOfInterest& roi){
 	Rect mouthROI(roi.x_offset, roi.y_offset, roi.width, roi.height);
-	Mat mouth = src(mouthROI).clone();
-	return mouth;
+	out = src(mouthROI).clone();
 }
+
+void ImageProcessing::squareImage(Mat& src){
+	int max = std::max(src.rows, src.cols);
+	Size squareSize(max, max);
+
+	Mat squareImg(max, max, CV_8UC1, Scalar(0));
+	cv::resize(src, src, squareSize);
+}
+
 
 void ImageProcessing::applyHistogramForLightCorrectionGHE(Mat& mat){
 	equalizeHist(mat, mat);

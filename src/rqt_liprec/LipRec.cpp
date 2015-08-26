@@ -132,7 +132,12 @@ void LipRec::getCamPic(cv::Mat img){
     QPixmap pixMap = imageProcessing.getPixmap(img);
     ui_.lbl_cam->setPixmap(pixMap);
 
-    Mat mouthImg = imageProcessing.cutROIfromImage(img, mouthROI);
+    Mat mouthImg;
+	imageProcessing.cutROIfromImage(img, mouthImg, mouthROI);
+
+    if(mouthImg.cols != 0){
+		imageProcessing.squareImage(mouthImg);
+    }
 
 	if(ui_.rbGHE->isChecked()){
 		imageProcessing.applyHistogramForLightCorrectionGHE(mouthImg);

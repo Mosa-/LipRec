@@ -39,7 +39,8 @@ public:
 	ImageProcessing();
 	virtual ~ImageProcessing();
 	void drawRectangle(Mat& iplImg, sensor_msgs::RegionOfInterest& roi, Scalar color);
-	Mat cutROIfromImage(Mat& src, sensor_msgs::RegionOfInterest& roi);
+	void cutROIfromImage(Mat& src, Mat& out, sensor_msgs::RegionOfInterest& roi);
+	void squareImage(Mat& src);
 	void applyHistogramForLightCorrectionGHE(Mat& mat);
 	void applyHistogramForLightCorrectionAHE(Mat& mat, int clipLimit, Size size);
 	void applyBlur(Mat& mat, int sbMask, BlurType bt);
