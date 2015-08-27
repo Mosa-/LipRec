@@ -30,7 +30,7 @@
 
 #include <time.h>
 
-#include "rqt_liprec/ImageProcessing.h"
+#include "ImageProcessing.h"
 
 using namespace std_msgs;
 using namespace std;

@@ -2,14 +2,7 @@
 #define IMAGEPROCESSING_H_
 
 
-#include <QWidget>
-#include <QStringList>
-#include <QList>
-#include <QIcon>
-#include <QMessageBox>
-#include <QImage>
-#include <QPainter>
-#include <QTimer>
+#include <QPixmap>
 
 #include <string>
 #include <stdlib.h>
@@ -21,13 +14,12 @@
 
 #include <image_transport/image_transport.h>
 #include <cv_bridge/cv_bridge.h>
-#include <cv.h>
 #include <sensor_msgs/image_encodings.h>
 #include "opencv2/video/tracking.hpp"
 #include <opencv2/imgproc/imgproc.hpp>
 #include <opencv2/highgui/highgui.hpp>
 
-#include "rqt_liprec/CommonEnums.h"
+#include "CommonEnums.h"
 
 using namespace std_msgs;
 using namespace std;
