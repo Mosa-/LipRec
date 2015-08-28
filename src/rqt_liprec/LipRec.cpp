@@ -135,10 +135,6 @@ void LipRec::getCamPic(cv::Mat img){
     Mat mouthImg;
 	imageProcessing.cutROIfromImage(img, mouthImg, mouthROI);
 
-    if(mouthImg.cols != 0){
-		imageProcessing.squareImage(mouthImg);
-    }
-
 	if(ui_.rbGHE->isChecked()){
 		imageProcessing.applyHistogramForLightCorrectionGHE(mouthImg);
 	}else if(ui_.rbAHE->isChecked()){
@@ -159,6 +155,10 @@ void LipRec::getCamPic(cv::Mat img){
 	imageProcessing.applyBlur(mouthImg, ui_.sbMask->value(), blur);
 
     this->showLips(mouthImg);
+
+    if(mouthImg.cols != 0){
+        imageProcessing.squareImage(mouthImg);
+    }
 
 	currentFrame = updateFrameBuffer(mouthImg);
 	Mat imageAbsDiff;
