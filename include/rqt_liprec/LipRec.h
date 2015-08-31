@@ -11,6 +11,7 @@
 #include <QImage>
 #include <QPainter>
 #include <QTimer>
+#include <QDebug>
 
 #include <string>
 #include <stdlib.h>
@@ -89,6 +90,8 @@ private:
   int silenceCounter;
 
   int timeoutROIdetection;
+
+  QList<int> utterancePixelDiff;
 
   ImageProcessing imageProcessing;
 

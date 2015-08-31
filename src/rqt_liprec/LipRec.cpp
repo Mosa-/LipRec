@@ -257,10 +257,12 @@ void LipRec::changeLipActivationState(int activation, Mat& imageAbsDiff){
 	switch (stateDetectionStartEndFrame) {
 		case Idle:
 			utterance.clear();
+            utterancePixelDiff.clear();
 			silenceCounter = 0;
 
 			if(activation > ui_.sbST->value()){
 				stateDetectionStartEndFrame = Utterance;
+                utterancePixelDiff.append(activation);
 			}else{
 
 			}
@@ -278,6 +280,7 @@ void LipRec::changeLipActivationState(int activation, Mat& imageAbsDiff){
 				// only add imageAbsDiff if the last DOF-image has the same size
 				if(uLast.cols == imageAbsDiff.cols && uLast.rows == imageAbsDiff.rows){
 					utterance.append(imageAbsDiff);
+                    utterancePixelDiff.append(activation);
 				}
 				ui_.lcdUtterance->display(QString::number(utterance.size(),'f',0));
 
@@ -320,9 +323,16 @@ void LipRec::changeLipActivationState(int activation, Mat& imageAbsDiff){
 				pixMap = pixMap.scaled(ui_.lbl_lips->maximumWidth(), ui_.lbl_lips->maximumHeight(), Qt::KeepAspectRatio, Qt::SmoothTransformation);
 				ui_.lbl_rec_word->setPixmap(pixMap);
 
+                ROS_INFO("##########################################1");
+                ROS_INFO("%d", utterancePixelDiff.size());
+                for (int i = 0; i < utterancePixelDiff.size(); ++i) {
+                    ROS_INFO("%d", utterancePixelDiff.at(i));
+                }
+                ROS_INFO("##########################################2");
 
 			}else if(activation <= ui_.sbST->value()){
 				silenceCounter++;
+                utterancePixelDiff.append(activation);
 			}else{
 				silenceCounter = 0;
 				Mat uLast = imageAbsDiff;
@@ -332,6 +342,7 @@ void LipRec::changeLipActivationState(int activation, Mat& imageAbsDiff){
 
 				if(uLast.cols == imageAbsDiff.cols && uLast.rows == imageAbsDiff.rows){
 					utterance.append(imageAbsDiff);
+                    utterancePixelDiff.append(activation);
 				}
 			}
 			break;
