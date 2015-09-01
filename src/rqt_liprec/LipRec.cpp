@@ -26,7 +26,7 @@ void LipRec::initPlugin(qt_gui_cpp::PluginContext& context)
 	// add widget to the user interface
 	context.addWidget(widget_);
 
-	qRegisterMetaType<cv::Mat>("cv::Mat");
+	qRegisterMetaType<cv::Mat>("cv::Mat");    
 
 	//camImage = getNodeHandle().subscribe("/liprecKinect/rgb/image_raw", 10, &LipRec::imageCallback, this);
 	camImage2 = getNodeHandle().subscribe("/kinect2/qhd/image_mono", 100, &LipRec::imageCallback, this);
@@ -57,15 +57,18 @@ void LipRec::initPlugin(qt_gui_cpp::PluginContext& context)
 	QObject::connect(&faceROITimer, SIGNAL(timeout()), this, SLOT(faceROItimeout()));
 	QObject::connect(&mouthROITimer, SIGNAL(timeout()), this, SLOT(mouthROItimeout()));
 
+    QObject::connect(ui_.pbUPDP, SIGNAL(clicked()), this, SLOT(clickedUtteranceDiffPlot()));
+
 	faceROITimer.start(timeoutROIdetection);
 	mouthROITimer.start(timeoutROIdetection);
+    ui_.frameWidget->setShown(false);
+
 
 	QObject::connect(this, SIGNAL(updateCam(cv::Mat)), this, SLOT(getCamPic(cv::Mat)));
 }
 
 void LipRec::shutdownPlugin()
 {
-
 }
 
 void LipRec::saveSettings(qt_gui_cpp::Settings& plugin_settings, qt_gui_cpp::Settings& instance_settings) const
@@ -157,7 +160,7 @@ void LipRec::getCamPic(cv::Mat img){
     this->showLips(mouthImg);
 
     if(mouthImg.cols != 0){
-        imageProcessing.squareImage(mouthImg);
+        //imageProcessing.squareImage(mouthImg);
     }
 
 	currentFrame = updateFrameBuffer(mouthImg);
@@ -323,11 +326,27 @@ void LipRec::changeLipActivationState(int activation, Mat& imageAbsDiff){
 				pixMap = pixMap.scaled(ui_.lbl_lips->maximumWidth(), ui_.lbl_lips->maximumHeight(), Qt::KeepAspectRatio, Qt::SmoothTransformation);
 				ui_.lbl_rec_word->setPixmap(pixMap);
 
+
+                QVector<QPointF> points;
                 ROS_INFO("##########################################1");
                 ROS_INFO("%d", utterancePixelDiff.size());
                 for (int i = 0; i < utterancePixelDiff.size(); ++i) {
+                    points.append(QPoint(i, -utterancePixelDiff.at(i)));
                     ROS_INFO("%d", utterancePixelDiff.at(i));
                 }
+                QGraphicsScene * scene = new QGraphicsScene();
+                QPolygonF plyline;
+                QPainterPath myPath;
+                ui_.graphicsView->setScene(scene);
+                double rad = 1;
+                for (int i = 0; i < points.size(); ++i) {
+                    plyline.append(points[i]);
+                    myPath.addPolygon(plyline);
+                    scene->addEllipse(points[i].x(), points[i].y(), rad*0.3, rad*0.3, QPen(), QBrush(Qt::red, Qt::SolidPattern));
+                }
+                scene->addPath(myPath);
+                ui_.graphicsView->fitInView( scene->sceneRect(), Qt::KeepAspectRatio );
+
                 ROS_INFO("##########################################2");
 
 			}else if(activation <= ui_.sbST->value()){
@@ -355,7 +374,16 @@ void LipRec::faceROItimeout(){
 	faceROI_detected = false;
 }
 void LipRec::mouthROItimeout(){
-	mouthROI_detected = false;
+    mouthROI_detected = false;
+}
+
+void LipRec::clickedUtteranceDiffPlot(){
+    if(ui_.frameWidget->isHidden()){
+        ui_.frameWidget->setShown(true);
+    }else{
+        ui_.frameWidget->setShown(false);
+
+    }
 }
 
 void LipRec::printMat(Mat& data){

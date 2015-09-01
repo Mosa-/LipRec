@@ -41,12 +41,6 @@ set(rqt_liprec_UIS
 	src/rqt_liprec/liprec.ui
 )
 
-
-add_message_files(
-  FILES
-  PointCloud.msg
-)
-
 catkin_python_setup()
 generate_messages(
   DEPENDENCIES

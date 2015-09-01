@@ -116,6 +116,7 @@ signals:
 private slots:
 	void faceROItimeout();
 	void mouthROItimeout();
+    void clickedUtteranceDiffPlot();
 
 
 
