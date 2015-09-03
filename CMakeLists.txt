@@ -18,6 +18,8 @@ find_package(catkin REQUIRED COMPONENTS
   rqt_gui_py
 )
 
+#find_package(Boost REQUIRED system filesystem date_time thread iostreams)
+
 find_package(OpenCV REQUIRED)
 
 find_package(Qt4 COMPONENTS QtCore QtGui REQUIRED)
@@ -42,18 +44,22 @@ set(rqt_liprec_UIS
 )
 
 catkin_python_setup()
-generate_messages(
-  DEPENDENCIES
-   std_msgs
-   geometry_msgs
-   sensor_msgs
-)
+#generate_messages(
+#  DEPENDENCIES
+#   std_msgs
+#   geometry_msgs
+#   sensor_msgs
+#)
 
 catkin_package(
-  INCLUDE_DIRS include
-  LIBRARIES ${PROJECT_NAME}
-  CATKIN_DEPENDS rospy rqt_gui rqt_gui_cpp rqt_gui_py message_runtime
-  #DEPENDS system_lib
+  INCLUDE_DIRS
+    include
+  LIBRARIES
+    ${PROJECT_NAME}
+  CATKIN_DEPENDS
+    rospy rqt_gui rqt_gui_cpp rqt_gui_py message_runtime
+  DEPENDS
+    #Boost
 )
 
 qt4_wrap_cpp(rqt_liprec_MOCS ${rqt_liprec_HDRS})
@@ -61,11 +67,14 @@ qt4_wrap_ui(rqt_liprec_UIS_H ${rqt_liprec_UIS})
 
 include_directories(${rqt_liprec_INCLUDE_DIRECTORIES} ${catkin_INCLUDE_DIRS} ${OpenCV_INCLUDE_DIRS})
 
+add_library(swt src/rqt_liprec/Swt.cpp)
+target_link_libraries(swt ${catkin_LIBRARIES} ${OpenCV_LIBRARIES} ${QT_QTCORE_LIBRARY} ${QT_QTGUI_LIBRARY})
+
 add_library(imageProcessing src/rqt_liprec/ImageProcessing.cpp)
 target_link_libraries(imageProcessing ${catkin_LIBRARIES} ${OpenCV_LIBRARIES} ${QT_QTCORE_LIBRARY} ${QT_QTGUI_LIBRARY})
 
 add_library(${PROJECT_NAME} ${rqt_liprec_SRCS} ${rqt_liprec_MOCS} ${rqt_liprec_UIS_H})
-target_link_libraries(${PROJECT_NAME} ${OpenCV_LIBRARIES} ${catkin_LIBRARIES} ${QT_QTCORE_LIBRARY} ${QT_QTGUI_LIBRARY} imageProcessing)
+target_link_libraries(${PROJECT_NAME} ${OpenCV_LIBRARIES} ${catkin_LIBRARIES} ${QT_QTCORE_LIBRARY} ${QT_QTGUI_LIBRARY} imageProcessing swt)
 
 find_package(class_loader)
 class_loader_hide_library_symbols(${PROJECT_NAME})

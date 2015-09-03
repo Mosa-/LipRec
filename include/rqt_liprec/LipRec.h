@@ -32,6 +32,7 @@
 #include <time.h>
 
 #include "ImageProcessing.h"
+#include "Swt.h"
 
 using namespace std_msgs;
 using namespace std;
@@ -94,6 +95,7 @@ private:
   QList<int> utterancePixelDiff;
 
   ImageProcessing imageProcessing;
+  Swt swt;
 
   void drawFaceMouthROI(Mat& img);
 

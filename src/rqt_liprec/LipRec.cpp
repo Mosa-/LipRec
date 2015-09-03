@@ -322,7 +322,14 @@ void LipRec::changeLipActivationState(int activation, Mat& imageAbsDiff){
 					}
 				}
 
-				pixMap = imageProcessing.getPixmap(mt);
+                Mat ca = Mat::zeros(mt.rows, mt.cols, CV_8UC1);
+                Mat ch = Mat::zeros(mt.rows, mt.cols, CV_8UC1);
+                Mat cd = Mat::zeros(mt.rows, mt.cols, CV_8UC1);
+                Mat cv = Mat::zeros(mt.rows, mt.cols, CV_8UC1);
+
+                swt.applySwt(mt, ca, ch, cd, cv, 1, Swt::Haar);
+
+                pixMap = imageProcessing.getPixmap(ca);
 				pixMap = pixMap.scaled(ui_.lbl_lips->maximumWidth(), ui_.lbl_lips->maximumHeight(), Qt::KeepAspectRatio, Qt::SmoothTransformation);
 				ui_.lbl_rec_word->setPixmap(pixMap);
 
@@ -345,7 +352,7 @@ void LipRec::changeLipActivationState(int activation, Mat& imageAbsDiff){
                     scene->addEllipse(points[i].x(), points[i].y(), rad*0.3, rad*0.3, QPen(), QBrush(Qt::red, Qt::SolidPattern));
                 }
                 scene->addPath(myPath);
-                ui_.graphicsView->fitInView( scene->sceneRect(), Qt::KeepAspectRatio );
+                ui_.graphicsView->fitInView(scene->sceneRect(), Qt::KeepAspectRatio);
 
                 ROS_INFO("##########################################2");
 
