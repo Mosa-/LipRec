@@ -78,7 +78,6 @@ Mat ImageProcessing::createImageAbsDiff(Mat& currentFrame, Mat& lastFrame){
 	return silh;
 }
 Mat ImageProcessing::createMotionHistoryImage(Mat& img, Mat& mhi, bool binarization, double binarThreshold, double mhiDuration){
-	QPixmap pixMap;
 	double timestamp = (double) clock()/CLOCKS_PER_SEC;
 	Size size = Size(img.size().width, img.size().height);
 	Mat silh = Mat::zeros(size, CV_8UC1);
@@ -103,5 +102,27 @@ QPixmap ImageProcessing::getPixmap(Mat iplImg){
 	QImage dest((const uchar *) iplImg.data, iplImg.cols, iplImg.rows, iplImg.step, QImage::Format_Indexed8);
 	dest.bits();
 	pixMap.convertFromImage(dest,Qt::ColorOnly);
-	return pixMap;
+    return pixMap;
+}
+
+double ImageProcessing::calcXCircularCoordinate(int imgSize, int xSquareCoordinate) {
+    return (sqrt(2)/imgSize-1)*xSquareCoordinate + (-1 / sqrt(2));
+}
+
+double ImageProcessing::calcYCircularCoordinate(int imgSize, int ySquareCoordinate) {
+    return (sqrt(2)/imgSize-1)*ySquareCoordinate + (-1 / sqrt(2));
+}
+
+double ImageProcessing::calcRadiusDist(int imgSize, int xSquareCoordinate, int ySquareCoordinate) {
+    double x = calcXCircularCoordinate(imgSize, xSquareCoordinate);
+    double y = calcYCircularCoordinate(imgSize, ySquareCoordinate);
+
+    return sqrt(pow(x,2) + pow(y,2));
+}
+
+double ImageProcessing::calcAngleCircular(int imgSize, int xSquareCoordinate, int ySquareCoordinate) {
+    double x = calcXCircularCoordinate(imgSize, xSquareCoordinate);
+    double y = calcYCircularCoordinate(imgSize, ySquareCoordinate);
+
+    return atan(y/x);
 }

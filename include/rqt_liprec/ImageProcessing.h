@@ -30,16 +30,27 @@ class ImageProcessing {
 public:
 	ImageProcessing();
 	virtual ~ImageProcessing();
-	void drawRectangle(Mat& iplImg, sensor_msgs::RegionOfInterest& roi, Scalar color);
+
+    void drawRectangle(Mat& iplImg, sensor_msgs::RegionOfInterest& roi, Scalar color);
 	void cutROIfromImage(Mat& src, Mat& out, sensor_msgs::RegionOfInterest& roi);
-	void squareImage(Mat& src);
-	void applyHistogramForLightCorrectionGHE(Mat& mat);
+
+    void squareImage(Mat& src);
+
+    void applyHistogramForLightCorrectionGHE(Mat& mat);
 	void applyHistogramForLightCorrectionAHE(Mat& mat, int clipLimit, Size size);
 	void applyBlur(Mat& mat, int sbMask, BlurType bt);
-	int generatePixelDifference(Mat& currentFrame, Mat& lastFrame);
+
+    int generatePixelDifference(Mat& currentFrame, Mat& lastFrame);
 	Mat createImageAbsDiff(Mat& currentFrame, Mat& lastFrame);
-	Mat createMotionHistoryImage(Mat& img, Mat& mhi, bool binarization, double binarThreshold, double mhiDuration);
-	QPixmap getPixmap(Mat iplImg);
+
+    Mat createMotionHistoryImage(Mat& img, Mat& mhi, bool binarization, double binarThreshold, double mhiDuration);
+
+    QPixmap getPixmap(Mat iplImg);
+
+    double calcXCircularCoordinate(int imgSize, int xSquareCoordinate);
+    double calcYCircularCoordinate(int imgSize, int ySquareCoordinate);
+    double calcRadiusDist(int imgSize, int xSquareCoordinate, int ySquareCoordinate);
+    double calcAngleCircular(int imgSize, int xSquareCoordinate, int ySquareCoordinate);
 };
 
 #endif /* IMAGEPROCESSING_H_ */

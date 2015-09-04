@@ -14,8 +14,8 @@ void Swt::applySwt(const Mat &src_Original, Mat &ca, Mat &ch, Mat &cd, Mat &cv, 
 
         /* Decalre and Intialize helper Matrices */
 
-        Mat kernel_High = Mat::zeros(1, 2, CV_32F);
-        Mat kernel_Low = Mat::zeros(1, 2, CV_32F);
+        Mat kernel_High = Mat::zeros(1, 2, CV_8U);
+        Mat kernel_Low = Mat::zeros(1, 2, CV_8U);
         Mat swa, swh, swv, swd;
         Mat src = src_Original;
 
@@ -29,12 +29,11 @@ void Swt::applySwt(const Mat &src_Original, Mat &ca, Mat &ch, Mat &cd, Mat &cv, 
         /* The main loop for calculating Stationary 2D Wavelet Transform */
 
 
-        for (int i = 0; i < Level; i++)
-        {
+        for (int i = 0; i < Level; i++) {
 
             /* A temporary src Matrix for calculations */
 
-            Mat extended_src = Mat::zeros(1,1, CV_32F);
+            Mat extended_src = Mat::zeros(1,1, CV_8U);
 
 
             /* Extend source Matrix to deal with edge related issues */
@@ -45,9 +44,9 @@ void Swt::applySwt(const Mat &src_Original, Mat &ca, Mat &ch, Mat &cd, Mat &cv, 
 
             /* Helper Matrices */
 
-            Mat y = Mat::zeros(1,1, CV_32F);
-            Mat y1 = Mat::zeros(1,1, CV_32F);
-            Mat z = Mat::zeros(1,1, CV_32F);
+            Mat y = Mat::zeros(1,1, CV_8U);
+            Mat y1 = Mat::zeros(1,1, CV_8U);
+            Mat z = Mat::zeros(1,1, CV_8U);
 
             /* Calculating Approximation coeffcients */
 
@@ -156,7 +155,7 @@ void Swt::extendPeriod(const Mat& b, Mat& c, int level)
 
         int Level_Mat[3] = {2,4,8};               /* This tells how much the source Matrix must be expanded at edges */
         int inc_Per = Level_Mat[level];			  /* Calculate the expansion at that particular level */
-        c = Mat::zeros(b.rows + inc_Per , b.cols + inc_Per , CV_32F);	 /* Create Matrix with expanded edges */
+        c = Mat::zeros(b.rows + inc_Per , b.cols + inc_Per , CV_8U);	 /* Create Matrix with expanded edges */
 
 
         /* Copy original Matrix into new Matrix */
@@ -187,11 +186,16 @@ void Swt::filterBank(Mat& kernel_High, Mat& kernel_Low, MotherWavelet type)
     if(type == Haar)
     {
         /* Initiliaze Haar's Filter Bank */
+        Mat kernel_High1 = Mat::zeros(1, 2, CV_32F);
+        Mat kernel_Low1 = Mat::zeros(1, 2, CV_32F);
 
-        kernel_High.at<float>(0,0) = (float) (-0.7071);
-        kernel_High.at<float>(0,1) = (float) (0.7071);
-        kernel_Low.at<float>(0,0) = (float) (0.7071);
-        kernel_Low.at<float>(0,1) = (float) (0.7071);
+        kernel_High1.at<float>(0,0) = (float) (-0.7071);
+        kernel_High1.at<float>(0,1) = (float) (0.7071);
+        kernel_Low1.at<float>(0,0) = (float) (0.7071);
+        kernel_Low1.at<float>(0,1) = (float) (0.7071);
+
+        kernel_High1.convertTo(kernel_High, CV_8U);
+        kernel_Low1.convertTo(kernel_Low, CV_8U);
     }
 }
 
@@ -202,7 +206,7 @@ void Swt::keepLoc(Mat& src, int extension, int originalSize)
           /* Note: This currently works for only Square matrices. Update needed. */
 
           int end = extension + originalSize - 1;
-          Mat dst = Mat::zeros(originalSize, originalSize, CV_32F);
+          Mat dst = Mat::zeros(originalSize, originalSize, CV_8U);
           src.rowRange(extension - 1, end).colRange(extension - 1, end).copyTo(dst);
           src = dst;
 }
@@ -211,7 +215,7 @@ void Swt::dyadicUpsample(Mat& kernel)
 {
     /* Create a new Matrix with two rows */
 
-    Mat temp = Mat::zeros(kernel.rows + 1, kernel.cols, CV_32F);
+    Mat temp = Mat::zeros(kernel.rows + 1, kernel.cols, CV_8U);
 
     /* Copy Kernel into first row */
 
@@ -221,7 +225,7 @@ void Swt::dyadicUpsample(Mat& kernel)
     /* values into a new column major Matrix */
     /* Note: There must be a faster way to do this in OpenCV. I will be updating it. */
 
-    Mat Ret = Mat::zeros(kernel.cols * 2, 1, CV_32F);
+    Mat Ret = Mat::zeros(kernel.cols * 2, 1, CV_8U);
     int index = 0;
     for (int i = 0; i < (kernel.cols * 2)/2 ; i++)
     {

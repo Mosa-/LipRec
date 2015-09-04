@@ -320,16 +320,23 @@ void LipRec::changeLipActivationState(int activation, Mat& imageAbsDiff){
 							}
 						}
 					}
-				}
+                }
 
-                Mat ca = Mat::zeros(mt.rows, mt.cols, CV_8UC1);
-                Mat ch = Mat::zeros(mt.rows, mt.cols, CV_8UC1);
-                Mat cd = Mat::zeros(mt.rows, mt.cols, CV_8UC1);
-                Mat cv = Mat::zeros(mt.rows, mt.cols, CV_8UC1);
+                imageProcessing.squareImage(mt);
 
-                swt.applySwt(mt, ca, ch, cd, cv, 1, Swt::Haar);
 
-                pixMap = imageProcessing.getPixmap(ca);
+                if(ui_.cbSWT->isChecked()){
+                    Mat ca = Mat::zeros(mt.rows, mt.cols, CV_8UC1);
+                    Mat ch = Mat::zeros(mt.rows, mt.cols, CV_8UC1);
+                    Mat cd = Mat::zeros(mt.rows, mt.cols, CV_8UC1);
+                    Mat cv = Mat::zeros(mt.rows, mt.cols, CV_8UC1);
+
+                    swt.applySwt(mt, ca, ch, cd, cv, 1, Swt::Haar);
+
+                    pixMap = imageProcessing.getPixmap(ca);
+                }else{
+                    pixMap = imageProcessing.getPixmap(mt);
+                }
 				pixMap = pixMap.scaled(ui_.lbl_lips->maximumWidth(), ui_.lbl_lips->maximumHeight(), Qt::KeepAspectRatio, Qt::SmoothTransformation);
 				ui_.lbl_rec_word->setPixmap(pixMap);
 
