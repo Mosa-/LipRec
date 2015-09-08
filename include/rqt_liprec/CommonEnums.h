@@ -2,16 +2,21 @@
 #define COMMONENUMS_H_
 
 enum HistogramType{
-	NONE,
+    H_NONE,
 	GHE,
 	AHE
 };
 
 enum BlurType{
-	NO,
+    B_NONE,
 	BLUR,
 	MEDIAN,
 	GAUSSIAN
+};
+
+enum SignalSmoothingType{
+    S_NONE,
+    AVERAGE
 };
 
 

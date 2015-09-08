@@ -105,6 +105,9 @@ private:
 
   void changeLipActivationState(int activation, Mat& imageAbsDiff);
 
+  void applySignalSmoothing(int graphicView, SignalSmoothingType type);
+  void averageSignalSmoothing(QList<int>& signalsSmoothing);
+
   void printMat(Mat& data);
 
   void setupModel();

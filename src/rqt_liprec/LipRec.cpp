@@ -61,7 +61,12 @@ void LipRec::initPlugin(qt_gui_cpp::PluginContext& context)
 
 	faceROITimer.start(timeoutROIdetection);
 	mouthROITimer.start(timeoutROIdetection);
-    ui_.frameWidget->setShown(false);
+    ui_.groupBoxWidget->setShown(false);
+    ui_.groupBoxWidget_2->setShown(false);
+    ui_.cbSignalWindow1->addItem("None");
+    ui_.cbSignalWindow1->addItem("Average");
+    ui_.cbSignalWindow2->addItem("None");
+    ui_.cbSignalWindow2->addItem("Average");
 
 
 	QObject::connect(this, SIGNAL(updateCam(cv::Mat)), this, SLOT(getCamPic(cv::Mat)));
@@ -341,27 +346,51 @@ void LipRec::changeLipActivationState(int activation, Mat& imageAbsDiff){
 				ui_.lbl_rec_word->setPixmap(pixMap);
 
 
-                QVector<QPointF> points;
-                ROS_INFO("##########################################1");
-                ROS_INFO("%d", utterancePixelDiff.size());
-                for (int i = 0; i < utterancePixelDiff.size(); ++i) {
-                    points.append(QPoint(i, -utterancePixelDiff.at(i)));
-                    ROS_INFO("%d", utterancePixelDiff.at(i));
-                }
-                QGraphicsScene * scene = new QGraphicsScene();
-                QPolygonF plyline;
-                QPainterPath myPath;
-                ui_.graphicsView->setScene(scene);
-                double rad = 1;
-                for (int i = 0; i < points.size(); ++i) {
-                    plyline.append(points[i]);
-                    myPath.addPolygon(plyline);
-                    scene->addEllipse(points[i].x(), points[i].y(), rad*0.3, rad*0.3, QPen(), QBrush(Qt::red, Qt::SolidPattern));
-                }
-                scene->addPath(myPath);
-                ui_.graphicsView->fitInView(scene->sceneRect(), Qt::KeepAspectRatio);
+                QString currentTextSignalWindow1 = ui_.cbSignalWindow1->currentText();
+                QString currentTextSignalWindow2 = ui_.cbSignalWindow2->currentText();
 
-                ROS_INFO("##########################################2");
+                if(currentTextSignalWindow1 == "None"){
+                    this->applySignalSmoothing(1, S_NONE);
+                }else if(currentTextSignalWindow1 == "Average"){
+                    this->applySignalSmoothing(1, AVERAGE);
+                }else{
+
+                }
+
+                if(currentTextSignalWindow2 == "None"){
+                    this->applySignalSmoothing(2, S_NONE);
+                }else if(currentTextSignalWindow2 == "Average"){
+                    this->applySignalSmoothing(2, AVERAGE);
+                }else{
+
+                }
+
+
+//                QVector<QPointF> points;
+
+//                this->averageSignalSmoothing();
+
+
+//                ROS_INFO("##########################################1");
+//                ROS_INFO("%d", utterancePixelDiff.size());
+//                for (int i = 0; i < utterancePixelDiff.size(); ++i) {
+//                    points.append(QPoint(i, -utterancePixelDiff.at(i)));
+//                    ROS_INFO("%d", utterancePixelDiff.at(i));
+//                }
+//                QGraphicsScene * scene = new QGraphicsScene();
+//                QPolygonF plyline;
+//                QPainterPath myPath;
+//                ui_.gvSignalWindow1->setScene(scene);
+//                double rad = 1;
+//                for (int i = 0; i < points.size(); ++i) {
+//                    plyline.append(points[i]);
+//                    myPath.addPolygon(plyline);
+//                    scene->addEllipse(points[i].x(), points[i].y(), rad*0.3, rad*0.3, QPen(), QBrush(Qt::red, Qt::SolidPattern));
+//                }
+//                scene->addPath(myPath);
+//                ui_.gvSignalWindow1->fitInView(scene->sceneRect(), Qt::KeepAspectRatio);
+
+//                ROS_INFO("##########################################2");
 
 			}else if(activation <= ui_.sbST->value()){
 				silenceCounter++;
@@ -381,7 +410,58 @@ void LipRec::changeLipActivationState(int activation, Mat& imageAbsDiff){
 			break;
 		default:
 			break;
-	}
+    }
+}
+
+void LipRec::applySignalSmoothing(int graphicView, SignalSmoothingType type)
+{
+    QGraphicsView* gv;
+    if(graphicView == 1){
+        gv = ui_.gvSignalWindow1;
+    }else{
+        gv = ui_.gvSignalWindow2;
+    }
+
+    QList<int> upd = utterancePixelDiff;
+
+    switch (type) {
+    case S_NONE:
+        break;
+    case AVERAGE:
+        this->averageSignalSmoothing(upd);
+        break;
+    default:
+        break;
+    }
+
+    QVector<QPointF> points;
+
+    for (int i = 0; i < upd.size(); ++i) {
+        points.append(QPoint(i, -upd.at(i)));
+    }
+    QGraphicsScene * scene = new QGraphicsScene();
+    QPolygonF plyline;
+    QPainterPath myPath;
+    gv->setScene(scene);
+    double rad = 1;
+    for (int i = 0; i < points.size(); ++i) {
+        plyline.append(points[i]);
+        myPath.addPolygon(plyline);
+        scene->addEllipse(points[i].x(), points[i].y(), rad*0.3, rad*0.3, QPen(), QBrush(Qt::red, Qt::SolidPattern));
+    }
+    scene->addPath(myPath);
+    gv->fitInView(scene->sceneRect(), Qt::KeepAspectRatio);
+
+
+}
+
+void LipRec::averageSignalSmoothing(QList<int>& signalsSmoothing){
+
+    for (int i = 0; i < signalsSmoothing.size(); ++i) {
+        if(i > 0 && i < signalsSmoothing.size()-1){
+            signalsSmoothing[i] = (signalsSmoothing[i-1] + signalsSmoothing[i] + signalsSmoothing[i+1]) / 3;
+        }
+    }
 }
 
 void LipRec::faceROItimeout(){
@@ -392,10 +472,14 @@ void LipRec::mouthROItimeout(){
 }
 
 void LipRec::clickedUtteranceDiffPlot(){
-    if(ui_.frameWidget->isHidden()){
-        ui_.frameWidget->setShown(true);
+    if(ui_.groupBoxWidget->isHidden()){
+        ui_.groupBoxWidget->setShown(true);
+        ui_.groupBoxWidget_2->setShown(true);
+
     }else{
-        ui_.frameWidget->setShown(false);
+        ui_.groupBoxWidget->setShown(false);
+        ui_.groupBoxWidget_2->setShown(false);
+
 
     }
 }
