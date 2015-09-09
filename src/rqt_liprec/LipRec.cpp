@@ -131,6 +131,9 @@ void LipRec::mouthROICallback(const sensor_msgs::RegionOfInterestConstPtr& msg){
 
 void LipRec::getCamPic(cv::Mat img){
 
+    imageProcessing.setupVideoWriter("out.avi", img.cols, img.rows);
+    imageProcessing.writeFrameToVideo(img);
+
 	MHI_DURATION = ui_.dsbMHIDuration->value();
 	NO_CYCLIC_FRAME = ui_.sbMHIFC->value();
 	int currentFrame = 0;
@@ -330,7 +333,7 @@ void LipRec::changeLipActivationState(int activation, Mat& imageAbsDiff){
                 imageProcessing.squareImage(mt);
 
 
-                if(ui_.cbSWT->isChecked()){
+                if(ui_.rbSWT->isChecked()){
                     Mat ca = Mat::zeros(mt.rows, mt.cols, CV_8UC1);
                     Mat ch = Mat::zeros(mt.rows, mt.cols, CV_8UC1);
                     Mat cd = Mat::zeros(mt.rows, mt.cols, CV_8UC1);
@@ -339,6 +342,8 @@ void LipRec::changeLipActivationState(int activation, Mat& imageAbsDiff){
                     swt.applySwt(mt, ca, ch, cd, cv, 1, Swt::Haar);
 
                     pixMap = imageProcessing.getPixmap(ca);
+                }else if(ui_.rbDCT->isChecked()){
+                    pixMap = imageProcessing.getPixmap(mt);
                 }else{
                     pixMap = imageProcessing.getPixmap(mt);
                 }
@@ -457,9 +462,11 @@ void LipRec::applySignalSmoothing(int graphicView, SignalSmoothingType type)
 
 void LipRec::averageSignalSmoothing(QList<int>& signalsSmoothing){
 
-    for (int i = 0; i < signalsSmoothing.size(); ++i) {
-        if(i > 0 && i < signalsSmoothing.size()-1){
-            signalsSmoothing[i] = (signalsSmoothing[i-1] + signalsSmoothing[i] + signalsSmoothing[i+1]) / 3;
+    QList<int> tmpSignalsSmoothing = signalsSmoothing;
+
+    for (int i = 0; i < tmpSignalsSmoothing.size(); ++i) {
+        if(i > 0 && i < tmpSignalsSmoothing.size()-1){
+            signalsSmoothing[i] = (tmpSignalsSmoothing[i-1] + tmpSignalsSmoothing[i] + tmpSignalsSmoothing[i+1]) / 3;
         }
     }
 }

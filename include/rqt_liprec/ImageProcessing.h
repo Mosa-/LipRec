@@ -51,6 +51,12 @@ public:
     double calcYCircularCoordinate(int imgSize, int ySquareCoordinate);
     double calcRadiusDist(int imgSize, int xSquareCoordinate, int ySquareCoordinate);
     double calcAngleCircular(int imgSize, int xSquareCoordinate, int ySquareCoordinate);
+
+    void setupVideoWriter(QString videoName, int frameWidth, int frameHeight);
+    void writeFrameToVideo(Mat frame);
+
+private:
+    VideoWriter video;
 };
 
 #endif /* IMAGEPROCESSING_H_ */

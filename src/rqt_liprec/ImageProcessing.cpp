@@ -126,3 +126,24 @@ double ImageProcessing::calcAngleCircular(int imgSize, int xSquareCoordinate, in
 
     return atan(y/x);
 }
+
+void ImageProcessing::setupVideoWriter(QString videoName, int frameWidth, int frameHeight)
+{
+    Size s;
+    s.width = frameWidth;
+    s.height = frameHeight;
+    video = VideoWriter(videoName.toStdString(), CV_FOURCC('M','J','P','G'), 30, s, false);
+
+    if(!video.isOpened()){
+        ROS_INFO("ERROR: Failed to write the video");
+    }
+}
+
+void ImageProcessing::writeFrameToVideo(Mat frame)
+{
+    Size s;
+    s.width = frame.cols;
+    s.height = frame.rows;
+    video.open("out.avi", CV_FOURCC('M','J','P','G'), 30, s, false);
+    video.write(frame);
+}
