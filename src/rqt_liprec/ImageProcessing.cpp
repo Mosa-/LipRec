@@ -144,6 +144,5 @@ void ImageProcessing::writeFrameToVideo(Mat frame)
     Size s;
     s.width = frame.cols;
     s.height = frame.rows;
-    video.open("out.avi", CV_FOURCC('M','J','P','G'), 30, s, false);
     video.write(frame);
 }

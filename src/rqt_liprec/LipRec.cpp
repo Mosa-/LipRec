@@ -68,6 +68,32 @@ void LipRec::initPlugin(qt_gui_cpp::PluginContext& context)
     ui_.cbSignalWindow2->addItem("None");
     ui_.cbSignalWindow2->addItem("Average");
 
+    initVideoWriter = false;
+
+    QMenuBar* menuBar = new QMenuBar(widget_);
+
+    QWidgetAction *widgetAction=new QWidgetAction(widget_);
+    QLineEdit* le = new QLineEdit(widget_);
+    widgetAction->setDefaultWidget(le);
+    QMenu *fm= menuBar->addMenu("File");
+    fm->addAction(widgetAction);
+
+    QMenu* video = new QMenu("Video");
+    video->addAction("Record");
+    video->addAction("Stop Record");
+    video->addSeparator();
+    video->addAction("Record Utterance");
+    video->addAction("Load Utterance");
+    menuBar->addMenu(video);
+
+    ui_.pbUPDP->setToolTip("Plot the pixel difference of an utterance.");
+    QPixmap pixmap("src/liprec/res/plot3.png");
+    QIcon bi(pixmap);
+    ui_.pbUPDP->setSizePolicy( QSizePolicy::Fixed, QSizePolicy::Preferred );
+    ui_.pbUPDP->setFlat(true);
+    ui_.pbUPDP->setIcon(bi);
+    ui_.pbUPDP->setIconSize(pixmap.rect().size());
+    ui_.pbUPDP->setMaximumSize(pixmap.rect().size());
 
 	QObject::connect(this, SIGNAL(updateCam(cv::Mat)), this, SLOT(getCamPic(cv::Mat)));
 }
@@ -131,8 +157,11 @@ void LipRec::mouthROICallback(const sensor_msgs::RegionOfInterestConstPtr& msg){
 
 void LipRec::getCamPic(cv::Mat img){
 
-    imageProcessing.setupVideoWriter("out.avi", img.cols, img.rows);
-    imageProcessing.writeFrameToVideo(img);
+//    if(!initVideoWriter){
+//        imageProcessing.setupVideoWriter("out.avi", img.cols, img.rows);
+//        initVideoWriter = true;
+//    }
+//    imageProcessing.writeFrameToVideo(img);
 
 	MHI_DURATION = ui_.dsbMHIDuration->value();
 	NO_CYCLIC_FRAME = ui_.sbMHIFC->value();

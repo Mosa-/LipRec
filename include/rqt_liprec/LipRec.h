@@ -12,6 +12,11 @@
 #include <QPainter>
 #include <QTimer>
 #include <QDebug>
+#include <QToolBar>
+#include <QMenuBar>
+#include <QDir>
+#include <QWidgetAction>
+#include <QLineEdit>
 
 #include <string>
 #include <stdlib.h>
@@ -94,6 +99,7 @@ private:
 
   QList<int> utterancePixelDiff;
 
+  bool initVideoWriter;
   ImageProcessing imageProcessing;
   Swt swt;
 
