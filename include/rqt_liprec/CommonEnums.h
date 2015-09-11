@@ -21,4 +21,5 @@ enum SignalSmoothingType{
 
 
 
+
 #endif /* COMMONENUMS_H_ */

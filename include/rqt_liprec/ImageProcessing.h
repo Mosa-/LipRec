@@ -54,6 +54,7 @@ public:
 
     void setupVideoWriter(QString videoName, int frameWidth, int frameHeight);
     void writeFrameToVideo(Mat frame);
+    void closeVideoWriter();
 
 private:
     VideoWriter video;

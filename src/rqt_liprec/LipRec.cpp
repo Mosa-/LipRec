@@ -68,12 +68,10 @@ void LipRec::initPlugin(qt_gui_cpp::PluginContext& context)
     ui_.cbSignalWindow2->addItem("None");
     ui_.cbSignalWindow2->addItem("Average");
 
-    initVideoWriter = false;
-
     QMenuBar* menuBar = new QMenuBar(widget_);
 
     QWidgetAction *widgetAction=new QWidgetAction(widget_);
-    QLineEdit* le = new QLineEdit(widget_);
+    le = new QLineEdit(widget_);
     widgetAction->setDefaultWidget(le);
     QMenu *fm= menuBar->addMenu("File");
     fm->addAction(widgetAction);
@@ -83,8 +81,16 @@ void LipRec::initPlugin(qt_gui_cpp::PluginContext& context)
     video->addAction("Stop Record");
     video->addSeparator();
     video->addAction("Record Utterance");
+
+    QWidgetAction *waGroupBox =new QWidgetAction(widget_);
+    checkboxOnlyMouth = new QCheckBox("Only Mouth");
+    waGroupBox->setDefaultWidget(checkboxOnlyMouth);
+    video->addAction(waGroupBox);
+
     video->addAction("Load Utterance");
     menuBar->addMenu(video);
+
+    connect(menuBar, SIGNAL(triggered(QAction*)), this, SLOT(triggedAction(QAction*)));
 
     ui_.pbUPDP->setToolTip("Plot the pixel difference of an utterance.");
     QPixmap pixmap("src/liprec/res/plot3.png");
@@ -94,6 +100,11 @@ void LipRec::initPlugin(qt_gui_cpp::PluginContext& context)
     ui_.pbUPDP->setIcon(bi);
     ui_.pbUPDP->setIconSize(pixmap.rect().size());
     ui_.pbUPDP->setMaximumSize(pixmap.rect().size());
+
+    recordVideo = false;
+    recordUtterance = false;
+    loadUtterance = false;
+    initVideoWriter = false;
 
 	QObject::connect(this, SIGNAL(updateCam(cv::Mat)), this, SLOT(getCamPic(cv::Mat)));
 }
@@ -157,11 +168,24 @@ void LipRec::mouthROICallback(const sensor_msgs::RegionOfInterestConstPtr& msg){
 
 void LipRec::getCamPic(cv::Mat img){
 
-//    if(!initVideoWriter){
-//        imageProcessing.setupVideoWriter("out.avi", img.cols, img.rows);
-//        initVideoWriter = true;
-//    }
-//    imageProcessing.writeFrameToVideo(img);
+    currentUtteranceFrame = img.clone();
+
+    if(recordVideo && !recordUtterance){
+        if(!le->text().isEmpty()){
+            if(!initVideoWriter){
+                imageProcessing.setupVideoWriter(le->text()+".avi", img.cols, img.rows);
+                initVideoWriter = true;
+            }
+
+            imageProcessing.writeFrameToVideo(img);
+        }else{
+            recordVideo = false;
+        }
+    }else if(!recordUtterance){
+        initVideoWriter = false;
+        imageProcessing.closeVideoWriter();
+    }
+
 
 	MHI_DURATION = ui_.dsbMHIDuration->value();
 	NO_CYCLIC_FRAME = ui_.sbMHIFC->value();
@@ -218,7 +242,7 @@ void LipRec::getCamPic(cv::Mat img){
 	//temporal segmentation
 	int activation = QString::number(d,'f',0).toInt();
 
-	this->changeLipActivationState(activation, imageAbsDiff);
+    this->changeLipActivationState(activation, imageAbsDiff, currentFrame);
 
 	if(!imageAbsDiff.empty()){
 		pixMap = imageProcessing.getPixmap(imageAbsDiff);
@@ -242,7 +266,25 @@ void LipRec::getCamPic(cv::Mat img){
 		}
 	}
 
-	last = currentFrame;
+    last = currentFrame;
+}
+
+void LipRec::triggedAction(QAction *action)
+{
+    QString currentAction = action->text();
+    QString leFile = le->text();
+
+    if(currentAction == "Record"){
+        this->recordVideo = true;
+    }else if(currentAction == "Stop Record"){
+        this->recordVideo = false;
+    }else if(currentAction == "Record Utterance"){
+        this->recordUtterance = true;
+    }else if(currentAction == "Load Utterance"){
+        this->loadUtterance = true;
+    }else{
+        ROS_INFO("Action '%s' not found.", action->text().toStdString().c_str());
+    }
 }
 
 void LipRec::drawFaceMouthROI(Mat& img){
@@ -292,7 +334,7 @@ int LipRec::updateFrameBuffer(Mat img){
 	return currentFrame;
 }
 
-void LipRec::changeLipActivationState(int activation, Mat& imageAbsDiff){
+void LipRec::changeLipActivationState(int activation, Mat& imageAbsDiff, int currentFrame){
 	QPixmap pixMap;
 	switch (stateDetectionStartEndFrame) {
 		case Idle:
@@ -300,9 +342,17 @@ void LipRec::changeLipActivationState(int activation, Mat& imageAbsDiff){
             utterancePixelDiff.clear();
 			silenceCounter = 0;
 
+            // Uterrance detected
 			if(activation > ui_.sbST->value()){
 				stateDetectionStartEndFrame = Utterance;
                 utterancePixelDiff.append(activation);
+
+                if(checkboxOnlyMouth->isChecked()){
+                    this->recordUtteranceFrame(frameBuffer[currentFrame]);
+                }else{
+                    this->recordUtteranceFrame(currentUtteranceFrame);
+                }
+
 			}else{
 
 			}
@@ -310,6 +360,7 @@ void LipRec::changeLipActivationState(int activation, Mat& imageAbsDiff){
 			break;
 		case Utterance:
 			if(activation <= ui_.sbST->value() && silenceCounter == ui_.sbNoSF->value()){
+                //Utterrance finished
 
 				stateDetectionStartEndFrame = Idle;
 				Mat uLast = imageAbsDiff;
@@ -321,6 +372,13 @@ void LipRec::changeLipActivationState(int activation, Mat& imageAbsDiff){
 				if(uLast.cols == imageAbsDiff.cols && uLast.rows == imageAbsDiff.rows){
 					utterance.append(imageAbsDiff);
                     utterancePixelDiff.append(activation);
+
+                    if(checkboxOnlyMouth->isChecked()){
+                        this->recordUtteranceFrame(frameBuffer[currentFrame]);
+                    }else{
+                        this->recordUtteranceFrame(currentUtteranceFrame);
+                    }
+                    this->recordUtterance = false;
 				}
 				ui_.lcdUtterance->display(QString::number(utterance.size(),'f',0));
 
@@ -398,38 +456,19 @@ void LipRec::changeLipActivationState(int activation, Mat& imageAbsDiff){
                 }else{
 
                 }
-
-
-//                QVector<QPointF> points;
-
-//                this->averageSignalSmoothing();
-
-
-//                ROS_INFO("##########################################1");
-//                ROS_INFO("%d", utterancePixelDiff.size());
-//                for (int i = 0; i < utterancePixelDiff.size(); ++i) {
-//                    points.append(QPoint(i, -utterancePixelDiff.at(i)));
-//                    ROS_INFO("%d", utterancePixelDiff.at(i));
-//                }
-//                QGraphicsScene * scene = new QGraphicsScene();
-//                QPolygonF plyline;
-//                QPainterPath myPath;
-//                ui_.gvSignalWindow1->setScene(scene);
-//                double rad = 1;
-//                for (int i = 0; i < points.size(); ++i) {
-//                    plyline.append(points[i]);
-//                    myPath.addPolygon(plyline);
-//                    scene->addEllipse(points[i].x(), points[i].y(), rad*0.3, rad*0.3, QPen(), QBrush(Qt::red, Qt::SolidPattern));
-//                }
-//                scene->addPath(myPath);
-//                ui_.gvSignalWindow1->fitInView(scene->sceneRect(), Qt::KeepAspectRatio);
-
-//                ROS_INFO("##########################################2");
-
 			}else if(activation <= ui_.sbST->value()){
+                //Silence during Utterance
 				silenceCounter++;
                 utterancePixelDiff.append(activation);
+
+                if(checkboxOnlyMouth->isChecked()){
+                    this->recordUtteranceFrame(frameBuffer[currentFrame]);
+                }else{
+                    this->recordUtteranceFrame(currentUtteranceFrame);
+                }
+
 			}else{
+                //During Utterance
 				silenceCounter = 0;
 				Mat uLast = imageAbsDiff;
 				if(!utterance.isEmpty()){
@@ -439,11 +478,36 @@ void LipRec::changeLipActivationState(int activation, Mat& imageAbsDiff){
 				if(uLast.cols == imageAbsDiff.cols && uLast.rows == imageAbsDiff.rows){
 					utterance.append(imageAbsDiff);
                     utterancePixelDiff.append(activation);
-				}
+
+                    if(checkboxOnlyMouth->isChecked()){
+                        this->recordUtteranceFrame(frameBuffer[currentFrame]);
+                    }else{
+                        this->recordUtteranceFrame(currentUtteranceFrame);
+                    }
+                }
 			}
 			break;
 		default:
 			break;
+    }
+}
+
+void LipRec::recordUtteranceFrame(Mat currentFrame)
+{
+    if(recordUtterance && !recordVideo){
+        if(!le->text().isEmpty()){
+            if(!initVideoWriter){
+                imageProcessing.setupVideoWriter(le->text()+".avi", currentFrame.cols, currentFrame.rows);
+                initVideoWriter = true;
+            }
+
+            imageProcessing.writeFrameToVideo(currentFrame);
+        }else{
+            recordUtterance = false;
+        }
+    }else if(!recordVideo){
+        initVideoWriter = false;
+        imageProcessing.closeVideoWriter();
     }
 }
 

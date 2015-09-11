@@ -17,6 +17,7 @@
 #include <QDir>
 #include <QWidgetAction>
 #include <QLineEdit>
+#include <QCheckBox>
 
 #include <string>
 #include <stdlib.h>
@@ -99,7 +100,14 @@ private:
 
   QList<int> utterancePixelDiff;
 
+  QLineEdit* le;
+  QCheckBox *checkboxOnlyMouth;
+  Mat currentUtteranceFrame;
   bool initVideoWriter;
+  bool recordVideo;
+  bool recordUtterance;
+  bool loadUtterance;
+
   ImageProcessing imageProcessing;
   Swt swt;
 
@@ -109,7 +117,9 @@ private:
 
   int updateFrameBuffer(Mat img);
 
-  void changeLipActivationState(int activation, Mat& imageAbsDiff);
+  void changeLipActivationState(int activation, Mat& imageAbsDiff, int currentFrame);
+
+  void recordUtteranceFrame(Mat currentFrame);
 
   void applySignalSmoothing(int graphicView, SignalSmoothingType type);
   void averageSignalSmoothing(QList<int>& signalsSmoothing);
@@ -120,6 +130,8 @@ private:
 
 public slots:
 	void getCamPic(cv::Mat img);
+
+    void triggedAction(QAction* action);
 
 signals:
 	void updateCam(cv::Mat img);
