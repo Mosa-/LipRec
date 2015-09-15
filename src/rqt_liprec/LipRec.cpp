@@ -58,6 +58,7 @@ void LipRec::initPlugin(qt_gui_cpp::PluginContext& context)
 	QObject::connect(&mouthROITimer, SIGNAL(timeout()), this, SLOT(mouthROItimeout()));
 
     QObject::connect(ui_.pbUPDP, SIGNAL(clicked()), this, SLOT(clickedUtteranceDiffPlot()));
+    QObject::connect(ui_.pbContinueVideo, SIGNAL(clicked()), this, SLOT(clickedContinueVideo()));
 
 	faceROITimer.start(timeoutROIdetection);
 	mouthROITimer.start(timeoutROIdetection);
@@ -100,6 +101,15 @@ void LipRec::initPlugin(qt_gui_cpp::PluginContext& context)
     ui_.pbUPDP->setIcon(bi);
     ui_.pbUPDP->setIconSize(pixmap.rect().size());
     ui_.pbUPDP->setMaximumSize(pixmap.rect().size());
+
+    ui_.pbContinueVideo->setToolTip("Continue video stream from camera.");
+    pixmap = QPixmap("src/liprec/res/video1.png");
+    bi = QIcon(pixmap);
+    ui_.pbContinueVideo->setSizePolicy( QSizePolicy::Fixed, QSizePolicy::Preferred );
+    ui_.pbContinueVideo->setFlat(true);
+    ui_.pbContinueVideo->setIcon(bi);
+    ui_.pbContinueVideo->setIconSize(pixmap.rect().size()/2.5);
+    ui_.pbContinueVideo->setMaximumSize(pixmap.rect().size()/2.5);
 
     recordVideo = false;
     recordUtterance = false;
@@ -163,11 +173,17 @@ void LipRec::faceROICallback(const sensor_msgs::RegionOfInterestConstPtr& msg){
 void LipRec::mouthROICallback(const sensor_msgs::RegionOfInterestConstPtr& msg){
 	mouthROITimer.start(timeoutROIdetection);
 	mouthROI = *msg;
-	mouthROI_detected = true;
+    mouthROI_detected = true;
 }
 
 void LipRec::getCamPic(cv::Mat img){
+    if(!this->loadUtterance){
+        this->processImage(img);
+    }
+}
 
+void LipRec::processImage(Mat img)
+{
     currentUtteranceFrame = img.clone();
 
     if(recordVideo && !recordUtterance){
@@ -187,36 +203,36 @@ void LipRec::getCamPic(cv::Mat img){
     }
 
 
-	MHI_DURATION = ui_.dsbMHIDuration->value();
-	NO_CYCLIC_FRAME = ui_.sbMHIFC->value();
-	int currentFrame = 0;
+    MHI_DURATION = ui_.dsbMHIDuration->value();
+    NO_CYCLIC_FRAME = ui_.sbMHIFC->value();
+    int currentFrame = 0;
 
-	this->drawFaceMouthROI(img);
+    this->drawFaceMouthROI(img);
 
     QPixmap pixMap = imageProcessing.getPixmap(img);
     ui_.lbl_cam->setPixmap(pixMap);
 
     Mat mouthImg;
-	imageProcessing.cutROIfromImage(img, mouthImg, mouthROI);
+    imageProcessing.cutROIfromImage(img, mouthImg, mouthROI);
 
-	if(ui_.rbGHE->isChecked()){
-		imageProcessing.applyHistogramForLightCorrectionGHE(mouthImg);
-	}else if(ui_.rbAHE->isChecked()){
-		imageProcessing.applyHistogramForLightCorrectionAHE(mouthImg,
-				ui_.sbClipLimit->value(), Size(ui_.sbSize->value(),ui_.sbSize->value()));
-	}
+    if(ui_.rbGHE->isChecked()){
+        imageProcessing.applyHistogramForLightCorrectionGHE(mouthImg);
+    }else if(ui_.rbAHE->isChecked()){
+        imageProcessing.applyHistogramForLightCorrectionAHE(mouthImg,
+                ui_.sbClipLimit->value(), Size(ui_.sbSize->value(),ui_.sbSize->value()));
+    }
 
-	BlurType blur;
+    BlurType blur;
 
-	if(ui_.rbBlur->isChecked()){
-		blur = BLUR;
-	}else if(ui_.rbMedian->isChecked()){
-		blur = MEDIAN;
-	}else if(ui_.rbGaussian->isChecked()){
-		blur = GAUSSIAN;
-	}
+    if(ui_.rbBlur->isChecked()){
+        blur = BLUR;
+    }else if(ui_.rbMedian->isChecked()){
+        blur = MEDIAN;
+    }else if(ui_.rbGaussian->isChecked()){
+        blur = GAUSSIAN;
+    }
 
-	imageProcessing.applyBlur(mouthImg, ui_.sbMask->value(), blur);
+    imageProcessing.applyBlur(mouthImg, ui_.sbMask->value(), blur);
 
     this->showLips(mouthImg);
 
@@ -224,47 +240,47 @@ void LipRec::getCamPic(cv::Mat img){
         //imageProcessing.squareImage(mouthImg);
     }
 
-	currentFrame = updateFrameBuffer(mouthImg);
-	Mat imageAbsDiff;
-	double d = 0;
+    currentFrame = updateFrameBuffer(mouthImg);
+    Mat imageAbsDiff;
+    double d = 0;
 
-	if(frameBuffer.at(last).cols == frameBuffer.at(currentFrame).cols
-				&& frameBuffer.at(last).rows == frameBuffer.at(currentFrame).rows){
+    if(frameBuffer.at(last).cols == frameBuffer.at(currentFrame).cols
+                && frameBuffer.at(last).rows == frameBuffer.at(currentFrame).rows){
 
-		//temporal segmentation
-		d = imageProcessing.generatePixelDifference(frameBuffer[currentFrame], frameBuffer[last]);
+        //temporal segmentation
+        d = imageProcessing.generatePixelDifference(frameBuffer[currentFrame], frameBuffer[last]);
 
-		ui_.lcdPixelWiseDiff->display(QString::number(d,'f',0));
+        ui_.lcdPixelWiseDiff->display(QString::number(d,'f',0));
 
-		imageAbsDiff = imageProcessing.createImageAbsDiff(frameBuffer[currentFrame], frameBuffer[last]);
-	}
+        imageAbsDiff = imageProcessing.createImageAbsDiff(frameBuffer[currentFrame], frameBuffer[last]);
+    }
 
-	//temporal segmentation
-	int activation = QString::number(d,'f',0).toInt();
+    //temporal segmentation
+    int activation = QString::number(d,'f',0).toInt();
 
     this->changeLipActivationState(activation, imageAbsDiff, currentFrame);
 
-	if(!imageAbsDiff.empty()){
-		pixMap = imageProcessing.getPixmap(imageAbsDiff);
-		pixMap = pixMap.scaled(ui_.lbl_lips->maximumWidth(), ui_.lbl_lips->maximumHeight(), Qt::KeepAspectRatio, Qt::SmoothTransformation);
-		ui_.lbl_rec_phonem->setPixmap(pixMap);
+    if(!imageAbsDiff.empty()){
+        pixMap = imageProcessing.getPixmap(imageAbsDiff);
+        pixMap = pixMap.scaled(ui_.lbl_lips->maximumWidth(), ui_.lbl_lips->maximumHeight(), Qt::KeepAspectRatio, Qt::SmoothTransformation);
+        ui_.lbl_rec_phonem->setPixmap(pixMap);
 
-		if(mouthROI_detected && ui_.cbMHI->isChecked()){
+        if(mouthROI_detected && ui_.cbMHI->isChecked()){
 
-			Mat mask = imageProcessing.createMotionHistoryImage(imageAbsDiff, mhi, ui_.cbMHIBinarization->isChecked(),
-				ui_.dsbMHIThreshold->value(), MHI_DURATION);
+            Mat mask = imageProcessing.createMotionHistoryImage(imageAbsDiff, mhi, ui_.cbMHIBinarization->isChecked(),
+                ui_.dsbMHIThreshold->value(), MHI_DURATION);
 
-			pixMap = imageProcessing.getPixmap(mask);
-			pixMap = pixMap.scaled(ui_.lbl_lips->maximumWidth(), ui_.lbl_lips->maximumHeight(), Qt::KeepAspectRatio, Qt::SmoothTransformation);
+            pixMap = imageProcessing.getPixmap(mask);
+            pixMap = pixMap.scaled(ui_.lbl_lips->maximumWidth(), ui_.lbl_lips->maximumHeight(), Qt::KeepAspectRatio, Qt::SmoothTransformation);
 
-			ui_.lbl_MHI->setPixmap(pixMap);
-		}else{
-			QPixmap empty;
-			ui_.lbl_MHI->setPixmap(empty);
-			ui_.lbl_rec_phonem->setPixmap(empty);
-			ui_.lbl_rec_word->setPixmap(empty);
-		}
-	}
+            ui_.lbl_MHI->setPixmap(pixMap);
+        }else{
+            QPixmap empty;
+            ui_.lbl_MHI->setPixmap(empty);
+            ui_.lbl_rec_phonem->setPixmap(empty);
+            ui_.lbl_rec_word->setPixmap(empty);
+        }
+    }
 
     last = currentFrame;
 }
@@ -282,6 +298,27 @@ void LipRec::triggedAction(QAction *action)
         this->recordUtterance = true;
     }else if(currentAction == "Load Utterance"){
         this->loadUtterance = true;
+
+        VideoCapture cap(QString(leFile + ".avi").toStdString());
+        if(!cap.isOpened()){
+            ROS_INFO("!!! Failed to open file: %s.avi", leFile.toStdString().c_str());
+        }
+        ROS_INFO("BLA");
+
+        Mat img;
+
+       // ROS_INFO("ma schauen: %d", cap.read(img));
+
+        cap >> img;
+
+        ROS_INFO("%s", QString(leFile + ".avi").toStdString().c_str());
+            ROS_INFO("BLA2 %d %d %d %d", img.cols, img.rows, img.type(), img.flags);
+            img.convertTo(img, CV_8UC1);
+
+            this->processImage(img);
+
+
+
     }else{
         ROS_INFO("Action '%s' not found.", action->text().toStdString().c_str());
     }
@@ -579,9 +616,12 @@ void LipRec::clickedUtteranceDiffPlot(){
     }else{
         ui_.groupBoxWidget->setShown(false);
         ui_.groupBoxWidget_2->setShown(false);
-
-
     }
+}
+
+void LipRec::clickedContinueVideo()
+{
+    this->loadUtterance = false;
 }
 
 void LipRec::printMat(Mat& data){

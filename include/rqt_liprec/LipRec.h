@@ -111,6 +111,8 @@ private:
   ImageProcessing imageProcessing;
   Swt swt;
 
+  void processImage(Mat img);
+
   void drawFaceMouthROI(Mat& img);
 
   void showLips(Mat& mouthImg);
@@ -140,6 +142,7 @@ private slots:
 	void faceROItimeout();
 	void mouthROItimeout();
     void clickedUtteranceDiffPlot();
+    void clickedContinueVideo();
 
 
 
