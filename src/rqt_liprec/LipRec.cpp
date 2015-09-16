@@ -102,8 +102,8 @@ void LipRec::initPlugin(qt_gui_cpp::PluginContext& context)
     ui_.pbUPDP->setIconSize(pixmap.rect().size());
     ui_.pbUPDP->setMaximumSize(pixmap.rect().size());
 
-    ui_.pbContinueVideo->setToolTip("Continue video stream from camera.");
-    pixmap = QPixmap("src/liprec/res/video1.png");
+    ui_.pbContinueVideo->setToolTip("Stop video stream from camera.");
+    pixmap = QPixmap("src/liprec/res/videostop1.png");
     bi = QIcon(pixmap);
     ui_.pbContinueVideo->setSizePolicy( QSizePolicy::Fixed, QSizePolicy::Preferred );
     ui_.pbContinueVideo->setFlat(true);
@@ -115,6 +115,7 @@ void LipRec::initPlugin(qt_gui_cpp::PluginContext& context)
     recordUtterance = false;
     loadUtterance = false;
     initVideoWriter = false;
+    useCam = true;
 
 	QObject::connect(this, SIGNAL(updateCam(cv::Mat)), this, SLOT(getCamPic(cv::Mat)));
 }
@@ -177,7 +178,7 @@ void LipRec::mouthROICallback(const sensor_msgs::RegionOfInterestConstPtr& msg){
 }
 
 void LipRec::getCamPic(cv::Mat img){
-    if(!this->loadUtterance){
+    if(!this->loadUtterance && useCam){
         this->processImage(img);
     }
 }
@@ -201,6 +202,8 @@ void LipRec::processImage(Mat img)
         initVideoWriter = false;
         imageProcessing.closeVideoWriter();
     }
+
+
 
 
     MHI_DURATION = ui_.dsbMHIDuration->value();
@@ -298,26 +301,20 @@ void LipRec::triggedAction(QAction *action)
         this->recordUtterance = true;
     }else if(currentAction == "Load Utterance"){
         this->loadUtterance = true;
+        this->changeUseCam();
 
         VideoCapture cap(QString(leFile + ".avi").toStdString());
         if(!cap.isOpened()){
             ROS_INFO("!!! Failed to open file: %s.avi", leFile.toStdString().c_str());
         }
-        ROS_INFO("BLA");
 
         Mat img;
 
-       // ROS_INFO("ma schauen: %d", cap.read(img));
-
-        cap >> img;
-
-        ROS_INFO("%s", QString(leFile + ".avi").toStdString().c_str());
-            ROS_INFO("BLA2 %d %d %d %d", img.cols, img.rows, img.type(), img.flags);
-            img.convertTo(img, CV_8UC1);
-
+        while(cap.read(img)){
+            cvtColor(img, img, CV_BGRA2GRAY);
             this->processImage(img);
-
-
+            waitKey(30);
+        }
 
     }else{
         ROS_INFO("Action '%s' not found.", action->text().toStdString().c_str());
@@ -622,6 +619,31 @@ void LipRec::clickedUtteranceDiffPlot(){
 void LipRec::clickedContinueVideo()
 {
     this->loadUtterance = false;
+
+    this->changeUseCam();
+}
+
+void LipRec::changeUseCam()
+{
+    QIcon bi;
+    QPixmap pixmap;
+
+    if(useCam){
+        ui_.pbContinueVideo->setToolTip("Continue video stream from camera.");
+        pixmap = QPixmap("src/liprec/res/video1.png");
+    }else{
+        ui_.pbContinueVideo->setToolTip("Stop video stream from camera.");
+        pixmap = QPixmap("src/liprec/res/videostop1.png");
+    }
+
+    bi = QIcon(pixmap);
+    ui_.pbContinueVideo->setSizePolicy( QSizePolicy::Fixed, QSizePolicy::Preferred );
+    ui_.pbContinueVideo->setFlat(true);
+    ui_.pbContinueVideo->setIcon(bi);
+    ui_.pbContinueVideo->setIconSize(pixmap.rect().size()/2.5);
+    ui_.pbContinueVideo->setMaximumSize(pixmap.rect().size()/2.5);
+
+    useCam = !useCam;
 }
 
 void LipRec::printMat(Mat& data){

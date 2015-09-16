@@ -107,6 +107,7 @@ private:
   bool recordVideo;
   bool recordUtterance;
   bool loadUtterance;
+  bool useCam;
 
   ImageProcessing imageProcessing;
   Swt swt;
@@ -122,6 +123,8 @@ private:
   void changeLipActivationState(int activation, Mat& imageAbsDiff, int currentFrame);
 
   void recordUtteranceFrame(Mat currentFrame);
+
+  void changeUseCam();
 
   void applySignalSmoothing(int graphicView, SignalSmoothingType type);
   void averageSignalSmoothing(QList<int>& signalsSmoothing);
