@@ -72,7 +72,6 @@ private:
   QWidget* widget_;
 
   ros::Subscriber camImage;
-  ros::Subscriber camImage2;
   ros::Subscriber faceROISub;
   ros::Subscriber mouthROISub;
 

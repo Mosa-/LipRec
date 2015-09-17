@@ -29,7 +29,7 @@ void LipRec::initPlugin(qt_gui_cpp::PluginContext& context)
 	qRegisterMetaType<cv::Mat>("cv::Mat");    
 
 	//camImage = getNodeHandle().subscribe("/liprecKinect/rgb/image_raw", 10, &LipRec::imageCallback, this);
-	camImage2 = getNodeHandle().subscribe("/kinect2/qhd/image_mono", 100, &LipRec::imageCallback, this);
+    camImage = getNodeHandle().subscribe("/kinect2/qhd/image_mono", 100, &LipRec::imageCallback, this);
 
 	faceROISub = getNodeHandle().subscribe("/face_detection/faceROI", 10, &LipRec::faceROICallback, this);
 	mouthROISub = getNodeHandle().subscribe("/face_detection/mouthROI", 10, &LipRec::mouthROICallback, this);
@@ -313,7 +313,7 @@ void LipRec::triggedAction(QAction *action)
         while(cap.read(img)){
             cvtColor(img, img, CV_BGRA2GRAY);
             this->processImage(img);
-            waitKey(30);
+            waitKey(40);
         }
 
     }else{
