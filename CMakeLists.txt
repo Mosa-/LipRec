@@ -75,7 +75,7 @@ add_library(imageProcessing src/rqt_liprec/ImageProcessing.cpp)
 target_link_libraries(imageProcessing ${catkin_LIBRARIES} ${OpenCV_LIBRARIES} ${QT_QTCORE_LIBRARY} ${QT_QTGUI_LIBRARY})
 
 add_library(zernikeMoments src/rqt_liprec/ZernikeMoments.cpp)
-target_link_libraries(zernikeMoments ${catkin_LIBRARIES} ${OpenCV_LIBRARIES} ${QT_QTCORE_LIBRARY} ${QT_QTGUI_LIBRARY} imageProcessing)
+target_link_libraries(zernikeMoments ${catkin_LIBRARIES} ${OpenCV_LIBRARIES} ${QT_QTCORE_LIBRARY} ${QT_QTGUI_LIBRARY})
 
 add_library(${PROJECT_NAME} ${rqt_liprec_SRCS} ${rqt_liprec_MOCS} ${rqt_liprec_UIS_H})
 target_link_libraries(${PROJECT_NAME} ${OpenCV_LIBRARIES} ${catkin_LIBRARIES} ${QT_QTCORE_LIBRARY} ${QT_QTGUI_LIBRARY} imageProcessing swt zernikeMoments)

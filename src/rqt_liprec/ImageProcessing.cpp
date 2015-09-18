@@ -105,28 +105,6 @@ QPixmap ImageProcessing::getPixmap(Mat iplImg){
     return pixMap;
 }
 
-double ImageProcessing::calcXCircularCoordinate(int imgSize, int xSquareCoordinate) {
-    return (sqrt(2)/imgSize-1)*xSquareCoordinate + (-1 / sqrt(2));
-}
-
-double ImageProcessing::calcYCircularCoordinate(int imgSize, int ySquareCoordinate) {
-    return (sqrt(2)/imgSize-1)*ySquareCoordinate + (-1 / sqrt(2));
-}
-
-double ImageProcessing::calcRadiusDist(int imgSize, int xSquareCoordinate, int ySquareCoordinate) {
-    double x = calcXCircularCoordinate(imgSize, xSquareCoordinate);
-    double y = calcYCircularCoordinate(imgSize, ySquareCoordinate);
-
-    return sqrt(pow(x,2) + pow(y,2));
-}
-
-double ImageProcessing::calcAngleCircular(int imgSize, int xSquareCoordinate, int ySquareCoordinate) {
-    double x = calcXCircularCoordinate(imgSize, xSquareCoordinate);
-    double y = calcYCircularCoordinate(imgSize, ySquareCoordinate);
-
-    return atan(y/x);
-}
-
 void ImageProcessing::setupVideoWriter(QString videoName, int frameWidth, int frameHeight)
 {
     if(!video.isOpened()){

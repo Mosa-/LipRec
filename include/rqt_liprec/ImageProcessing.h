@@ -47,11 +47,6 @@ public:
 
     QPixmap getPixmap(Mat iplImg);
 
-    double calcXCircularCoordinate(int imgSize, int xSquareCoordinate);
-    double calcYCircularCoordinate(int imgSize, int ySquareCoordinate);
-    double calcRadiusDist(int imgSize, int xSquareCoordinate, int ySquareCoordinate);
-    double calcAngleCircular(int imgSize, int xSquareCoordinate, int ySquareCoordinate);
-
     void setupVideoWriter(QString videoName, int frameWidth, int frameHeight);
     void writeFrameToVideo(Mat frame);
     void closeVideoWriter();
