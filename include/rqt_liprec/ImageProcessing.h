@@ -28,7 +28,7 @@ using namespace cv;
 
 class ImageProcessing {
 public:
-	ImageProcessing();
+    ImageProcessing();
 	virtual ~ImageProcessing();
 
     void drawRectangle(Mat& iplImg, sensor_msgs::RegionOfInterest& roi, Scalar color);
@@ -51,8 +51,12 @@ public:
     void writeFrameToVideo(Mat frame);
     void closeVideoWriter();
 
+    void setUseMonoImage(bool use);
+
 private:
     VideoWriter video;
+
+    bool useMonoImage;
 };
 
 #endif /* IMAGEPROCESSING_H_ */

@@ -84,6 +84,7 @@ private:
   bool mouthROI_detected;
 
   int blackBorder;
+  bool useMonoImage;
 
   double MHI_DURATION;
   int NO_CYCLIC_FRAME;

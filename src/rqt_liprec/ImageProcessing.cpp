@@ -99,9 +99,16 @@ Mat ImageProcessing::createMotionHistoryImage(Mat& img, Mat& mhi, bool binarizat
 }
 QPixmap ImageProcessing::getPixmap(Mat iplImg){
 	QPixmap pixMap;
-	QImage dest((const uchar *) iplImg.data, iplImg.cols, iplImg.rows, iplImg.step, QImage::Format_Indexed8);
+    QImage dest;
+    Mat temp;
+    if(useMonoImage){
+        dest = QImage((const uchar *) iplImg.data, iplImg.cols, iplImg.rows, iplImg.step, QImage::Format_Indexed8);
+    }else{
+        cvtColor(iplImg, temp, CV_BGRA2RGB);
+        dest = QImage((const uchar *) temp.data, temp.cols, temp.rows, temp.step, QImage::Format_RGB888);
+    }
 	dest.bits();
-	pixMap.convertFromImage(dest,Qt::ColorOnly);
+    pixMap.convertFromImage(dest);
     return pixMap;
 }
 
@@ -132,4 +139,9 @@ void ImageProcessing::closeVideoWriter()
     if(video.isOpened()){
         video.release();
     }
+}
+
+void ImageProcessing::setUseMonoImage(bool use)
+{
+    this->useMonoImage = use;
 }
