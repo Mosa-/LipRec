@@ -19,6 +19,12 @@ enum SignalSmoothingType{
     AVERAGE
 };
 
+enum RGB{
+    B = 0,
+    G = 1,
+    R = 2
+};
+
 
 
 

@@ -1315,9 +1315,9 @@
        </widget>
       </item>
       <item row="0" column="3">
-       <widget class="QCheckBox" name="cbMHI">
+       <widget class="QCheckBox" name="cbLipSeg">
         <property name="text">
-         <string>MHI</string>
+         <string>Lips segmentation</string>
         </property>
        </widget>
       </item>
@@ -1331,7 +1331,7 @@
       <item row="0" column="4">
        <widget class="QCheckBox" name="cbMHIBinarization">
         <property name="text">
-         <string>MHI Binarization</string>
+         <string/>
         </property>
        </widget>
       </item>

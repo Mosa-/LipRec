@@ -97,18 +97,20 @@ Mat ImageProcessing::createMotionHistoryImage(Mat& img, Mat& mhi, bool binarizat
 
 	return mask;
 }
-QPixmap ImageProcessing::getPixmap(Mat iplImg){
+QPixmap ImageProcessing::getPixmap(Mat& iplImg){
 	QPixmap pixMap;
     QImage dest;
     Mat temp;
-    if(useMonoImage){
-        dest = QImage((const uchar *) iplImg.data, iplImg.cols, iplImg.rows, iplImg.step, QImage::Format_Indexed8);
-    }else{
-        cvtColor(iplImg, temp, CV_BGRA2RGB);
-        dest = QImage((const uchar *) temp.data, temp.cols, temp.rows, temp.step, QImage::Format_RGB888);
+    if(!iplImg.empty()){
+        if(useMonoImage){
+            dest = QImage((const uchar *) iplImg.data, iplImg.cols, iplImg.rows, iplImg.step, QImage::Format_Indexed8);
+        }else{
+            cvtColor(iplImg, temp, CV_BGR2RGB);
+            dest = QImage((const uchar *) temp.data, temp.cols, temp.rows, temp.step, QImage::Format_RGB888);
+        }
+        dest.bits();
+        pixMap.convertFromImage(dest);
     }
-	dest.bits();
-    pixMap.convertFromImage(dest);
     return pixMap;
 }
 
