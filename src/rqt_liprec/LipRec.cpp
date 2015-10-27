@@ -62,8 +62,7 @@ void LipRec::initPlugin(qt_gui_cpp::PluginContext& context)
     faceROISub = getNodeHandle().subscribe("/face_detection/faceROI", 10, &LipRec::faceROICallback, this);
     mouthROISub = getNodeHandle().subscribe("/face_detection/mouthROI", 10, &LipRec::mouthROICallback, this);
 
-	MHI_DURATION = ui_.dsbMHIDuration->value();
-	NO_CYCLIC_FRAME = ui_.sbMHIFC->value();
+    NO_CYCLIC_FRAME = ui_.sbNOCF->value();
 
 	QObject::connect(&faceROITimer, SIGNAL(timeout()), this, SLOT(faceROItimeout()));
 	QObject::connect(&mouthROITimer, SIGNAL(timeout()), this, SLOT(mouthROItimeout()));
@@ -193,7 +192,7 @@ void LipRec::mouthROICallback(const sensor_msgs::RegionOfInterestConstPtr& msg){
 }
 
 void LipRec::getCamPic(cv::Mat img){
-    if(!this->loadUtterance && useCam){
+    if(!this->loadUtterance && useCam && !img.empty()){
         this->processImage(img);
     }
 }
@@ -218,8 +217,7 @@ void LipRec::processImage(Mat img)
         imageProcessing.closeVideoWriter();
     }
 
-    MHI_DURATION = ui_.dsbMHIDuration->value();
-    NO_CYCLIC_FRAME = ui_.sbMHIFC->value();
+    NO_CYCLIC_FRAME = ui_.sbNOCF->value();
     int currentFrame = 0;
 
     this->drawFaceMouthROI(img);
@@ -251,89 +249,19 @@ void LipRec::processImage(Mat img)
 
     imageProcessing.applyBlur(mouthImg, ui_.sbMask->value(), blur);
 
-
     if(!useMonoImage){
-        double saturation = 0.0;
-        double r,g,b;
-        int saturationHistogram[100] = {};
-        int s;
-        int noPixelImg = 0;
-
-
         if(ui_.cbLipSeg->isChecked()){
-            for (int y = 0; y < mouthImg.rows; ++y) {
-                for (int x = 0; x < mouthImg.cols; ++x) {
-                    //ROS_INFO("%d %d: B=%d G=%d R=%d", y, x, mouthImg.at<cv::Vec3b>(Point(x, y))[0], mouthImg.at<cv::Vec3b>(Point(x, y))[1], mouthImg.at<cv::Vec3b>(Point(x, y))[2]);
-                    b = mouthImg.at<cv::Vec3b>(Point(x, y))[B];
-                    g = mouthImg.at<cv::Vec3b>(Point(x, y))[G];
-                    r = mouthImg.at<cv::Vec3b>(Point(x, y))[R];
-                    saturation = fabs(2 * atan((r-g)/r)/M_PI);
-                    s = saturation * 100;
-                    if(s > 0){
-                        saturationHistogram[s-1]++;
-                    }else{
-                        saturationHistogram[s]++;
-                    }
-                    noPixelImg++;
-                    //ROS_INFO("saturation: %f b: %.0f g: %.0f r: %.0f", saturation, b, g, r);
-                }
+            if(ui_.rbSaturation->isChecked()){
+                this->applyLipsSegmentationSaturation(mouthImg);
             }
 
-            int oneThirdMouthPxl = noPixelImg - (noPixelImg*30/100);
-            int thresholdIndex = 0;
+            if(ui_.rbPseudoHue->isChecked()){
 
-
-            for (int i = 0; i < 100; ++i) {
-                if(saturationHistogram[i] > 0){
-                    //ROS_INFO("oneThirdMouthPxl %d, saturationHistogram[i] %d i %d", oneThirdMouthPxl, saturationHistogram[i], i);
-                    oneThirdMouthPxl -= saturationHistogram[i];
-                }
-
-                if(oneThirdMouthPxl <= 0){
-                    thresholdIndex = i;
-                    break;
-                }
-            }
-
-            for (int y = 0; y < mouthImg.rows; ++y) {
-                for (int x = 0; x < mouthImg.cols; ++x) {
-                    b = mouthImg.at<cv::Vec3b>(Point(x, y))[B];
-                    g = mouthImg.at<cv::Vec3b>(Point(x, y))[G];
-                    r = mouthImg.at<cv::Vec3b>(Point(x, y))[R];
-                    saturation = fabs(2 * atan((r-g)/r)/M_PI);
-                    s = saturation * 100;
-                    int newS = 0;
-
-                    if(s > 0){
-                        newS = s-1;
-                    }else{
-                        newS = s;
-                    }
-
-
-                    if(newS >= thresholdIndex){
-                        mouthImg.at<cv::Vec3b>(Point(x, y))[B] = 255;
-                        mouthImg.at<cv::Vec3b>(Point(x, y))[G] = 255;
-                        mouthImg.at<cv::Vec3b>(Point(x, y))[R] = 255;
-                    }
-                }
             }
         }
-
-
-
-//        int noPixel = 0;
-//        for (int i = 0; i < 100; ++i) {
-//            ROS_INFO("saturation: %d, amount: %d", i, saturationHistogram[i]);
-//            noPixel += saturationHistogram[i];
-//        }
-//        ROS_INFO("saturationHistogram[i] noPixel: %d <> noPixelImg: %d", noPixel, noPixelImg);
     }
 
-
     this->showLips(mouthImg);
-
-
 
 //    if(mouthImg.cols != 0){
 //        //imageProcessing.squareImage(mouthImg);
@@ -382,6 +310,81 @@ void LipRec::processImage(Mat img)
 //    }
 
     last = currentFrame;
+}
+
+void LipRec::applyLipsSegmentationSaturation(Mat& mouthImg){
+    double saturation = 0.0;
+    double r,g,b;
+    int saturationHistogram[100] = {};
+    int s;
+    int noPixelImg = 0;
+
+    for (int y = 0; y < mouthImg.rows; ++y) {
+        for (int x = 0; x < mouthImg.cols; ++x) {
+            //ROS_INFO("%d %d: B=%d G=%d R=%d", y, x, mouthImg.at<cv::Vec3b>(Point(x, y))[0], mouthImg.at<cv::Vec3b>(Point(x, y))[1], mouthImg.at<cv::Vec3b>(Point(x, y))[2]);
+            b = mouthImg.at<cv::Vec3b>(Point(x, y))[B];
+            g = mouthImg.at<cv::Vec3b>(Point(x, y))[G];
+            r = mouthImg.at<cv::Vec3b>(Point(x, y))[R];
+            saturation = fabs(2 * atan((r-g)/r)/M_PI);
+            s = saturation * 100;
+            if(s > 0){
+                saturationHistogram[s-1]++;
+            }else{
+                saturationHistogram[s]++;
+            }
+            noPixelImg++;
+            //ROS_INFO("saturation: %f b: %.0f g: %.0f r: %.0f", saturation, b, g, r);
+        }
+    }
+
+    int amountFacePixel = noPixelImg - (noPixelImg*30/100);
+    int thresholdIndex = 0;
+
+
+    for (int i = 0; i < 100; ++i) {
+        if(saturationHistogram[i] > 0){
+            //ROS_INFO("oneThirdMouthPxl %d, saturationHistogram[i] %d i %d", oneThirdMouthPxl, saturationHistogram[i], i);
+            amountFacePixel -= saturationHistogram[i];
+        }
+
+        if(amountFacePixel <= 0){
+            thresholdIndex = i;
+            break;
+        }
+    }
+
+    for (int y = 0; y < mouthImg.rows; ++y) {
+        for (int x = 0; x < mouthImg.cols; ++x) {
+            b = mouthImg.at<cv::Vec3b>(Point(x, y))[B];
+            g = mouthImg.at<cv::Vec3b>(Point(x, y))[G];
+            r = mouthImg.at<cv::Vec3b>(Point(x, y))[R];
+            saturation = fabs(2 * atan((r-g)/r)/M_PI);
+            s = saturation * 100;
+            int newS = 0;
+
+            if(s > 0){
+                newS = s-1;
+            }else{
+                newS = s;
+            }
+
+
+            if(newS >= thresholdIndex){
+                mouthImg.at<cv::Vec3b>(Point(x, y))[B] = 255;
+                mouthImg.at<cv::Vec3b>(Point(x, y))[G] = 255;
+                mouthImg.at<cv::Vec3b>(Point(x, y))[R] = 255;
+            }
+        }
+    }
+
+
+    //        int noPixel = 0;
+    //        for (int i = 0; i < 100; ++i) {
+    //            ROS_INFO("saturation: %d, amount: %d", i, saturationHistogram[i]);
+    //            noPixel += saturationHistogram[i];
+    //        }
+    //        ROS_INFO("saturationHistogram[i] noPixel: %d <> noPixelImg: %d", noPixel, noPixelImg);
+
 }
 
 void LipRec::triggedAction(QAction *action)

@@ -86,7 +86,6 @@ private:
   int blackBorder;
   bool useMonoImage;
 
-  double MHI_DURATION;
   int NO_CYCLIC_FRAME;
   QList<Mat> frameBuffer;
   int last;
@@ -133,6 +132,7 @@ private:
 
   void setupModel();
 
+  void applyLipsSegmentationSaturation(Mat &mouthImg);
 public slots:
 	void getCamPic(cv::Mat img);
 
