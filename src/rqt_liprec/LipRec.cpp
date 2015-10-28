@@ -235,6 +235,10 @@ void LipRec::processImage(Mat img)
             imageProcessing.applyHistogramForLightCorrectionAHE(mouthImg,
                     ui_.sbClipLimit->value(), Size(ui_.sbSize->value(),ui_.sbSize->value()));
         }
+    }else{
+        if(ui_.rbGHE->isChecked()){
+            mouthImg = calcColorHistogramEqualization(mouthImg);
+        }
     }
 
     BlurType blur = B_NONE;
@@ -248,6 +252,14 @@ void LipRec::processImage(Mat img)
     }
 
     imageProcessing.applyBlur(mouthImg, ui_.sbMask->value(), blur);
+
+    cvtColor(mouthImg, mouthImg, CV_BGR2HSV);
+    for (int i = 0; i < mouthImg.rows; ++i) {
+        for (int j = 0; j < mouthImg.cols; ++j) {
+            mouthImg.at<Vec3b>(i,j)[1] = mouthImg.at<Vec3b>(i,j)[1] + (mouthImg.at<Vec3b>(i,j)[1]*0.6);
+        }
+    }
+    cvtColor(mouthImg, mouthImg, CV_HSV2BGR);
 
     if(!useMonoImage){
         if(ui_.cbLipSeg->isChecked()){
@@ -337,7 +349,7 @@ void LipRec::applyLipsSegmentationSaturation(Mat& mouthImg){
         }
     }
 
-    int amountFacePixel = noPixelImg - (noPixelImg*30/100);
+    int amountFacePixel = noPixelImg - (noPixelImg*ui_.sbSaturation->value()/100);
     int thresholdIndex = 0;
 
 
@@ -385,6 +397,23 @@ void LipRec::applyLipsSegmentationSaturation(Mat& mouthImg){
     //        }
     //        ROS_INFO("saturationHistogram[i] noPixel: %d <> noPixelImg: %d", noPixel, noPixelImg);
 
+}
+
+Mat LipRec::calcColorHistogramEqualization(Mat& img){
+    vector<Mat> channels;
+    Mat imgHistEqualized;
+
+    cvtColor(img, imgHistEqualized, CV_BGR2YCrCb); //change the color image from BGR to YCrCb format
+
+    split(imgHistEqualized, channels);
+
+    equalizeHist(channels[0], channels[0]);
+
+    merge(channels, imgHistEqualized);
+
+    cvtColor(imgHistEqualized, imgHistEqualized, CV_YCrCb2BGR);
+
+    return imgHistEqualized;
 }
 
 void LipRec::triggedAction(QAction *action)

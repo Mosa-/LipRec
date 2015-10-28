@@ -133,6 +133,7 @@ private:
   void setupModel();
 
   void applyLipsSegmentationSaturation(Mat &mouthImg);
+  Mat calcColorHistogramEqualization(Mat &img);
 public slots:
 	void getCamPic(cv::Mat img);
 
