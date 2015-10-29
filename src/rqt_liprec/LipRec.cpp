@@ -222,7 +222,7 @@ void LipRec::processImage(Mat img)
 
     this->drawFaceMouthROI(img);
 
-    QPixmap pixMap = imageProcessing.getPixmap(img);
+    QPixmap pixMap = imageProcessing.getPixmap(img, useMonoImage);
     ui_.lbl_cam->setPixmap(pixMap);
 
     Mat mouthImg;
@@ -253,13 +253,24 @@ void LipRec::processImage(Mat img)
 
     imageProcessing.applyBlur(mouthImg, ui_.sbMask->value(), blur);
 
-    cvtColor(mouthImg, mouthImg, CV_BGR2HSV);
-    for (int i = 0; i < mouthImg.rows; ++i) {
-        for (int j = 0; j < mouthImg.cols; ++j) {
-            mouthImg.at<Vec3b>(i,j)[1] = mouthImg.at<Vec3b>(i,j)[1] + (mouthImg.at<Vec3b>(i,j)[1]*0.6);
+    //IDEE schwarze pixel weg nehmen
+
+    if(!mouthImg.empty()){
+        cvtColor(mouthImg, mouthImg, CV_BGR2HSV);
+        for (int i = 0; i < mouthImg.rows; ++i) {
+            for (int j = 0; j < mouthImg.cols; ++j) {
+                mouthImg.at<Vec3b>(i,j)[1] = mouthImg.at<Vec3b>(i,j)[1] + (mouthImg.at<Vec3b>(i,j)[1]*0.6);
+            }
         }
+        cvtColor(mouthImg, mouthImg, CV_HSV2BGR);
     }
-    cvtColor(mouthImg, mouthImg, CV_HSV2BGR);
+
+    Mat rTop(mouthImg.rows, mouthImg.cols, CV_8UC1);
+    Mat rMid(mouthImg.rows, mouthImg.cols, CV_8UC1);
+    Mat rLow(mouthImg.rows, mouthImg.cols, CV_8UC1);
+    Mat rTopFinal(mouthImg.rows, mouthImg.cols, CV_8UC1);
+    Mat rMidFinal(mouthImg.rows, mouthImg.cols, CV_8UC1);
+    Mat rLowFinal(mouthImg.rows, mouthImg.cols, CV_8UC1);
 
     if(!useMonoImage){
         if(ui_.cbLipSeg->isChecked()){
@@ -268,12 +279,33 @@ void LipRec::processImage(Mat img)
             }
 
             if(ui_.rbPseudoHue->isChecked()){
+                for (int i = 0; i < mouthImg.rows; ++i) {
+                    for (int j = 0; j < mouthImg.cols; ++j) {
+                        rTop.at<uchar>(i,j) = pseudoHuePxl(mouthImg, i, j) - luminancePxl(mouthImg, i, j);
+                        rMid.at<uchar>(i,j) = pseudoHuePxl(mouthImg, i, j);
+                        rLow.at<uchar>(i,j) = pseudoHuePxl(mouthImg, i, j) + luminancePxl(mouthImg, i, j);
+                    }
+                }
+
+                Mat rTopTemp;
+                Sobel(rTop, rTopTemp, CV_32FC1, 0, 1);
+                double minVal, maxVal;
+                minMaxLoc(rTopTemp, &minVal, &maxVal);
+                rTopTemp.convertTo(rTopFinal, CV_8UC1, 255.0/(maxVal - minVal), -minVal * 255.0/(maxVal - minVal));
+
+
+                Mat rLowTemp;
+                Sobel(rLow, rLowTemp, CV_32FC1, 0, 1);
+                minMaxLoc(rLowTemp, &minVal, &maxVal);
+                rLowTemp.convertTo(rLowFinal, CV_8UC1, 255.0/(maxVal - minVal), -minVal * 255.0/(maxVal - minVal));
 
             }
         }
     }
 
-    this->showLips(mouthImg);
+    this->showLips(rTopFinal, true);
+
+    //this->showLips(mouthImg);
 
 //    if(mouthImg.cols != 0){
 //        //imageProcessing.squareImage(mouthImg);
@@ -416,6 +448,30 @@ Mat LipRec::calcColorHistogramEqualization(Mat& img){
     return imgHistEqualized;
 }
 
+int LipRec::pseudoHuePxl(Mat img, int x, int y)
+{
+    double r,g,b;
+    b = img.at<cv::Vec3b>(Point(y, x))[B];
+    g = img.at<cv::Vec3b>(Point(y, x))[G];
+    r = img.at<cv::Vec3b>(Point(y, x))[R];
+
+    if(g+r == 0){
+        return 0;
+    }
+
+    return (int) (r/(g+r));
+}
+
+int LipRec::luminancePxl(Mat img, int x, int y)
+{
+    double r,g,b;
+    b = img.at<cv::Vec3b>(Point(y, x))[B];
+    g = img.at<cv::Vec3b>(Point(y, x))[G];
+    r = img.at<cv::Vec3b>(Point(y, x))[R];
+
+    return (int) (0.2126*r + 0.7152*g + 0.0722*b);
+}
+
 void LipRec::triggedAction(QAction *action)
 {
     QString currentAction = action->text();
@@ -470,10 +526,10 @@ void LipRec::drawFaceMouthROI(Mat& img){
 	}
 }
 
-void LipRec::showLips(Mat& mouthImg){
+void LipRec::showLips(Mat& mouthImg, bool useMonoImage){
 	QPixmap pixMap;
 	if(ui_.cbLips->isChecked()){
-        pixMap = imageProcessing.getPixmap(mouthImg);
+        pixMap = imageProcessing.getPixmap(mouthImg, useMonoImage);
 		pixMap = pixMap.scaled(ui_.lbl_lips->maximumWidth(), ui_.lbl_lips->maximumHeight(), Qt::KeepAspectRatio, Qt::SmoothTransformation);
 		ui_.lbl_lips->setPixmap(pixMap);
 	}else{
@@ -590,11 +646,11 @@ void LipRec::changeLipActivationState(int activation, Mat& imageAbsDiff, int cur
 
                     swt.applySwt(mt, ca, ch, cd, cv, 1, Swt::Haar);
 
-                    pixMap = imageProcessing.getPixmap(ca);
+                    pixMap = imageProcessing.getPixmap(ca, useMonoImage);
                 }else if(ui_.rbDCT->isChecked()){
-                    pixMap = imageProcessing.getPixmap(mt);
+                    pixMap = imageProcessing.getPixmap(mt, useMonoImage);
                 }else{
-                    pixMap = imageProcessing.getPixmap(mt);
+                    pixMap = imageProcessing.getPixmap(mt, useMonoImage);
                 }
 				pixMap = pixMap.scaled(ui_.lbl_lips->maximumWidth(), ui_.lbl_lips->maximumHeight(), Qt::KeepAspectRatio, Qt::SmoothTransformation);
 				ui_.lbl_rec_word->setPixmap(pixMap);

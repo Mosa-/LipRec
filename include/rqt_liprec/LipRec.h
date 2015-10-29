@@ -48,103 +48,105 @@ using namespace cv;
 namespace rqt_liprec {
 
 typedef enum{
-	Idle,
-	Utterance,
+    Idle,
+    Utterance,
 }DetectStartEndFrame;
 
 class LipRec
-  : public rqt_gui_cpp::Plugin
+        : public rqt_gui_cpp::Plugin
 {
-  Q_OBJECT
+    Q_OBJECT
 public:
-  LipRec();
-  virtual void initPlugin(qt_gui_cpp::PluginContext& context);
-  virtual void shutdownPlugin();
-  virtual void saveSettings(qt_gui_cpp::Settings& plugin_settings, qt_gui_cpp::Settings& instance_settings) const;
-  virtual void restoreSettings(const qt_gui_cpp::Settings& plugin_settings, const qt_gui_cpp::Settings& instance_settings);
-  void imageCallback(const sensor_msgs::ImageConstPtr& msg);
-  void faceROICallback(const sensor_msgs::RegionOfInterestConstPtr& msg);
-  void mouthROICallback(const sensor_msgs::RegionOfInterestConstPtr& msg);
+    LipRec();
+    virtual void initPlugin(qt_gui_cpp::PluginContext& context);
+    virtual void shutdownPlugin();
+    virtual void saveSettings(qt_gui_cpp::Settings& plugin_settings, qt_gui_cpp::Settings& instance_settings) const;
+    virtual void restoreSettings(const qt_gui_cpp::Settings& plugin_settings, const qt_gui_cpp::Settings& instance_settings);
+    void imageCallback(const sensor_msgs::ImageConstPtr& msg);
+    void faceROICallback(const sensor_msgs::RegionOfInterestConstPtr& msg);
+    void mouthROICallback(const sensor_msgs::RegionOfInterestConstPtr& msg);
 
 
 private:
-  Ui_Form ui_;
-  QWidget* widget_;
+    Ui_Form ui_;
+    QWidget* widget_;
 
-  ros::Subscriber camImage;
-  ros::Subscriber faceROISub;
-  ros::Subscriber mouthROISub;
+    ros::Subscriber camImage;
+    ros::Subscriber faceROISub;
+    ros::Subscriber mouthROISub;
 
-  sensor_msgs::RegionOfInterest faceROI;
-  sensor_msgs::RegionOfInterest mouthROI;
+    sensor_msgs::RegionOfInterest faceROI;
+    sensor_msgs::RegionOfInterest mouthROI;
 
-  QTimer faceROITimer;
-  QTimer mouthROITimer;
-  bool faceROI_detected;
-  bool mouthROI_detected;
+    QTimer faceROITimer;
+    QTimer mouthROITimer;
+    bool faceROI_detected;
+    bool mouthROI_detected;
 
-  int blackBorder;
-  bool useMonoImage;
+    int blackBorder;
+    bool useMonoImage;
 
-  int NO_CYCLIC_FRAME;
-  QList<Mat> frameBuffer;
-  int last;
-  Mat mhi;
+    int NO_CYCLIC_FRAME;
+    QList<Mat> frameBuffer;
+    int last;
+    Mat mhi;
 
-  DetectStartEndFrame stateDetectionStartEndFrame;
-  QList<Mat> utterance;
-  int silenceCounter;
+    DetectStartEndFrame stateDetectionStartEndFrame;
+    QList<Mat> utterance;
+    int silenceCounter;
 
-  int timeoutROIdetection;
+    int timeoutROIdetection;
 
-  QList<int> utterancePixelDiff;
+    QList<int> utterancePixelDiff;
 
-  QLineEdit* le;
-  QCheckBox *checkboxOnlyMouth;
-  Mat currentUtteranceFrame;
-  bool initVideoWriter;
-  bool recordVideo;
-  bool recordUtterance;
-  bool loadUtterance;
-  bool useCam;
+    QLineEdit* le;
+    QCheckBox *checkboxOnlyMouth;
+    Mat currentUtteranceFrame;
+    bool initVideoWriter;
+    bool recordVideo;
+    bool recordUtterance;
+    bool loadUtterance;
+    bool useCam;
 
-  ImageProcessing imageProcessing;
-  Swt swt;
+    ImageProcessing imageProcessing;
+    Swt swt;
 
-  void processImage(Mat img);
+    void processImage(Mat img);
 
-  void drawFaceMouthROI(Mat& img);
+    void drawFaceMouthROI(Mat& img);
 
-  void showLips(Mat& mouthImg);
+    void showLips(Mat& mouthImg, bool useMonoImage = false);
 
-  int updateFrameBuffer(Mat img);
+    int updateFrameBuffer(Mat img);
 
-  void changeLipActivationState(int activation, Mat& imageAbsDiff, int currentFrame);
+    void changeLipActivationState(int activation, Mat& imageAbsDiff, int currentFrame);
 
-  void recordUtteranceFrame(Mat currentFrame);
+    void recordUtteranceFrame(Mat currentFrame);
 
-  void changeUseCam();
+    void changeUseCam();
 
-  void applySignalSmoothing(int graphicView, SignalSmoothingType type);
-  void averageSignalSmoothing(QList<int>& signalsSmoothing);
+    void applySignalSmoothing(int graphicView, SignalSmoothingType type);
+    void averageSignalSmoothing(QList<int>& signalsSmoothing);
 
-  void printMat(Mat& data);
+    void printMat(Mat& data);
 
-  void setupModel();
+    void setupModel();
 
-  void applyLipsSegmentationSaturation(Mat &mouthImg);
-  Mat calcColorHistogramEqualization(Mat &img);
+    void applyLipsSegmentationSaturation(Mat &mouthImg);
+    Mat calcColorHistogramEqualization(Mat &img);
+    int pseudoHuePxl(Mat img, int x, int y);
+    int luminancePxl(Mat img, int x, int y);
 public slots:
-	void getCamPic(cv::Mat img);
+    void getCamPic(cv::Mat img);
 
     void triggedAction(QAction* action);
 
 signals:
-	void updateCam(cv::Mat img);
+    void updateCam(cv::Mat img);
 
 private slots:
-	void faceROItimeout();
-	void mouthROItimeout();
+    void faceROItimeout();
+    void mouthROItimeout();
     void clickedUtteranceDiffPlot();
     void clickedContinueVideo();
 

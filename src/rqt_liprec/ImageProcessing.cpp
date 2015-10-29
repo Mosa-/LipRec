@@ -97,7 +97,8 @@ Mat ImageProcessing::createMotionHistoryImage(Mat& img, Mat& mhi, bool binarizat
 
 	return mask;
 }
-QPixmap ImageProcessing::getPixmap(Mat& iplImg){
+
+QPixmap ImageProcessing::getPixmap(Mat& iplImg, bool useMonoImage){
 	QPixmap pixMap;
     QImage dest;
     Mat temp;
