@@ -1,4 +1,4 @@
-#include "rqt_liprec/LipRec.h"
+ #include "rqt_liprec/LipRec.h"
 #include <pluginlib/class_list_macros.h>
 
 
@@ -255,15 +255,15 @@ void LipRec::processImage(Mat img)
 
     //IDEE schwarze pixel weg nehmen
 
-    if(!mouthImg.empty()){
-        cvtColor(mouthImg, mouthImg, CV_BGR2HSV);
-        for (int i = 0; i < mouthImg.rows; ++i) {
-            for (int j = 0; j < mouthImg.cols; ++j) {
-                mouthImg.at<Vec3b>(i,j)[1] = mouthImg.at<Vec3b>(i,j)[1] + (mouthImg.at<Vec3b>(i,j)[1]*0.6);
-            }
-        }
-        cvtColor(mouthImg, mouthImg, CV_HSV2BGR);
-    }
+//    if(!mouthImg.empty()){
+//        cvtColor(mouthImg, mouthImg, CV_BGR2HSV);
+//        for (int i = 0; i < mouthImg.rows; ++i) {
+//            for (int j = 0; j < mouthImg.cols; ++j) {
+//                mouthImg.at<Vec3b>(i,j)[1] = mouthImg.at<Vec3b>(i,j)[1] + (mouthImg.at<Vec3b>(i,j)[1]*0.6);
+//            }
+//        }
+//        cvtColor(mouthImg, mouthImg, CV_HSV2BGR);
+//    }
 
     Mat rTop(mouthImg.rows, mouthImg.cols, CV_8UC1);
     Mat rMid(mouthImg.rows, mouthImg.cols, CV_8UC1);
@@ -281,31 +281,52 @@ void LipRec::processImage(Mat img)
             if(ui_.rbPseudoHue->isChecked()){
                 for (int i = 0; i < mouthImg.rows; ++i) {
                     for (int j = 0; j < mouthImg.cols; ++j) {
-                        rTop.at<uchar>(i,j) = pseudoHuePxl(mouthImg, i, j) - luminancePxl(mouthImg, i, j);
-                        rMid.at<uchar>(i,j) = pseudoHuePxl(mouthImg, i, j);
-                        rLow.at<uchar>(i,j) = pseudoHuePxl(mouthImg, i, j) + luminancePxl(mouthImg, i, j);
+                        rTop.at<uchar>(i,j) = (int) (pseudoHuePxl(mouthImg, i, j) - luminancePxl(mouthImg, i, j));
+                        rMid.at<uchar>(i,j) = luminancePxl(mouthImg, i, j);
+                        rLow.at<uchar>(i,j) = (int) (pseudoHuePxl(mouthImg, i, j) + luminancePxl(mouthImg, i, j));
                     }
                 }
 
+                double minVal, maxVal;
+
                 Mat rTopTemp;
                 Sobel(rTop, rTopTemp, CV_32FC1, 0, 1);
-                double minVal, maxVal;
                 minMaxLoc(rTopTemp, &minVal, &maxVal);
                 rTopTemp.convertTo(rTopFinal, CV_8UC1, 255.0/(maxVal - minVal), -minVal * 255.0/(maxVal - minVal));
 
+                Mat rMidTemp;
+                Sobel(rMid, rMidTemp, CV_32FC1, 0, 1);
+                minMaxLoc(rMidTemp, &minVal, &maxVal);
+                rMidTemp.convertTo(rMidFinal, CV_8UC1, 255.0/(maxVal - minVal), -minVal * 255.0/(maxVal - minVal));
+
+                for (int i = 0; i < mouthImg.rows; ++i) {
+                    for (int j = 0; j < mouthImg.cols; ++j) {
+                        rMidFinal.at<uchar>(i,j) = (int) (rMidFinal.at<uchar>(i,j) * pseudoHuePxl(mouthImg, i, j));
+                    }
+                }
 
                 Mat rLowTemp;
                 Sobel(rLow, rLowTemp, CV_32FC1, 0, 1);
                 minMaxLoc(rLowTemp, &minVal, &maxVal);
                 rLowTemp.convertTo(rLowFinal, CV_8UC1, 255.0/(maxVal - minVal), -minVal * 255.0/(maxVal - minVal));
-
             }
         }
+
+        if(ui_.rbLipsNone->isChecked()){
+            this->showLips(mouthImg);
+        }else if(ui_.rbRLow->isChecked()){
+            this->showLips(rLowFinal, true);
+        }else if(ui_.rbRMid->isChecked()){
+            this->showLips(rMidFinal, true);
+        }else{
+            this->showLips(rTopFinal, true);
+        }
+
+    }else{
+        this->showLips(mouthImg, true);
     }
 
-    this->showLips(rTopFinal, true);
 
-    //this->showLips(mouthImg);
 
 //    if(mouthImg.cols != 0){
 //        //imageProcessing.squareImage(mouthImg);
@@ -448,7 +469,7 @@ Mat LipRec::calcColorHistogramEqualization(Mat& img){
     return imgHistEqualized;
 }
 
-int LipRec::pseudoHuePxl(Mat img, int x, int y)
+double LipRec::pseudoHuePxl(Mat img, int x, int y)
 {
     double r,g,b;
     b = img.at<cv::Vec3b>(Point(y, x))[B];
@@ -459,7 +480,7 @@ int LipRec::pseudoHuePxl(Mat img, int x, int y)
         return 0;
     }
 
-    return (int) (r/(g+r));
+    return (r/(g+r));
 }
 
 int LipRec::luminancePxl(Mat img, int x, int y)
@@ -469,7 +490,10 @@ int LipRec::luminancePxl(Mat img, int x, int y)
     g = img.at<cv::Vec3b>(Point(y, x))[G];
     r = img.at<cv::Vec3b>(Point(y, x))[R];
 
+    /// http://stackoverflow.com/questions/596216/formula-to-determine-brightness-of-rgb-color
     return (int) (0.2126*r + 0.7152*g + 0.0722*b);
+   // return (int) (0.299*r + 0.587*g + 0.114*b);
+   // return (int) (0.33*r + 0.5*g + 0.16*b);
 }
 
 void LipRec::triggedAction(QAction *action)

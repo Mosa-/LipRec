@@ -134,7 +134,7 @@ private:
 
     void applyLipsSegmentationSaturation(Mat &mouthImg);
     Mat calcColorHistogramEqualization(Mat &img);
-    int pseudoHuePxl(Mat img, int x, int y);
+    double pseudoHuePxl(Mat img, int x, int y);
     int luminancePxl(Mat img, int x, int y);
 public slots:
     void getCamPic(cv::Mat img);
