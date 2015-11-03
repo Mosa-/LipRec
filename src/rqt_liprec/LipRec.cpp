@@ -312,13 +312,94 @@ void LipRec::processImage(Mat img)
             }
         }
 
+        cv::Point leftLinePoint(0, mouthROI.height/2);
+        cv::Point rightLinePoint(mouthROI.width, mouthROI.height/2);
+
         if(ui_.rbLipsNone->isChecked()){
+            line(mouthImg, leftLinePoint, rightLinePoint, cv::Scalar(255,255,255), 1);
             this->showLips(mouthImg);
         }else if(ui_.rbRLow->isChecked()){
+            line(rLowFinal, leftLinePoint, rightLinePoint, cv::Scalar(255,255,255), 1);
             this->showLips(rLowFinal, true);
         }else if(ui_.rbRMid->isChecked()){
+            line(rMidFinal, leftLinePoint, rightLinePoint, cv::Scalar(255,255,255), 1);
             this->showLips(rMidFinal, true);
         }else{
+            int thresholdDifferenceToAvg = 20;
+            QList<PossibleKeyPoint> possibleKeyPoints;
+            PossibleKeyPoint possibleKeyPoint;
+
+            int totalLineCheck = 8;
+            for (int i = 0; i < mouthImg.cols; ++i) {
+                for (int j = mouthImg.rows/2; j > totalLineCheck/2; --j) {
+
+                    int currentDiffToAvg = 0;
+
+                    for (int k = 1; k < totalLineCheck/2 + 1; ++k) {
+                        currentDiffToAvg += rTopFinal.at<uchar>(j-k,i) + rTopFinal.at<uchar>(j+k,i);
+
+                    }
+                    currentDiffToAvg = currentDiffToAvg / totalLineCheck;
+
+                    if(currentDiffToAvg > 0){
+                        currentDiffToAvg = 100 - (rTopFinal.at<uchar>(j,i) * 100 / currentDiffToAvg);
+                    }
+
+                    if(currentDiffToAvg > thresholdDifferenceToAvg){
+                        possibleKeyPoint.differenceToAvg = currentDiffToAvg;
+                        possibleKeyPoint.keyPoint.x  = i;
+                        possibleKeyPoint.keyPoint.y  = j;
+                        possibleKeyPoints.append(possibleKeyPoint);
+                    }
+                }
+            }
+
+
+            if(!possibleKeyPoints.empty()){
+                QList<PossibleKeyPoint> finalPossibleKeyPoints;
+                bool* searchedPossibleKeyPoints = new bool[possibleKeyPoints.size()];
+                std::fill_n( searchedPossibleKeyPoints, possibleKeyPoints.size(), 0 );
+
+                for (int i = 0; i < possibleKeyPoints.size(); ++i) {
+                    if(!searchedPossibleKeyPoints[i]){
+                        finalPossibleKeyPoints.append(possibleKeyPoints.at(i));
+                        for (int j = i+1; j < possibleKeyPoints.size(); ++j) {
+                            if(
+                               abs(possibleKeyPoints.at(i).keyPoint.x - possibleKeyPoints.at(j).keyPoint.x) < 5){
+                                searchedPossibleKeyPoints[j] = true;
+                                //ROS_INFO("diff x %d", abs(possibleKeyPoints.at(i).keyPoint.x - possibleKeyPoints.at(j).keyPoint.x));
+                            }
+                        }
+                    }
+                }
+                delete[] searchedPossibleKeyPoints;
+
+                int keyPoint1Index = 0;
+                int keyPoint2Index = 0;
+                for (int i = 0; i < finalPossibleKeyPoints.size(); ++i) {
+                    if(finalPossibleKeyPoints.at(i).differenceToAvg > finalPossibleKeyPoints.at(keyPoint1Index).differenceToAvg){
+                        keyPoint2Index = keyPoint1Index;
+                        keyPoint1Index = i;
+                    }
+                }
+
+//                if(!finalPossibleKeyPoints.empty()){
+//                    ROS_INFO("%d %d keyPoint1Index %d keyPoint2Index %d",
+//                             possibleKeyPoints.size(), finalPossibleKeyPoints.size(), keyPoint1Index, keyPoint2Index);
+
+//                    circle(rTopFinal, finalPossibleKeyPoints.at(keyPoint1Index).keyPoint, 2, Scalar(255,255,255));
+//                    circle(rTopFinal, finalPossibleKeyPoints.at(keyPoint2Index).keyPoint, 2, Scalar(255,255,255));
+//                }
+
+                if(!finalPossibleKeyPoints.empty()){
+                    for (int i = 0; i < finalPossibleKeyPoints.size(); ++i) {
+                        circle(rTopFinal, finalPossibleKeyPoints.at(i).keyPoint, 2, Scalar(255,255,255));
+                    }
+                }
+            }
+
+
+            line(rTopFinal, leftLinePoint, rightLinePoint, cv::Scalar(255,255,255), 1);
             this->showLips(rTopFinal, true);
         }
 

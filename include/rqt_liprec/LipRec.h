@@ -108,6 +108,11 @@ private:
     bool loadUtterance;
     bool useCam;
 
+    struct PossibleKeyPoint{
+        int differenceToAvg;
+        Point keyPoint;
+    };
+
     ImageProcessing imageProcessing;
     Swt swt;
 
