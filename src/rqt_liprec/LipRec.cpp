@@ -191,6 +191,11 @@ void LipRec::mouthROICallback(const sensor_msgs::RegionOfInterestConstPtr& msg){
     mouthROI_detected = true;
 }
 
+bool yCoordLessThanPossibleKeyPoint(LipRec::PossibleKeyPoint a, LipRec::PossibleKeyPoint b)
+{
+    return a.keyPoint.y > b.keyPoint.y;
+}
+
 void LipRec::getCamPic(cv::Mat img){
     if(!this->loadUtterance && useCam && !img.empty()){
         this->processImage(img);
@@ -272,6 +277,8 @@ void LipRec::processImage(Mat img)
     Mat rMidFinal(mouthImg.rows, mouthImg.cols, CV_8UC1);
     Mat rLowFinal(mouthImg.rows, mouthImg.cols, CV_8UC1);
 
+    Point keyPoint1, keyPoint2, keyPoint3, keyPoint4, keyPoint5, keyPoint6;
+
     if(!useMonoImage){
         if(ui_.cbLipSeg->isChecked()){
             if(ui_.rbSaturation->isChecked()){
@@ -291,6 +298,7 @@ void LipRec::processImage(Mat img)
 
                 Mat rTopTemp;
                 Sobel(rTop, rTopTemp, CV_32FC1, 0, 1);
+                //Scharr(rTop, rTopTemp, CV_32FC1, 0, 1);
                 minMaxLoc(rTopTemp, &minVal, &maxVal);
                 rTopTemp.convertTo(rTopFinal, CV_8UC1, 255.0/(maxVal - minVal), -minVal * 255.0/(maxVal - minVal));
 
@@ -325,11 +333,11 @@ void LipRec::processImage(Mat img)
             line(rMidFinal, leftLinePoint, rightLinePoint, cv::Scalar(255,255,255), 1);
             this->showLips(rMidFinal, true);
         }else{
-            int thresholdDifferenceToAvg = 20;
+            int thresholdDifferenceToAvg = 25;
             QList<PossibleKeyPoint> possibleKeyPoints;
             PossibleKeyPoint possibleKeyPoint;
 
-            int totalLineCheck = 8;
+            int totalLineCheck = 10;
             for (int i = 0; i < mouthImg.cols; ++i) {
                 for (int j = mouthImg.rows/2; j > totalLineCheck/2; --j) {
 
@@ -355,48 +363,93 @@ void LipRec::processImage(Mat img)
             }
 
 
-            if(!possibleKeyPoints.empty()){
-                QList<PossibleKeyPoint> finalPossibleKeyPoints;
-                bool* searchedPossibleKeyPoints = new bool[possibleKeyPoints.size()];
-                std::fill_n( searchedPossibleKeyPoints, possibleKeyPoints.size(), 0 );
+            Mat contourImg(mouthImg.rows, mouthImg.cols, CV_8UC1, Scalar(0,0,0));
+            Point p;
+            for (int i = 0; i < possibleKeyPoints.size(); ++i) {
+                p = possibleKeyPoints.at(i).keyPoint;
+                contourImg.at<uchar>(p.y, p.x) = 255;
+            }
+            Mat _img;
+            double otsu_thresh_val = cv::threshold(
+                contourImg, _img, 0, 255, CV_THRESH_BINARY | CV_THRESH_OTSU
+            );
+            Canny(contourImg, contourImg, otsu_thresh_val*0.5, otsu_thresh_val);
 
-                for (int i = 0; i < possibleKeyPoints.size(); ++i) {
-                    if(!searchedPossibleKeyPoints[i]){
-                        finalPossibleKeyPoints.append(possibleKeyPoints.at(i));
-                        for (int j = i+1; j < possibleKeyPoints.size(); ++j) {
-                            if(
-                               abs(possibleKeyPoints.at(i).keyPoint.x - possibleKeyPoints.at(j).keyPoint.x) < 5){
-                                searchedPossibleKeyPoints[j] = true;
-                                //ROS_INFO("diff x %d", abs(possibleKeyPoints.at(i).keyPoint.x - possibleKeyPoints.at(j).keyPoint.x));
-                            }
+            cv::Point upLinePoint(mouthROI.width/2, 0);
+            cv::Point bottomLinePoint(mouthROI.width/2, mouthROI.height);
+
+            keyPoint2.y = 1000;
+            for (int i = 0; i < mouthImg.rows; ++i) {
+                for (int j = mouthImg.cols/2; j > 0; --j) {
+                    if(contourImg.at<uchar>(i,j) == 255){
+                        if(keyPoint2.y >= i){
+                            keyPoint2.y = i;
+                            keyPoint2.x = j;
                         }
                     }
                 }
-                delete[] searchedPossibleKeyPoints;
+            }
 
-                int keyPoint1Index = 0;
-                int keyPoint2Index = 0;
-                for (int i = 0; i < finalPossibleKeyPoints.size(); ++i) {
-                    if(finalPossibleKeyPoints.at(i).differenceToAvg > finalPossibleKeyPoints.at(keyPoint1Index).differenceToAvg){
-                        keyPoint2Index = keyPoint1Index;
-                        keyPoint1Index = i;
-                    }
-                }
-
-//                if(!finalPossibleKeyPoints.empty()){
-//                    ROS_INFO("%d %d keyPoint1Index %d keyPoint2Index %d",
-//                             possibleKeyPoints.size(), finalPossibleKeyPoints.size(), keyPoint1Index, keyPoint2Index);
-
-//                    circle(rTopFinal, finalPossibleKeyPoints.at(keyPoint1Index).keyPoint, 2, Scalar(255,255,255));
-//                    circle(rTopFinal, finalPossibleKeyPoints.at(keyPoint2Index).keyPoint, 2, Scalar(255,255,255));
-//                }
-
-                if(!finalPossibleKeyPoints.empty()){
-                    for (int i = 0; i < finalPossibleKeyPoints.size(); ++i) {
-                        circle(rTopFinal, finalPossibleKeyPoints.at(i).keyPoint, 2, Scalar(255,255,255));
+            keyPoint4.y = 1000;
+            for (int i = 0; i < mouthImg.rows; ++i) {
+                for (int j = mouthImg.cols/2; j < mouthImg.cols; ++j) {
+                    if(contourImg.at<uchar>(i,j) == 255){
+                        if(keyPoint4.y >= i){
+                            keyPoint4.y = i;
+                            keyPoint4.x = j;
+                        }
                     }
                 }
             }
+
+            keyPoint3.y = 0;
+            int kp2kp3Width = keyPoint4.x  - keyPoint2.x;
+            kp2kp3Width = kp2kp3Width/2;
+
+            for (int i = keyPoint2.x; i < keyPoint4.x; ++i) {
+                for (int j = 0; j < leftLinePoint.y-10; ++j) {
+                    if(contourImg.at<uchar>(j,i) == 255){
+                        if(keyPoint3.y <= j &&  i <= (keyPoint2.x + kp2kp3Width) ){
+                            keyPoint3.y = j;
+                            keyPoint3.x = i;
+                        }
+                    }
+                }
+            }
+
+           circle(rTopFinal, keyPoint2, 1, Scalar(255,255,255));
+           circle(rTopFinal, keyPoint4, 1, Scalar(255,255,255));
+           circle(rTopFinal, keyPoint3, 1, Scalar(255,255,255));
+
+
+           line(rTopFinal, upLinePoint, bottomLinePoint, Scalar(255,255,255));
+
+
+//            if(!possibleKeyPoints.empty()){
+//                QList<PossibleKeyPoint> finalPossibleKeyPoints;
+//                bool* searchedPossibleKeyPoints = new bool[possibleKeyPoints.size()];
+//                std::fill_n( searchedPossibleKeyPoints, possibleKeyPoints.size(), 0 );
+
+//                for (int i = 0; i < possibleKeyPoints.size(); ++i) {
+//                    if(!searchedPossibleKeyPoints[i]){
+//                        finalPossibleKeyPoints.append(possibleKeyPoints.at(i));
+//                        for (int j = i+1; j < possibleKeyPoints.size(); ++j) {
+//                            if(abs(possibleKeyPoints.at(i).keyPoint.y - possibleKeyPoints.at(j).keyPoint.y) < 5 &&
+//                               abs(possibleKeyPoints.at(i).keyPoint.x - possibleKeyPoints.at(j).keyPoint.x) < 10){
+//                                searchedPossibleKeyPoints[j] = true;
+//                            }
+//                        }
+//                    }
+//                }
+//                delete[] searchedPossibleKeyPoints;
+
+                ///Show all possible keypoints
+//                if(!finalPossibleKeyPoints.empty()){
+//                    for (int i = 0; i < finalPossibleKeyPoints.size(); ++i) {
+//                        circle(rTopFinal, finalPossibleKeyPoints.at(i).keyPoint, 1, Scalar(255,255,255));
+//                    }
+//                }
+//            }
 
 
             line(rTopFinal, leftLinePoint, rightLinePoint, cv::Scalar(255,255,255), 1);

@@ -36,6 +36,7 @@
 #include <opencv2/highgui/highgui.hpp>
 
 #include <time.h>
+#include <QtAlgorithms>
 
 #include "ImageProcessing.h"
 #include "Swt.h"
@@ -66,6 +67,10 @@ public:
     void faceROICallback(const sensor_msgs::RegionOfInterestConstPtr& msg);
     void mouthROICallback(const sensor_msgs::RegionOfInterestConstPtr& msg);
 
+    struct PossibleKeyPoint{
+        int differenceToAvg;
+        Point keyPoint;
+    };
 
 private:
     Ui_Form ui_;
@@ -108,10 +113,6 @@ private:
     bool loadUtterance;
     bool useCam;
 
-    struct PossibleKeyPoint{
-        int differenceToAvg;
-        Point keyPoint;
-    };
 
     ImageProcessing imageProcessing;
     Swt swt;
@@ -141,6 +142,7 @@ private:
     Mat calcColorHistogramEqualization(Mat &img);
     double pseudoHuePxl(Mat img, int x, int y);
     int luminancePxl(Mat img, int x, int y);
+
 public slots:
     void getCamPic(cv::Mat img);
 
