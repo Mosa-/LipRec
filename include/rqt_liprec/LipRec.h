@@ -143,6 +143,10 @@ private:
     double pseudoHuePxl(Mat img, int x, int y);
     int luminancePxl(Mat img, int x, int y);
 
+    void extractCupidsBowKeyPoints(Mat &rTopFinal, Point& keyPoint2, Point &keyPoint3, Point &keyPoint4, Point &leftPointHorizontalLine, int thresholdDifferenceToAvg, int totalLineCheck);
+    void extractLowerLipKeyPoint(Mat& rLowFinal, Point& keyPoint6, int kp2X, int kp4X, Point &leftPointHorizontalLine, int thresholdDifferenceToAvg, int totalLineCheck);
+
+    //void extractKeyPoint2And3And4(Mat &rTopFinal, Point &keyPoint2, Point &keyPoint3, Point &keyPoint4, Point& leftPointHorizontalLine, int thresholdDiffToAvg);
 public slots:
     void getCamPic(cv::Mat img);
 

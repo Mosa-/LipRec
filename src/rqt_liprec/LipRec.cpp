@@ -1,52 +1,52 @@
- #include "rqt_liprec/LipRec.h"
+#include "rqt_liprec/LipRec.h"
 #include <pluginlib/class_list_macros.h>
 
 
 namespace rqt_liprec {
 
 LipRec::LipRec()
-  : rqt_gui_cpp::Plugin()
-  , last(0), timeoutROIdetection(500), blackBorder(0), widget_(0), stateDetectionStartEndFrame(Idle)
+    : rqt_gui_cpp::Plugin()
+    , last(0), timeoutROIdetection(500), blackBorder(0), widget_(0), stateDetectionStartEndFrame(Idle)
 {
-  // Constructor is called first before initPlugin function, needless to say.
+    // Constructor is called first before initPlugin function, needless to say.
 
-  // give QObjects reasonable names
-  setObjectName("rqt_liprec");
+    // give QObjects reasonable names
+    setObjectName("rqt_liprec");
 }
 
 
 void LipRec::initPlugin(qt_gui_cpp::PluginContext& context)
 {
-	// access standalone command line arguments
-	QStringList argv = context.argv();
-	// create QWidget
-	widget_ = new QWidget();
-	// extend the widget with all attributes and children from UI file
-	ui_.setupUi(widget_);
-	// add widget to the user interface
-	context.addWidget(widget_);
+    // access standalone command line arguments
+    QStringList argv = context.argv();
+    // create QWidget
+    widget_ = new QWidget();
+    // extend the widget with all attributes and children from UI file
+    ui_.setupUi(widget_);
+    // add widget to the user interface
+    context.addWidget(widget_);
 
-	qRegisterMetaType<cv::Mat>("cv::Mat");    
+    qRegisterMetaType<cv::Mat>("cv::Mat");
 
     if(argv.size() != 4){
         ROS_INFO("Four arguments necessary!");
-	}else{
-		int showFaceROI = argv[0].toInt();
-		int showMouthROI = argv[1].toInt();
-		blackBorder = argv[2].toInt();
-		if(showFaceROI == 1)
-			ui_.cbFaceROI->setChecked(true);
+    }else{
+        int showFaceROI = argv[0].toInt();
+        int showMouthROI = argv[1].toInt();
+        blackBorder = argv[2].toInt();
+        if(showFaceROI == 1)
+            ui_.cbFaceROI->setChecked(true);
 
-		if(showMouthROI == 1)
-			ui_.cbMouthROI->setChecked(true);
+        if(showMouthROI == 1)
+            ui_.cbMouthROI->setChecked(true);
 
         useMonoImage = argv[3].toInt();
 
-		ROS_INFO("Show FaceROI: %s",argv[0].toStdString().c_str());
-		ROS_INFO("Show MouthROI: %s",argv[1].toStdString().c_str());
-		ROS_INFO("BlackBorder: %s",argv[2].toStdString().c_str());
+        ROS_INFO("Show FaceROI: %s",argv[0].toStdString().c_str());
+        ROS_INFO("Show MouthROI: %s",argv[1].toStdString().c_str());
+        ROS_INFO("BlackBorder: %s",argv[2].toStdString().c_str());
         ROS_INFO("Use mono image: %s",argv[3].toStdString().c_str());
-	}
+    }
 
     string kinectTopic;
     //camImage = getNodeHandle().subscribe("/liprecKinect/rgb/image_raw", 10, &LipRec::imageCallback, this);
@@ -64,14 +64,14 @@ void LipRec::initPlugin(qt_gui_cpp::PluginContext& context)
 
     NO_CYCLIC_FRAME = ui_.sbNOCF->value();
 
-	QObject::connect(&faceROITimer, SIGNAL(timeout()), this, SLOT(faceROItimeout()));
-	QObject::connect(&mouthROITimer, SIGNAL(timeout()), this, SLOT(mouthROItimeout()));
+    QObject::connect(&faceROITimer, SIGNAL(timeout()), this, SLOT(faceROItimeout()));
+    QObject::connect(&mouthROITimer, SIGNAL(timeout()), this, SLOT(mouthROItimeout()));
 
     QObject::connect(ui_.pbUPDP, SIGNAL(clicked()), this, SLOT(clickedUtteranceDiffPlot()));
     QObject::connect(ui_.pbContinueVideo, SIGNAL(clicked()), this, SLOT(clickedContinueVideo()));
 
-	faceROITimer.start(timeoutROIdetection);
-	mouthROITimer.start(timeoutROIdetection);
+    faceROITimer.start(timeoutROIdetection);
+    mouthROITimer.start(timeoutROIdetection);
     ui_.groupBoxWidget->setShown(false);
     ui_.groupBoxWidget_2->setShown(false);
     ui_.cbSignalWindow1->addItem("None");
@@ -127,7 +127,7 @@ void LipRec::initPlugin(qt_gui_cpp::PluginContext& context)
     initVideoWriter = false;
     useCam = true;
 
-	QObject::connect(this, SIGNAL(updateCam(cv::Mat)), this, SLOT(getCamPic(cv::Mat)));
+    QObject::connect(this, SIGNAL(updateCam(cv::Mat)), this, SLOT(getCamPic(cv::Mat)));
 }
 
 void LipRec::shutdownPlugin()
@@ -136,14 +136,14 @@ void LipRec::shutdownPlugin()
 
 void LipRec::saveSettings(qt_gui_cpp::Settings& plugin_settings, qt_gui_cpp::Settings& instance_settings) const
 {
-  // TODO save intrinsic configuration, usually using:
-  // instance_settings.setValue(k, v)
+    // TODO save intrinsic configuration, usually using:
+    // instance_settings.setValue(k, v)
 }
 
 void LipRec::restoreSettings(const qt_gui_cpp::Settings& plugin_settings, const qt_gui_cpp::Settings& instance_settings)
 {
-  // TODO restore intrinsic configuration, usually using:
-  // v = instance_settings.value(k)
+    // TODO restore intrinsic configuration, usually using:
+    // v = instance_settings.value(k)
 }
 
 /*bool hasConfiguration() const
@@ -158,36 +158,36 @@ void triggerConfiguration()
 
 
 void LipRec::imageCallback(const sensor_msgs::ImageConstPtr& msg){
-	cv::Mat img;
+    cv::Mat img;
 
-	cv_bridge::CvImagePtr cv_ptr;
-	try
-	{
+    cv_bridge::CvImagePtr cv_ptr;
+    try
+    {
         if(useMonoImage){
             cv_ptr = cv_bridge::toCvCopy(msg, sensor_msgs::image_encodings::TYPE_8UC1);
         }else{
             cv_ptr = cv_bridge::toCvCopy(msg, sensor_msgs::image_encodings::BGR8);
         }
-	}
-	catch (cv_bridge::Exception& e)
-	{
-		ROS_ERROR("cv_bridge exception: %s", e.what());
-		return;
-	}
+    }
+    catch (cv_bridge::Exception& e)
+    {
+        ROS_ERROR("cv_bridge exception: %s", e.what());
+        return;
+    }
 
-	img = cv_ptr->image;
+    img = cv_ptr->image;
 
-	emit updateCam(img);
+    emit updateCam(img);
 }
 
 void LipRec::faceROICallback(const sensor_msgs::RegionOfInterestConstPtr& msg){
-	faceROITimer.start(timeoutROIdetection);
-	faceROI = *msg;
-	faceROI_detected = true;
+    faceROITimer.start(timeoutROIdetection);
+    faceROI = *msg;
+    faceROI_detected = true;
 }
 void LipRec::mouthROICallback(const sensor_msgs::RegionOfInterestConstPtr& msg){
-	mouthROITimer.start(timeoutROIdetection);
-	mouthROI = *msg;
+    mouthROITimer.start(timeoutROIdetection);
+    mouthROI = *msg;
     mouthROI_detected = true;
 }
 
@@ -238,7 +238,7 @@ void LipRec::processImage(Mat img)
             imageProcessing.applyHistogramForLightCorrectionGHE(mouthImg);
         }else if(ui_.rbAHE->isChecked()){
             imageProcessing.applyHistogramForLightCorrectionAHE(mouthImg,
-                    ui_.sbClipLimit->value(), Size(ui_.sbSize->value(),ui_.sbSize->value()));
+                                                                ui_.sbClipLimit->value(), Size(ui_.sbSize->value(),ui_.sbSize->value()));
         }
     }else{
         if(ui_.rbGHE->isChecked()){
@@ -260,15 +260,15 @@ void LipRec::processImage(Mat img)
 
     //IDEE schwarze pixel weg nehmen
 
-//    if(!mouthImg.empty()){
-//        cvtColor(mouthImg, mouthImg, CV_BGR2HSV);
-//        for (int i = 0; i < mouthImg.rows; ++i) {
-//            for (int j = 0; j < mouthImg.cols; ++j) {
-//                mouthImg.at<Vec3b>(i,j)[1] = mouthImg.at<Vec3b>(i,j)[1] + (mouthImg.at<Vec3b>(i,j)[1]*0.6);
-//            }
-//        }
-//        cvtColor(mouthImg, mouthImg, CV_HSV2BGR);
-//    }
+    //    if(!mouthImg.empty()){
+    //        cvtColor(mouthImg, mouthImg, CV_BGR2HSV);
+    //        for (int i = 0; i < mouthImg.rows; ++i) {
+    //            for (int j = 0; j < mouthImg.cols; ++j) {
+    //                mouthImg.at<Vec3b>(i,j)[1] = mouthImg.at<Vec3b>(i,j)[1] + (mouthImg.at<Vec3b>(i,j)[1]*0.6);
+    //            }
+    //        }
+    //        cvtColor(mouthImg, mouthImg, CV_HSV2BGR);
+    //    }
 
     Mat rTop(mouthImg.rows, mouthImg.cols, CV_8UC1);
     Mat rMid(mouthImg.rows, mouthImg.cols, CV_8UC1);
@@ -288,9 +288,9 @@ void LipRec::processImage(Mat img)
             if(ui_.rbPseudoHue->isChecked()){
                 for (int i = 0; i < mouthImg.rows; ++i) {
                     for (int j = 0; j < mouthImg.cols; ++j) {
-                        rTop.at<uchar>(i,j) = (int) (pseudoHuePxl(mouthImg, i, j) - luminancePxl(mouthImg, i, j));
-                        rMid.at<uchar>(i,j) = luminancePxl(mouthImg, i, j);
-                        rLow.at<uchar>(i,j) = (int) (pseudoHuePxl(mouthImg, i, j) + luminancePxl(mouthImg, i, j));
+                        rTop.at<uchar>(i,j) = (int) (pseudoHuePxl(mouthImg, j, i) - luminancePxl(mouthImg, j, i));
+                        rMid.at<uchar>(i,j) = luminancePxl(mouthImg, j, i);
+                        rLow.at<uchar>(i,j) = (int) (pseudoHuePxl(mouthImg, j, i) + luminancePxl(mouthImg, j, i));
                     }
                 }
 
@@ -309,12 +309,13 @@ void LipRec::processImage(Mat img)
 
                 for (int i = 0; i < mouthImg.rows; ++i) {
                     for (int j = 0; j < mouthImg.cols; ++j) {
-                        rMidFinal.at<uchar>(i,j) = (int) (rMidFinal.at<uchar>(i,j) * pseudoHuePxl(mouthImg, i, j));
+                        rMidFinal.at<uchar>(i,j) = (int) (rMidFinal.at<uchar>(i,j) * pseudoHuePxl(mouthImg, j, i));
                     }
                 }
 
                 Mat rLowTemp;
-                Sobel(rLow, rLowTemp, CV_32FC1, 0, 1);
+                //Sobel(rLow, rLowTemp, CV_32FC1, 0, 1);
+                Scharr(rLow, rLowTemp, CV_32FC1, 0, 1);
                 minMaxLoc(rLowTemp, &minVal, &maxVal);
                 rLowTemp.convertTo(rLowFinal, CV_8UC1, 255.0/(maxVal - minVal), -minVal * 255.0/(maxVal - minVal));
             }
@@ -323,138 +324,81 @@ void LipRec::processImage(Mat img)
         cv::Point leftLinePoint(0, mouthROI.height/2);
         cv::Point rightLinePoint(mouthROI.width, mouthROI.height/2);
 
+        cv::Point upLinePoint(mouthROI.width/2, 0);
+        cv::Point bottomLinePoint(mouthROI.width/2, mouthROI.height);
+
+        double luminanceMean = 0.0;
+        double pseudoHueMean = 0.0;
+        for (int i = 0; i < mouthImg.cols/2; ++i) {
+            for (int j = 0; j < mouthImg.rows; ++j) {
+                luminanceMean += luminancePxl(mouthImg, i, j);
+                pseudoHueMean += pseudoHuePxl(mouthImg, i, j);
+            }
+        }
+        luminanceMean /= (mouthImg.cols*mouthImg.rows);
+        pseudoHueMean /= (mouthImg.cols*mouthImg.rows);
+
+
+        double lowestLuminance = 1000;
+        double highestPseudoHue = 0;
+        for (int i = 0; i < mouthImg.cols/2; ++i) {
+            for (int j = 0; j < mouthImg.rows; ++j) {
+                    if(pseudoHuePxl(mouthImg, i, j) > pseudoHueMean && pseudoHuePxl(mouthImg, i, j) > highestPseudoHue){
+                        if(luminancePxl(mouthImg, i, j) < luminanceMean && luminancePxl(mouthImg, i, j) < lowestLuminance){
+
+                        lowestLuminance = luminancePxl(mouthImg, i, j);
+                        highestPseudoHue = pseudoHuePxl(mouthImg, i, j);
+                        keyPoint1.x = i;
+                        keyPoint1.y = j;
+                    }
+                }
+            }
+        }
+
+
+
+
+        this->extractCupidsBowKeyPoints(rTopFinal, keyPoint2, keyPoint3, keyPoint4, leftLinePoint, 25, 10);
+        this->extractLowerLipKeyPoint(rLowFinal, keyPoint6, keyPoint2.x, keyPoint4.x, leftLinePoint, 40, 16);
+
         if(ui_.rbLipsNone->isChecked()){
             line(mouthImg, leftLinePoint, rightLinePoint, cv::Scalar(255,255,255), 1);
             this->showLips(mouthImg);
         }else if(ui_.rbRLow->isChecked()){
+            circle(rLowFinal, keyPoint1, 1, Scalar(255,255,255));
+
+            circle(rLowFinal, keyPoint6, 1, Scalar(255,255,255));
+
+            line(rLowFinal, upLinePoint, bottomLinePoint, Scalar(255,255,255));
             line(rLowFinal, leftLinePoint, rightLinePoint, cv::Scalar(255,255,255), 1);
             this->showLips(rLowFinal, true);
         }else if(ui_.rbRMid->isChecked()){
+            Mat _img;
+            double otsu_thresh_val = cv::threshold(
+                        rMidFinal, _img, 0, 255, CV_THRESH_BINARY | CV_THRESH_OTSU
+                        );
+            Canny(rMidFinal, rMidFinal, otsu_thresh_val*0.5, otsu_thresh_val);
+
             line(rMidFinal, leftLinePoint, rightLinePoint, cv::Scalar(255,255,255), 1);
             this->showLips(rMidFinal, true);
         }else{
-            int thresholdDifferenceToAvg = 25;
-            QList<PossibleKeyPoint> possibleKeyPoints;
-            PossibleKeyPoint possibleKeyPoint;
+            circle(rTopFinal, keyPoint2, 1, Scalar(255,255,255));
+            circle(rTopFinal, keyPoint4, 1, Scalar(255,255,255));
+            circle(rTopFinal, keyPoint3, 1, Scalar(255,255,255));
 
-            int totalLineCheck = 10;
-            for (int i = 0; i < mouthImg.cols; ++i) {
-                for (int j = mouthImg.rows/2; j > totalLineCheck/2; --j) {
+            line(rTopFinal, upLinePoint, bottomLinePoint, Scalar(255,255,255));
+            line(rTopFinal, leftLinePoint, rightLinePoint, Scalar(255,255,255));
 
-                    int currentDiffToAvg = 0;
+            this->showLips(rTopFinal, true);
 
-                    for (int k = 1; k < totalLineCheck/2 + 1; ++k) {
-                        currentDiffToAvg += rTopFinal.at<uchar>(j-k,i) + rTopFinal.at<uchar>(j+k,i);
-
-                    }
-                    currentDiffToAvg = currentDiffToAvg / totalLineCheck;
-
-                    if(currentDiffToAvg > 0){
-                        currentDiffToAvg = 100 - (rTopFinal.at<uchar>(j,i) * 100 / currentDiffToAvg);
-                    }
-
-                    if(currentDiffToAvg > thresholdDifferenceToAvg){
-                        possibleKeyPoint.differenceToAvg = currentDiffToAvg;
-                        possibleKeyPoint.keyPoint.x  = i;
-                        possibleKeyPoint.keyPoint.y  = j;
-                        possibleKeyPoints.append(possibleKeyPoint);
-                    }
-                }
-            }
-
-
-            Mat contourImg(mouthImg.rows, mouthImg.cols, CV_8UC1, Scalar(0,0,0));
-            Point p;
-            for (int i = 0; i < possibleKeyPoints.size(); ++i) {
-                p = possibleKeyPoints.at(i).keyPoint;
-                contourImg.at<uchar>(p.y, p.x) = 255;
-            }
-            Mat _img;
-            double otsu_thresh_val = cv::threshold(
-                contourImg, _img, 0, 255, CV_THRESH_BINARY | CV_THRESH_OTSU
-            );
-            Canny(contourImg, contourImg, otsu_thresh_val*0.5, otsu_thresh_val);
-
-            cv::Point upLinePoint(mouthROI.width/2, 0);
-            cv::Point bottomLinePoint(mouthROI.width/2, mouthROI.height);
-
-            keyPoint2.y = 1000;
-            for (int i = 0; i < mouthImg.rows; ++i) {
-                for (int j = mouthImg.cols/2; j > 0; --j) {
-                    if(contourImg.at<uchar>(i,j) == 255){
-                        if(keyPoint2.y >= i){
-                            keyPoint2.y = i;
-                            keyPoint2.x = j;
-                        }
-                    }
-                }
-            }
-
-            keyPoint4.y = 1000;
-            for (int i = 0; i < mouthImg.rows; ++i) {
-                for (int j = mouthImg.cols/2; j < mouthImg.cols; ++j) {
-                    if(contourImg.at<uchar>(i,j) == 255){
-                        if(keyPoint4.y >= i){
-                            keyPoint4.y = i;
-                            keyPoint4.x = j;
-                        }
-                    }
-                }
-            }
-
-            keyPoint3.y = 0;
-            int kp2kp3Width = keyPoint4.x  - keyPoint2.x;
-            kp2kp3Width = kp2kp3Width/2;
-
-            for (int i = keyPoint2.x; i < keyPoint4.x; ++i) {
-                for (int j = 0; j < leftLinePoint.y-10; ++j) {
-                    if(contourImg.at<uchar>(j,i) == 255){
-                        if(keyPoint3.y <= j &&  i <= (keyPoint2.x + kp2kp3Width) ){
-                            keyPoint3.y = j;
-                            keyPoint3.x = i;
-                        }
-                    }
-                }
-            }
-
-           circle(rTopFinal, keyPoint2, 1, Scalar(255,255,255));
-           circle(rTopFinal, keyPoint4, 1, Scalar(255,255,255));
-           circle(rTopFinal, keyPoint3, 1, Scalar(255,255,255));
-
-
-           line(rTopFinal, upLinePoint, bottomLinePoint, Scalar(255,255,255));
-
-
-//            if(!possibleKeyPoints.empty()){
-//                QList<PossibleKeyPoint> finalPossibleKeyPoints;
-//                bool* searchedPossibleKeyPoints = new bool[possibleKeyPoints.size()];
-//                std::fill_n( searchedPossibleKeyPoints, possibleKeyPoints.size(), 0 );
-
-//                for (int i = 0; i < possibleKeyPoints.size(); ++i) {
-//                    if(!searchedPossibleKeyPoints[i]){
-//                        finalPossibleKeyPoints.append(possibleKeyPoints.at(i));
-//                        for (int j = i+1; j < possibleKeyPoints.size(); ++j) {
-//                            if(abs(possibleKeyPoints.at(i).keyPoint.y - possibleKeyPoints.at(j).keyPoint.y) < 5 &&
-//                               abs(possibleKeyPoints.at(i).keyPoint.x - possibleKeyPoints.at(j).keyPoint.x) < 10){
-//                                searchedPossibleKeyPoints[j] = true;
-//                            }
-//                        }
-//                    }
-//                }
-//                delete[] searchedPossibleKeyPoints;
-
-                ///Show all possible keypoints
-//                if(!finalPossibleKeyPoints.empty()){
-//                    for (int i = 0; i < finalPossibleKeyPoints.size(); ++i) {
-//                        circle(rTopFinal, finalPossibleKeyPoints.at(i).keyPoint, 1, Scalar(255,255,255));
-//                    }
+            ///Show all possible keypoints
+//            if(!finalPossibleKeyPoints.empty()){
+//                for (int i = 0; i < finalPossibleKeyPoints.size(); ++i) {
+//                    circle(rTopFinal, finalPossibleKeyPoints.at(i).keyPoint, 1, Scalar(255,255,255));
 //                }
 //            }
-
-
-            line(rTopFinal, leftLinePoint, rightLinePoint, cv::Scalar(255,255,255), 1);
-            this->showLips(rTopFinal, true);
         }
+
 
     }else{
         this->showLips(mouthImg, true);
@@ -462,53 +406,191 @@ void LipRec::processImage(Mat img)
 
 
 
-//    if(mouthImg.cols != 0){
-//        //imageProcessing.squareImage(mouthImg);
-//    }
+    //    if(mouthImg.cols != 0){
+    //        //imageProcessing.squareImage(mouthImg);
+    //    }
 
-//    currentFrame = updateFrameBuffer(mouthImg);
-//    Mat imageAbsDiff;
-//    double d = 0;
+    //    currentFrame = updateFrameBuffer(mouthImg);
+    //    Mat imageAbsDiff;
+    //    double d = 0;
 
-//    if(frameBuffer.at(last).cols == frameBuffer.at(currentFrame).cols
-//                && frameBuffer.at(last).rows == frameBuffer.at(currentFrame).rows){
+    //    if(frameBuffer.at(last).cols == frameBuffer.at(currentFrame).cols
+    //                && frameBuffer.at(last).rows == frameBuffer.at(currentFrame).rows){
 
-//        //temporal segmentation
-//        d = imageProcessing.generatePixelDifference(frameBuffer[currentFrame], frameBuffer[last]);
+    //        //temporal segmentation
+    //        d = imageProcessing.generatePixelDifference(frameBuffer[currentFrame], frameBuffer[last]);
 
-//        ui_.lcdPixelWiseDiff->display(QString::number(d,'f',0));
+    //        ui_.lcdPixelWiseDiff->display(QString::number(d,'f',0));
 
-//        imageAbsDiff = imageProcessing.createImageAbsDiff(frameBuffer[currentFrame], frameBuffer[last]);
-//    }
+    //        imageAbsDiff = imageProcessing.createImageAbsDiff(frameBuffer[currentFrame], frameBuffer[last]);
+    //    }
 
-//    //temporal segmentation
-//    int activation = QString::number(d,'f',0).toInt();
+    //    //temporal segmentation
+    //    int activation = QString::number(d,'f',0).toInt();
 
-//    this->changeLipActivationState(activation, imageAbsDiff, currentFrame);
+    //    this->changeLipActivationState(activation, imageAbsDiff, currentFrame);
 
-//    if(!imageAbsDiff.empty()){
-//        pixMap = imageProcessing.getPixmap(imageAbsDiff);
-//        pixMap = pixMap.scaled(ui_.lbl_lips->maximumWidth(), ui_.lbl_lips->maximumHeight(), Qt::KeepAspectRatio, Qt::SmoothTransformation);
-//        ui_.lbl_rec_phonem->setPixmap(pixMap);
+    //    if(!imageAbsDiff.empty()){
+    //        pixMap = imageProcessing.getPixmap(imageAbsDiff);
+    //        pixMap = pixMap.scaled(ui_.lbl_lips->maximumWidth(), ui_.lbl_lips->maximumHeight(), Qt::KeepAspectRatio, Qt::SmoothTransformation);
+    //        ui_.lbl_rec_phonem->setPixmap(pixMap);
 
-//        if(mouthROI_detected && ui_.cbMHI->isChecked()){
+    //        if(mouthROI_detected && ui_.cbMHI->isChecked()){
 
-//            Mat mask = imageProcessing.createMotionHistoryImage(imageAbsDiff, mhi, ui_.cbMHIBinarization->isChecked(),
-//                ui_.dsbMHIThreshold->value(), MHI_DURATION);
+    //            Mat mask = imageProcessing.createMotionHistoryImage(imageAbsDiff, mhi, ui_.cbMHIBinarization->isChecked(),
+    //                ui_.dsbMHIThreshold->value(), MHI_DURATION);
 
-//            pixMap = imageProcessing.getPixmap(mask);
-//            pixMap = pixMap.scaled(ui_.lbl_lips->maximumWidth(), ui_.lbl_lips->maximumHeight(), Qt::KeepAspectRatio, Qt::SmoothTransformation);
+    //            pixMap = imageProcessing.getPixmap(mask);
+    //            pixMap = pixMap.scaled(ui_.lbl_lips->maximumWidth(), ui_.lbl_lips->maximumHeight(), Qt::KeepAspectRatio, Qt::SmoothTransformation);
 
-//            ui_.lbl_MHI->setPixmap(pixMap);
-//        }else{
-//            QPixmap empty;
-//            ui_.lbl_MHI->setPixmap(empty);
-//            ui_.lbl_rec_phonem->setPixmap(empty);
-//            ui_.lbl_rec_word->setPixmap(empty);
-//        }
-//    }
+    //            ui_.lbl_MHI->setPixmap(pixMap);
+    //        }else{
+    //            QPixmap empty;
+    //            ui_.lbl_MHI->setPixmap(empty);
+    //            ui_.lbl_rec_phonem->setPixmap(empty);
+    //            ui_.lbl_rec_word->setPixmap(empty);
+    //        }
+    //    }
 
     last = currentFrame;
+}
+
+void LipRec::extractCupidsBowKeyPoints(Mat& rTopFinal, Point& keyPoint2, Point& keyPoint3, Point& keyPoint4, Point& leftPointHorizontalLine, int thresholdDifferenceToAvg, int totalLineCheck)
+{
+    QList<PossibleKeyPoint> possibleKeyPoints;
+    PossibleKeyPoint possibleKeyPoint;
+
+    for (int i = 0; i < rTopFinal.cols; ++i) {
+        for (int j = rTopFinal.rows/2; j > totalLineCheck/2; --j) {
+
+            int currentDiffToAvg = 0;
+
+            for (int k = 1; k < totalLineCheck/2 + 1; ++k) {
+                currentDiffToAvg += rTopFinal.at<uchar>(j-k,i) + rTopFinal.at<uchar>(j+k,i);
+
+            }
+            currentDiffToAvg = currentDiffToAvg / totalLineCheck;
+
+            if(currentDiffToAvg > 0){
+                currentDiffToAvg = 100 - (rTopFinal.at<uchar>(j,i) * 100 / currentDiffToAvg);
+            }
+
+            if(currentDiffToAvg > thresholdDifferenceToAvg){
+                possibleKeyPoint.differenceToAvg = currentDiffToAvg;
+                possibleKeyPoint.keyPoint.x  = i;
+                possibleKeyPoint.keyPoint.y  = j;
+                possibleKeyPoints.append(possibleKeyPoint);
+            }
+        }
+    }
+
+    Mat contourImg(rTopFinal.rows, rTopFinal.cols, CV_8UC1, Scalar(0,0,0));
+    Point p;
+    for (int i = 0; i < possibleKeyPoints.size(); ++i) {
+        p = possibleKeyPoints.at(i).keyPoint;
+        contourImg.at<uchar>(p.y, p.x) = 255;
+    }
+    Mat _img;
+    double otsu_thresh_val = cv::threshold(
+                contourImg, _img, 0, 255, CV_THRESH_BINARY | CV_THRESH_OTSU
+                );
+    Canny(contourImg, contourImg, otsu_thresh_val*0.5, otsu_thresh_val);
+
+    keyPoint2.y = 1000;
+    for (int i = 0; i < rTopFinal.rows; ++i) {
+        for (int j = rTopFinal.cols/2; j > 0; --j) {
+            if(contourImg.at<uchar>(i,j) == 255){
+                if(keyPoint2.y >= i){
+                    keyPoint2.y = i;
+                    keyPoint2.x = j;
+                }
+            }
+        }
+    }
+
+    keyPoint4.y = 1000;
+    for (int i = 0; i < rTopFinal.rows; ++i) {
+        for (int j = rTopFinal.cols/2; j < rTopFinal.cols; ++j) {
+            if(contourImg.at<uchar>(i,j) == 255){
+                if(keyPoint4.y >= i){
+                    keyPoint4.y = i;
+                    keyPoint4.x = j;
+                }
+            }
+        }
+    }
+
+    keyPoint3.y = 0;
+    int kp2kp3Width = keyPoint4.x  - keyPoint2.x;
+    kp2kp3Width = kp2kp3Width/2;
+
+    for (int i = keyPoint2.x; i < keyPoint4.x; ++i) {
+        for (int j = 0; j < leftPointHorizontalLine.y-10; ++j) {
+            if(contourImg.at<uchar>(j,i) == 255){
+                if(keyPoint3.y <= j &&  i <= (keyPoint2.x + kp2kp3Width) ){
+                    keyPoint3.y = j;
+                    keyPoint3.x = i;
+                }
+            }
+        }
+    }
+}
+
+void LipRec::extractLowerLipKeyPoint(Mat& rLowFinal, Point& keyPoint6, int kp2X, int kp4X, Point& leftPointHorizontalLine, int thresholdDifferenceToAvg, int totalLineCheck)
+{
+    QList<PossibleKeyPoint> possibleKeyPoints;
+    PossibleKeyPoint possibleKeyPoint;
+
+    for (int i = 0; i < rLowFinal.cols; ++i) {
+        for (int j = rLowFinal.rows/2; j < rLowFinal.rows-totalLineCheck/2; ++j) {
+
+            int currentDiffToAvg = 0;
+
+            for (int k = 1; k < totalLineCheck/2 + 1; ++k) {
+                currentDiffToAvg += rLowFinal.at<uchar>(j-k,i) + rLowFinal.at<uchar>(j+k,i);
+
+            }
+            currentDiffToAvg = currentDiffToAvg / totalLineCheck;
+
+            if(currentDiffToAvg > 0){
+                currentDiffToAvg = 100 - (rLowFinal.at<uchar>(j,i) * 100 / currentDiffToAvg);
+            }
+
+            if(currentDiffToAvg > thresholdDifferenceToAvg){
+                possibleKeyPoint.differenceToAvg = currentDiffToAvg;
+                possibleKeyPoint.keyPoint.x  = i;
+                possibleKeyPoint.keyPoint.y  = j;
+                possibleKeyPoints.append(possibleKeyPoint);
+            }
+        }
+    }
+
+    Mat contourImg(rLowFinal.rows, rLowFinal.cols, CV_8UC1, Scalar(0,0,0));
+    Point p;
+    for (int i = 0; i < possibleKeyPoints.size(); ++i) {
+        p = possibleKeyPoints.at(i).keyPoint;
+        contourImg.at<uchar>(p.y, p.x) = 255;
+    }
+    Mat _img;
+    double otsu_thresh_val = cv::threshold(
+                contourImg, _img, 0, 255, CV_THRESH_BINARY | CV_THRESH_OTSU
+                );
+    Canny(contourImg, contourImg, otsu_thresh_val*0.5, otsu_thresh_val);
+
+    keyPoint6.y = 0;
+    int kp2kp3Width = kp4X - kp2X;
+    kp2kp3Width = kp2kp3Width/2;
+
+    for (int i = rLowFinal.rows; i > leftPointHorizontalLine.y; --i) {
+        for (int j = kp2X; j < kp4X; ++j) {
+            if(contourImg.at<uchar>(i,j) == 255){
+                if(keyPoint6.y <= i && j <= (kp2X + kp2kp3Width)){
+                    keyPoint6.y = i;
+                    keyPoint6.x = j;
+                }
+            }
+        }
+    }
 }
 
 void LipRec::applyLipsSegmentationSaturation(Mat& mouthImg){
@@ -606,9 +688,9 @@ Mat LipRec::calcColorHistogramEqualization(Mat& img){
 double LipRec::pseudoHuePxl(Mat img, int x, int y)
 {
     double r,g,b;
-    b = img.at<cv::Vec3b>(Point(y, x))[B];
-    g = img.at<cv::Vec3b>(Point(y, x))[G];
-    r = img.at<cv::Vec3b>(Point(y, x))[R];
+    b = img.at<cv::Vec3b>(Point(x, y))[B];
+    g = img.at<cv::Vec3b>(Point(x, y))[G];
+    r = img.at<cv::Vec3b>(Point(x, y))[R];
 
     if(g+r == 0){
         return 0;
@@ -620,14 +702,14 @@ double LipRec::pseudoHuePxl(Mat img, int x, int y)
 int LipRec::luminancePxl(Mat img, int x, int y)
 {
     double r,g,b;
-    b = img.at<cv::Vec3b>(Point(y, x))[B];
-    g = img.at<cv::Vec3b>(Point(y, x))[G];
-    r = img.at<cv::Vec3b>(Point(y, x))[R];
+    b = img.at<cv::Vec3b>(Point(x, y))[B];
+    g = img.at<cv::Vec3b>(Point(x, y))[G];
+    r = img.at<cv::Vec3b>(Point(x, y))[R];
 
     /// http://stackoverflow.com/questions/596216/formula-to-determine-brightness-of-rgb-color
     return (int) (0.2126*r + 0.7152*g + 0.0722*b);
-   // return (int) (0.299*r + 0.587*g + 0.114*b);
-   // return (int) (0.33*r + 0.5*g + 0.16*b);
+    // return (int) (0.299*r + 0.587*g + 0.114*b);
+    // return (int) (0.33*r + 0.5*g + 0.16*b);
 }
 
 void LipRec::triggedAction(QAction *action)
@@ -664,63 +746,89 @@ void LipRec::triggedAction(QAction *action)
 }
 
 void LipRec::drawFaceMouthROI(Mat& img){
-	Scalar color;
-	if(blackBorder==1){
-		color = Scalar(0,0,0);
-	}else{
-		color = Scalar(255, 255, 255);
-	}
+    Scalar color;
+    if(blackBorder==1){
+        color = Scalar(0,0,0);
+    }else{
+        color = Scalar(255, 255, 255);
+    }
 
-	if(faceROI_detected){
-		if(ui_.cbFaceROI->isChecked()){
-			imageProcessing.drawRectangle(img, faceROI, color);
-		}
-	}
+    if(faceROI_detected){
+        if(ui_.cbFaceROI->isChecked()){
+            imageProcessing.drawRectangle(img, faceROI, color);
+        }
+    }
 
-	if(mouthROI_detected){
-		if(ui_.cbMouthROI->isChecked()){
-			imageProcessing.drawRectangle(img, mouthROI, color);
-		}
-	}
+    if(mouthROI_detected){
+        if(ui_.cbMouthROI->isChecked()){
+            imageProcessing.drawRectangle(img, mouthROI, color);
+        }
+    }
 }
 
 void LipRec::showLips(Mat& mouthImg, bool useMonoImage){
-	QPixmap pixMap;
-	if(ui_.cbLips->isChecked()){
+    QPixmap pixMap;
+    if(ui_.cbLips->isChecked()){
         pixMap = imageProcessing.getPixmap(mouthImg, useMonoImage);
-		pixMap = pixMap.scaled(ui_.lbl_lips->maximumWidth(), ui_.lbl_lips->maximumHeight(), Qt::KeepAspectRatio, Qt::SmoothTransformation);
-		ui_.lbl_lips->setPixmap(pixMap);
-	}else{
-		QPixmap empty;
-		ui_.lbl_lips->setPixmap(empty);
-	}
+        pixMap = pixMap.scaled(ui_.lbl_lips->maximumWidth(), ui_.lbl_lips->maximumHeight(), Qt::KeepAspectRatio, Qt::SmoothTransformation);
+        ui_.lbl_lips->setPixmap(pixMap);
+    }else{
+        QPixmap empty;
+        ui_.lbl_lips->setPixmap(empty);
+    }
 }
 
 int LipRec::updateFrameBuffer(Mat img){
-	int currentFrame = 0;
-	if(frameBuffer.empty()){
-		for (int var = 0; var < NO_CYCLIC_FRAME; ++var) {
-			frameBuffer.append(img);
-		}
-	}else{
-		currentFrame = (last+1) % NO_CYCLIC_FRAME;
-		frameBuffer[currentFrame] = img;
-	}
+    int currentFrame = 0;
+    if(frameBuffer.empty()){
+        for (int var = 0; var < NO_CYCLIC_FRAME; ++var) {
+            frameBuffer.append(img);
+        }
+    }else{
+        currentFrame = (last+1) % NO_CYCLIC_FRAME;
+        frameBuffer[currentFrame] = img;
+    }
 
-	return currentFrame;
+    return currentFrame;
 }
 
 void LipRec::changeLipActivationState(int activation, Mat& imageAbsDiff, int currentFrame){
-	QPixmap pixMap;
-	switch (stateDetectionStartEndFrame) {
-		case Idle:
-			utterance.clear();
-            utterancePixelDiff.clear();
-			silenceCounter = 0;
+    QPixmap pixMap;
+    switch (stateDetectionStartEndFrame) {
+    case Idle:
+        utterance.clear();
+        utterancePixelDiff.clear();
+        silenceCounter = 0;
 
-            // Uterrance detected
-			if(activation > ui_.sbST->value()){
-				stateDetectionStartEndFrame = Utterance;
+        // Uterrance detected
+        if(activation > ui_.sbST->value()){
+            stateDetectionStartEndFrame = Utterance;
+            utterancePixelDiff.append(activation);
+
+            if(checkboxOnlyMouth->isChecked()){
+                this->recordUtteranceFrame(frameBuffer[currentFrame]);
+            }else{
+                this->recordUtteranceFrame(currentUtteranceFrame);
+            }
+
+        }else{
+
+        }
+
+        break;
+    case Utterance:
+        if(activation <= ui_.sbST->value() && silenceCounter == ui_.sbNoSF->value()){
+            //Utterrance finished
+
+            stateDetectionStartEndFrame = Idle;
+            Mat uLast = imageAbsDiff;
+            if(!utterance.isEmpty()){
+                uLast = utterance.last();
+            }
+
+            // only add imageAbsDiff if the last DOF-image has the same size
+            if(uLast.cols == imageAbsDiff.cols && uLast.rows == imageAbsDiff.rows){
+                utterance.append(imageAbsDiff);
                 utterancePixelDiff.append(activation);
 
                 if(checkboxOnlyMouth->isChecked()){
@@ -728,113 +836,105 @@ void LipRec::changeLipActivationState(int activation, Mat& imageAbsDiff, int cur
                 }else{
                     this->recordUtteranceFrame(currentUtteranceFrame);
                 }
+                this->recordUtterance = false;
+            }
+            ui_.lcdUtterance->display(QString::number(utterance.size(),'f',0));
 
-			}else{
+            //1. Generate weighted DOFs
+            for (int i = 0; i < utterance.size(); ++i) {
 
-			}
+                if(!utterance.at(i).empty()){
+                    for (int k = 0; k < utterance.at(i).cols; ++k) {
+                        for (int j = 0; j < utterance.at(i).rows; ++j) {
+                            utterance[i].at<uchar>(j,k) = utterance[i].at<uchar>(j,k) * (ui_.sbDOFboost->value());
+                            if(utterance[i].at<uchar>(j,k) > 255){
+                                utterance[i].at<uchar>(j,k) = 255;
+                            }
 
-			break;
-		case Utterance:
-			if(activation <= ui_.sbST->value() && silenceCounter == ui_.sbNoSF->value()){
-                //Utterrance finished
-
-				stateDetectionStartEndFrame = Idle;
-				Mat uLast = imageAbsDiff;
-				if(!utterance.isEmpty()){
-					uLast = utterance.last();
-				}
-
-				// only add imageAbsDiff if the last DOF-image has the same size
-				if(uLast.cols == imageAbsDiff.cols && uLast.rows == imageAbsDiff.rows){
-					utterance.append(imageAbsDiff);
-                    utterancePixelDiff.append(activation);
-
-                    if(checkboxOnlyMouth->isChecked()){
-                        this->recordUtteranceFrame(frameBuffer[currentFrame]);
-                    }else{
-                        this->recordUtteranceFrame(currentUtteranceFrame);
+                        }
                     }
-                    this->recordUtterance = false;
-				}
-				ui_.lcdUtterance->display(QString::number(utterance.size(),'f',0));
-
-				//1. Generate weighted DOFs
-				for (int i = 0; i < utterance.size(); ++i) {
-
-					if(!utterance.at(i).empty()){
-						for (int k = 0; k < utterance.at(i).cols; ++k) {
-							for (int j = 0; j < utterance.at(i).rows; ++j) {
-								utterance[i].at<uchar>(j,k) = utterance[i].at<uchar>(j,k) * (ui_.sbDOFboost->value());
-								if(utterance[i].at<uchar>(j,k) > 255){
-									utterance[i].at<uchar>(j,k) = 255;
-								}
-
-							}
-						}
-					}
-				}
-
-				Size size = Size(imageAbsDiff.size().width, imageAbsDiff.size().height);
-				Mat mt(imageAbsDiff.rows, imageAbsDiff.cols, CV_8UC1, Scalar(0));
-
-
-				//2. take max pixel intensity value
-				for (int i = 0; i < utterance.size(); ++i) {
-
-					if(!utterance.at(i).empty()){
-
-						for (int k = 0; k < utterance.at(i).cols; ++k) {
-							for (int j = 0; j < utterance.at(i).rows; ++j) {
-								if(mt.at<uchar>(j,k) < utterance[i].at<uchar>(j,k)){
-									mt.at<uchar>(j,k) = utterance[i].at<uchar>(j,k);
-								}
-							}
-						}
-					}
                 }
+            }
 
-                imageProcessing.squareImage(mt);
+            Size size = Size(imageAbsDiff.size().width, imageAbsDiff.size().height);
+            Mat mt(imageAbsDiff.rows, imageAbsDiff.cols, CV_8UC1, Scalar(0));
 
 
-                if(ui_.rbSWT->isChecked()){
-                    Mat ca = Mat::zeros(mt.rows, mt.cols, CV_8UC1);
-                    Mat ch = Mat::zeros(mt.rows, mt.cols, CV_8UC1);
-                    Mat cd = Mat::zeros(mt.rows, mt.cols, CV_8UC1);
-                    Mat cv = Mat::zeros(mt.rows, mt.cols, CV_8UC1);
+            //2. take max pixel intensity value
+            for (int i = 0; i < utterance.size(); ++i) {
 
-                    swt.applySwt(mt, ca, ch, cd, cv, 1, Swt::Haar);
+                if(!utterance.at(i).empty()){
 
-                    pixMap = imageProcessing.getPixmap(ca, useMonoImage);
-                }else if(ui_.rbDCT->isChecked()){
-                    pixMap = imageProcessing.getPixmap(mt, useMonoImage);
-                }else{
-                    pixMap = imageProcessing.getPixmap(mt, useMonoImage);
+                    for (int k = 0; k < utterance.at(i).cols; ++k) {
+                        for (int j = 0; j < utterance.at(i).rows; ++j) {
+                            if(mt.at<uchar>(j,k) < utterance[i].at<uchar>(j,k)){
+                                mt.at<uchar>(j,k) = utterance[i].at<uchar>(j,k);
+                            }
+                        }
+                    }
                 }
-				pixMap = pixMap.scaled(ui_.lbl_lips->maximumWidth(), ui_.lbl_lips->maximumHeight(), Qt::KeepAspectRatio, Qt::SmoothTransformation);
-				ui_.lbl_rec_word->setPixmap(pixMap);
+            }
+
+            imageProcessing.squareImage(mt);
 
 
-                QString currentTextSignalWindow1 = ui_.cbSignalWindow1->currentText();
-                QString currentTextSignalWindow2 = ui_.cbSignalWindow2->currentText();
+            if(ui_.rbSWT->isChecked()){
+                Mat ca = Mat::zeros(mt.rows, mt.cols, CV_8UC1);
+                Mat ch = Mat::zeros(mt.rows, mt.cols, CV_8UC1);
+                Mat cd = Mat::zeros(mt.rows, mt.cols, CV_8UC1);
+                Mat cv = Mat::zeros(mt.rows, mt.cols, CV_8UC1);
 
-                if(currentTextSignalWindow1 == "None"){
-                    this->applySignalSmoothing(1, S_NONE);
-                }else if(currentTextSignalWindow1 == "Average"){
-                    this->applySignalSmoothing(1, AVERAGE);
-                }else{
+                swt.applySwt(mt, ca, ch, cd, cv, 1, Swt::Haar);
 
-                }
+                pixMap = imageProcessing.getPixmap(ca, useMonoImage);
+            }else if(ui_.rbDCT->isChecked()){
+                pixMap = imageProcessing.getPixmap(mt, useMonoImage);
+            }else{
+                pixMap = imageProcessing.getPixmap(mt, useMonoImage);
+            }
+            pixMap = pixMap.scaled(ui_.lbl_lips->maximumWidth(), ui_.lbl_lips->maximumHeight(), Qt::KeepAspectRatio, Qt::SmoothTransformation);
+            ui_.lbl_rec_word->setPixmap(pixMap);
 
-                if(currentTextSignalWindow2 == "None"){
-                    this->applySignalSmoothing(2, S_NONE);
-                }else if(currentTextSignalWindow2 == "Average"){
-                    this->applySignalSmoothing(2, AVERAGE);
-                }else{
 
-                }
-			}else if(activation <= ui_.sbST->value()){
-                //Silence during Utterance
-				silenceCounter++;
+            QString currentTextSignalWindow1 = ui_.cbSignalWindow1->currentText();
+            QString currentTextSignalWindow2 = ui_.cbSignalWindow2->currentText();
+
+            if(currentTextSignalWindow1 == "None"){
+                this->applySignalSmoothing(1, S_NONE);
+            }else if(currentTextSignalWindow1 == "Average"){
+                this->applySignalSmoothing(1, AVERAGE);
+            }else{
+
+            }
+
+            if(currentTextSignalWindow2 == "None"){
+                this->applySignalSmoothing(2, S_NONE);
+            }else if(currentTextSignalWindow2 == "Average"){
+                this->applySignalSmoothing(2, AVERAGE);
+            }else{
+
+            }
+        }else if(activation <= ui_.sbST->value()){
+            //Silence during Utterance
+            silenceCounter++;
+            utterancePixelDiff.append(activation);
+
+            if(checkboxOnlyMouth->isChecked()){
+                this->recordUtteranceFrame(frameBuffer[currentFrame]);
+            }else{
+                this->recordUtteranceFrame(currentUtteranceFrame);
+            }
+
+        }else{
+            //During Utterance
+            silenceCounter = 0;
+            Mat uLast = imageAbsDiff;
+            if(!utterance.isEmpty()){
+                uLast = utterance.last();
+            }
+
+            if(uLast.cols == imageAbsDiff.cols && uLast.rows == imageAbsDiff.rows){
+                utterance.append(imageAbsDiff);
                 utterancePixelDiff.append(activation);
 
                 if(checkboxOnlyMouth->isChecked()){
@@ -842,29 +942,11 @@ void LipRec::changeLipActivationState(int activation, Mat& imageAbsDiff, int cur
                 }else{
                     this->recordUtteranceFrame(currentUtteranceFrame);
                 }
-
-			}else{
-                //During Utterance
-				silenceCounter = 0;
-				Mat uLast = imageAbsDiff;
-				if(!utterance.isEmpty()){
-					uLast = utterance.last();
-				}
-
-				if(uLast.cols == imageAbsDiff.cols && uLast.rows == imageAbsDiff.rows){
-					utterance.append(imageAbsDiff);
-                    utterancePixelDiff.append(activation);
-
-                    if(checkboxOnlyMouth->isChecked()){
-                        this->recordUtteranceFrame(frameBuffer[currentFrame]);
-                    }else{
-                        this->recordUtteranceFrame(currentUtteranceFrame);
-                    }
-                }
-			}
-			break;
-		default:
-			break;
+            }
+        }
+        break;
+    default:
+        break;
     }
 }
 
@@ -941,7 +1023,7 @@ void LipRec::averageSignalSmoothing(QList<int>& signalsSmoothing){
 }
 
 void LipRec::faceROItimeout(){
-	faceROI_detected = false;
+    faceROI_detected = false;
 }
 void LipRec::mouthROItimeout(){
     mouthROI_detected = false;
@@ -989,13 +1071,13 @@ void LipRec::changeUseCam()
 }
 
 void LipRec::printMat(Mat& data){
-	ROS_INFO("<1==============printMat================1>");
-	for (int i = 0; i < data.cols; ++i) {
-		for (int j = 0; j < data.rows; ++j) {
-				ROS_INFO("Pixelvalue(%d,%d): %d", j,i,data.at<uchar>(j,i));
-		}
-	}
-	ROS_INFO("<2==============printMat================2>");
+    ROS_INFO("<1==============printMat================1>");
+    for (int i = 0; i < data.cols; ++i) {
+        for (int j = 0; j < data.rows; ++j) {
+            ROS_INFO("Pixelvalue(%d,%d): %d", j,i,data.at<uchar>(j,i));
+        }
+    }
+    ROS_INFO("<2==============printMat================2>");
 
 }
 
