@@ -289,7 +289,7 @@ void LipRec::processImage(Mat img)
                 for (int i = 0; i < mouthImg.rows; ++i) {
                     for (int j = 0; j < mouthImg.cols; ++j) {
                         rTop.at<uchar>(i,j) = (int) (pseudoHuePxl(mouthImg, j, i) - luminancePxl(mouthImg, j, i));
-                        rMid.at<uchar>(i,j) = luminancePxl(mouthImg, j, i);
+                        rMid.at<uchar>(i,j) = (int) (pseudoHuePxl(mouthImg, j, i) + luminancePxl(mouthImg, j, i));
                         rLow.at<uchar>(i,j) = (int) (pseudoHuePxl(mouthImg, j, i) + luminancePxl(mouthImg, j, i));
                     }
                 }
@@ -297,8 +297,8 @@ void LipRec::processImage(Mat img)
                 double minVal, maxVal;
 
                 Mat rTopTemp;
-                Sobel(rTop, rTopTemp, CV_32FC1, 0, 1);
-                //Scharr(rTop, rTopTemp, CV_32FC1, 0, 1);
+                //Sobel(rTop, rTopTemp, CV_32FC1, 0, 1);
+                Scharr(rTop, rTopTemp, CV_32FC1, 0, 1);
                 minMaxLoc(rTopTemp, &minVal, &maxVal);
                 rTopTemp.convertTo(rTopFinal, CV_8UC1, 255.0/(maxVal - minVal), -minVal * 255.0/(maxVal - minVal));
 
@@ -327,33 +327,33 @@ void LipRec::processImage(Mat img)
         cv::Point upLinePoint(mouthROI.width/2, 0);
         cv::Point bottomLinePoint(mouthROI.width/2, mouthROI.height);
 
-        double luminanceMean = 0.0;
-        double pseudoHueMean = 0.0;
-        for (int i = 0; i < mouthImg.cols/2; ++i) {
-            for (int j = 0; j < mouthImg.rows; ++j) {
-                luminanceMean += luminancePxl(mouthImg, i, j);
-                pseudoHueMean += pseudoHuePxl(mouthImg, i, j);
-            }
-        }
-        luminanceMean /= (mouthImg.cols*mouthImg.rows);
-        pseudoHueMean /= (mouthImg.cols*mouthImg.rows);
+//        double luminanceMean = 0.0;
+//        double pseudoHueMean = 0.0;
+//        for (int i = 0; i < mouthImg.cols/2; ++i) {
+//            for (int j = 0; j < mouthImg.rows; ++j) {
+//                luminanceMean += luminancePxl(mouthImg, i, j);
+//                pseudoHueMean += pseudoHuePxl(mouthImg, i, j);
+//            }
+//        }
+//        luminanceMean /= (mouthImg.cols*mouthImg.rows);
+//        pseudoHueMean /= (mouthImg.cols*mouthImg.rows);
 
 
-        double lowestLuminance = 1000;
-        double highestPseudoHue = 0;
-        for (int i = 0; i < mouthImg.cols/2; ++i) {
-            for (int j = 0; j < mouthImg.rows; ++j) {
-                    if(pseudoHuePxl(mouthImg, i, j) > pseudoHueMean && pseudoHuePxl(mouthImg, i, j) > highestPseudoHue){
-                        if(luminancePxl(mouthImg, i, j) < luminanceMean && luminancePxl(mouthImg, i, j) < lowestLuminance){
+//        double lowestLuminance = 1000;
+//        double highestPseudoHue = 0;
+//        for (int i = 0; i < mouthImg.cols/2; ++i) {
+//            for (int j = 0; j < mouthImg.rows; ++j) {
+//                    if(pseudoHuePxl(mouthImg, i, j) > pseudoHueMean && pseudoHuePxl(mouthImg, i, j) > highestPseudoHue){
+//                        if(luminancePxl(mouthImg, i, j) < luminanceMean && luminancePxl(mouthImg, i, j) < lowestLuminance){
 
-                        lowestLuminance = luminancePxl(mouthImg, i, j);
-                        highestPseudoHue = pseudoHuePxl(mouthImg, i, j);
-                        keyPoint1.x = i;
-                        keyPoint1.y = j;
-                    }
-                }
-            }
-        }
+//                        lowestLuminance = luminancePxl(mouthImg, i, j);
+//                        highestPseudoHue = pseudoHuePxl(mouthImg, i, j);
+//                        keyPoint1.x = i;
+//                        keyPoint1.y = j;
+//                    }
+//                }
+//            }
+//        }
 
 
 
@@ -365,7 +365,6 @@ void LipRec::processImage(Mat img)
             line(mouthImg, leftLinePoint, rightLinePoint, cv::Scalar(255,255,255), 1);
             this->showLips(mouthImg);
         }else if(ui_.rbRLow->isChecked()){
-            circle(rLowFinal, keyPoint1, 1, Scalar(255,255,255));
 
             circle(rLowFinal, keyPoint6, 1, Scalar(255,255,255));
 
@@ -373,14 +372,50 @@ void LipRec::processImage(Mat img)
             line(rLowFinal, leftLinePoint, rightLinePoint, cv::Scalar(255,255,255), 1);
             this->showLips(rLowFinal, true);
         }else if(ui_.rbRMid->isChecked()){
+            QList<PossibleKeyPoint> possibleKeyPoints;
+            PossibleKeyPoint possibleKeyPoint;
+
+            int thresholdDifferenceToAvg = 25;
+            int totalLineCheck = 10;
+
+            for (int i = 0; i < rMidFinal.cols; ++i) {
+                for (int j = rMidFinal.rows/2; j > totalLineCheck/2; --j) {
+
+                    int currentDiffToAvg = 0;
+
+                    for (int k = 1; k < totalLineCheck/2 + 1; ++k) {
+                        currentDiffToAvg += rMidFinal.at<uchar>(j-k,i) + rMidFinal.at<uchar>(j+k,i);
+
+                    }
+                    currentDiffToAvg = currentDiffToAvg / totalLineCheck;
+
+                    if(currentDiffToAvg > 0){
+                        currentDiffToAvg = 100 - (rMidFinal.at<uchar>(j,i) * 100 / currentDiffToAvg);
+                    }
+
+                    if(currentDiffToAvg > thresholdDifferenceToAvg){
+                        possibleKeyPoint.differenceToAvg = currentDiffToAvg;
+                        possibleKeyPoint.keyPoint.x  = i;
+                        possibleKeyPoint.keyPoint.y  = j;
+                        possibleKeyPoints.append(possibleKeyPoint);
+                    }
+                }
+            }
+
+            Mat contourImg(rMidFinal.rows, rMidFinal.cols, CV_8UC1, Scalar(0,0,0));
+            Point p;
+            for (int i = 0; i < possibleKeyPoints.size(); ++i) {
+                p = possibleKeyPoints.at(i).keyPoint;
+                contourImg.at<uchar>(p.y, p.x) = 255;
+            }
             Mat _img;
             double otsu_thresh_val = cv::threshold(
-                        rMidFinal, _img, 0, 255, CV_THRESH_BINARY | CV_THRESH_OTSU
+                        contourImg, _img, 0, 255, CV_THRESH_BINARY | CV_THRESH_OTSU
                         );
-            Canny(rMidFinal, rMidFinal, otsu_thresh_val*0.5, otsu_thresh_val);
+            Canny(contourImg, contourImg, otsu_thresh_val*0.5, otsu_thresh_val, 3, true);
 
             line(rMidFinal, leftLinePoint, rightLinePoint, cv::Scalar(255,255,255), 1);
-            this->showLips(rMidFinal, true);
+            this->showLips(contourImg, true);
         }else{
             circle(rTopFinal, keyPoint2, 1, Scalar(255,255,255));
             circle(rTopFinal, keyPoint4, 1, Scalar(255,255,255));
