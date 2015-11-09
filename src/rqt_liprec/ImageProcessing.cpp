@@ -43,11 +43,11 @@ void ImageProcessing::applyBlur(Mat& mat, int sbMask, BlurType bt){
 		sbMaskValue += 1;
 	}
 	if(bt == BLUR){
-		blur(mat, mat,Size(sbMaskValue,sbMaskValue), Point(-1,-1));
-	}else if(bt == MEDIAN){
-		medianBlur(mat, mat, sbMaskValue);
-	}else if(bt == GAUSSIAN){
-		GaussianBlur(mat, mat, Size(sbMaskValue,sbMaskValue),0,0);
+        blur(mat, mat,Size(sbMaskValue,sbMaskValue), Point(-1,-1));
+    }else if(bt == MEDIAN){
+        medianBlur(mat, mat, sbMaskValue);
+    }else if(bt == GAUSSIAN){
+        GaussianBlur(mat, mat, Size(sbMaskValue,sbMaskValue),0,0);
 	}
 }
 

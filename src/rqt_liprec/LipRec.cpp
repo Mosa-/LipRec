@@ -289,7 +289,7 @@ void LipRec::processImage(Mat img)
                 for (int i = 0; i < mouthImg.rows; ++i) {
                     for (int j = 0; j < mouthImg.cols; ++j) {
                         rTop.at<uchar>(i,j) = (int) (pseudoHuePxl(mouthImg, j, i) - luminancePxl(mouthImg, j, i));
-                        rMid.at<uchar>(i,j) = (int) (pseudoHuePxl(mouthImg, j, i) + luminancePxl(mouthImg, j, i));
+                        rMid.at<uchar>(i,j) = (int) (pseudoHuePxl(mouthImg, j, i) - luminancePxl(mouthImg, j, i));
                         rLow.at<uchar>(i,j) = (int) (pseudoHuePxl(mouthImg, j, i) + luminancePxl(mouthImg, j, i));
                     }
                 }
@@ -327,33 +327,33 @@ void LipRec::processImage(Mat img)
         cv::Point upLinePoint(mouthROI.width/2, 0);
         cv::Point bottomLinePoint(mouthROI.width/2, mouthROI.height);
 
-//        double luminanceMean = 0.0;
-//        double pseudoHueMean = 0.0;
-//        for (int i = 0; i < mouthImg.cols/2; ++i) {
-//            for (int j = 0; j < mouthImg.rows; ++j) {
-//                luminanceMean += luminancePxl(mouthImg, i, j);
-//                pseudoHueMean += pseudoHuePxl(mouthImg, i, j);
-//            }
-//        }
-//        luminanceMean /= (mouthImg.cols*mouthImg.rows);
-//        pseudoHueMean /= (mouthImg.cols*mouthImg.rows);
+        //        double luminanceMean = 0.0;
+        //        double pseudoHueMean = 0.0;
+        //        for (int i = 0; i < mouthImg.cols/2; ++i) {
+        //            for (int j = 0; j < mouthImg.rows; ++j) {
+        //                luminanceMean += luminancePxl(mouthImg, i, j);
+        //                pseudoHueMean += pseudoHuePxl(mouthImg, i, j);
+        //            }
+        //        }
+        //        luminanceMean /= (mouthImg.cols*mouthImg.rows);
+        //        pseudoHueMean /= (mouthImg.cols*mouthImg.rows);
 
 
-//        double lowestLuminance = 1000;
-//        double highestPseudoHue = 0;
-//        for (int i = 0; i < mouthImg.cols/2; ++i) {
-//            for (int j = 0; j < mouthImg.rows; ++j) {
-//                    if(pseudoHuePxl(mouthImg, i, j) > pseudoHueMean && pseudoHuePxl(mouthImg, i, j) > highestPseudoHue){
-//                        if(luminancePxl(mouthImg, i, j) < luminanceMean && luminancePxl(mouthImg, i, j) < lowestLuminance){
+        //        double lowestLuminance = 1000;
+        //        double highestPseudoHue = 0;
+        //        for (int i = 0; i < mouthImg.cols/2; ++i) {
+        //            for (int j = 0; j < mouthImg.rows; ++j) {
+        //                    if(pseudoHuePxl(mouthImg, i, j) > pseudoHueMean && pseudoHuePxl(mouthImg, i, j) > highestPseudoHue){
+        //                        if(luminancePxl(mouthImg, i, j) < luminanceMean && luminancePxl(mouthImg, i, j) < lowestLuminance){
 
-//                        lowestLuminance = luminancePxl(mouthImg, i, j);
-//                        highestPseudoHue = pseudoHuePxl(mouthImg, i, j);
-//                        keyPoint1.x = i;
-//                        keyPoint1.y = j;
-//                    }
-//                }
-//            }
-//        }
+        //                        lowestLuminance = luminancePxl(mouthImg, i, j);
+        //                        highestPseudoHue = pseudoHuePxl(mouthImg, i, j);
+        //                        keyPoint1.x = i;
+        //                        keyPoint1.y = j;
+        //                    }
+        //                }
+        //            }
+        //        }
 
 
 
@@ -375,11 +375,11 @@ void LipRec::processImage(Mat img)
             QList<PossibleKeyPoint> possibleKeyPoints;
             PossibleKeyPoint possibleKeyPoint;
 
-            int thresholdDifferenceToAvg = 25;
+            int thresholdDifferenceToAvg = 24;
             int totalLineCheck = 10;
 
             for (int i = 0; i < rMidFinal.cols; ++i) {
-                for (int j = rMidFinal.rows/2; j > totalLineCheck/2; --j) {
+                for (int j = rMidFinal.rows-totalLineCheck; j > totalLineCheck/2; --j) {
 
                     int currentDiffToAvg = 0;
 
@@ -412,10 +412,73 @@ void LipRec::processImage(Mat img)
             double otsu_thresh_val = cv::threshold(
                         contourImg, _img, 0, 255, CV_THRESH_BINARY | CV_THRESH_OTSU
                         );
+
             Canny(contourImg, contourImg, otsu_thresh_val*0.5, otsu_thresh_val, 3, true);
 
+            vector<vector<Point> > contours;
+            vector<Vec4i> hierarchy;
+            findContours( contourImg, contours, hierarchy, CV_RETR_TREE, CV_CHAIN_APPROX_SIMPLE, Point(0, 0) );
+            for( int i = 0; i< contours.size(); i++ )
+            {
+                drawContours( contourImg, contours, i, Scalar(255,255,255), 1, 8, hierarchy, 1, Point() );
+            }
+
+
+            double luminanceMean = 0.0;
+            double pseudoHueMean = 0.0;
+            for (int i = 0; i < mouthImg.cols/2; ++i) {
+                for (int j = 0; j < mouthImg.rows; ++j) {
+                    luminanceMean += luminancePxl(mouthImg, i, j);
+                    pseudoHueMean += pseudoHuePxl(mouthImg, i, j);
+                }
+            }
+            luminanceMean /= (mouthImg.cols*mouthImg.rows);
+            pseudoHueMean /= (mouthImg.cols*mouthImg.rows);
+
+            QList<PossibleKeyPoint> pKPoints;
+            PossibleKeyPoint pKPoint;
+
+            for (int i = mouthImg.cols/2-(mouthImg.cols/2*0.4); i > 0; --i) {
+                for (int j = mouthImg.rows; j > 0; --j) {
+                    if(contourImg.at<uchar>(j,i) == 255
+                            && pseudoHuePxl(mouthImg, i, j) > pseudoHueMean){
+                        pKPoint.keyPoint.x = i;
+                        pKPoint.keyPoint.y = j;
+                        pKPoints.append(pKPoint);
+                        break;
+                    }
+                }
+            }
+
+
+            ROS_INFO("##############1################");
+            keyPoint1.x = 1000;
+            for (int i = 0; i < pKPoints.size(); ++i) {
+                int diffY = 0;
+                if(i > 0){
+                    diffY = abs(pKPoints.at(i).keyPoint.y - pKPoints.at(i-1).keyPoint.y);
+                    ROS_INFO("diff: %d", abs(pKPoints.at(i).keyPoint.y - pKPoints.at(i-1).keyPoint.y));
+                }
+
+                if(diffY > 3){
+                    break;
+                }
+
+                if(keyPoint1.x > pKPoints.at(i).keyPoint.x){
+                    keyPoint1.x = pKPoints.at(i).keyPoint.x;
+                    keyPoint1.y = pKPoints.at(i).keyPoint.y;
+                }
+                //circle(rMidFinal, pKPoints.at(i).keyPoint, 2, Scalar(255,255,255));
+            }
+            ROS_INFO("##############2################");
+
+
+
+
+            circle(rMidFinal, keyPoint1, 1, Scalar(255,255,255));
+
             line(rMidFinal, leftLinePoint, rightLinePoint, cv::Scalar(255,255,255), 1);
-            this->showLips(contourImg, true);
+            this->showLips(rMidFinal, true);
         }else{
             circle(rTopFinal, keyPoint2, 1, Scalar(255,255,255));
             circle(rTopFinal, keyPoint4, 1, Scalar(255,255,255));
@@ -427,11 +490,11 @@ void LipRec::processImage(Mat img)
             this->showLips(rTopFinal, true);
 
             ///Show all possible keypoints
-//            if(!finalPossibleKeyPoints.empty()){
-//                for (int i = 0; i < finalPossibleKeyPoints.size(); ++i) {
-//                    circle(rTopFinal, finalPossibleKeyPoints.at(i).keyPoint, 1, Scalar(255,255,255));
-//                }
-//            }
+            //            if(!finalPossibleKeyPoints.empty()){
+            //                for (int i = 0; i < finalPossibleKeyPoints.size(); ++i) {
+            //                    circle(rTopFinal, finalPossibleKeyPoints.at(i).keyPoint, 1, Scalar(255,255,255));
+            //                }
+            //            }
         }
 
 
@@ -529,7 +592,15 @@ void LipRec::extractCupidsBowKeyPoints(Mat& rTopFinal, Point& keyPoint2, Point& 
     double otsu_thresh_val = cv::threshold(
                 contourImg, _img, 0, 255, CV_THRESH_BINARY | CV_THRESH_OTSU
                 );
+
     Canny(contourImg, contourImg, otsu_thresh_val*0.5, otsu_thresh_val);
+
+    vector<vector<Point> > contours;
+    vector<Vec4i> hierarchy;
+    findContours( contourImg, contours, hierarchy, CV_RETR_TREE, CV_CHAIN_APPROX_SIMPLE, Point(0, 0) );
+    for( int i = 0; i< contours.size(); i++ ){
+        drawContours( contourImg, contours, i, Scalar(255,255,255), 1, 8, hierarchy, 1, Point() );
+    }
 
     keyPoint2.y = 1000;
     for (int i = 0; i < rTopFinal.rows; ++i) {
@@ -612,16 +683,25 @@ void LipRec::extractLowerLipKeyPoint(Mat& rLowFinal, Point& keyPoint6, int kp2X,
                 );
     Canny(contourImg, contourImg, otsu_thresh_val*0.5, otsu_thresh_val);
 
+    vector<vector<Point> > contours;
+    vector<Vec4i> hierarchy;
+    findContours( contourImg, contours, hierarchy, CV_RETR_TREE, CV_CHAIN_APPROX_SIMPLE, Point(0, 0) );
+    for( int i = 0; i< contours.size(); i++ ){
+        drawContours( contourImg, contours, i, Scalar(255,255,255), 1, 8, hierarchy, 1, Point() );
+    }
+
+
     keyPoint6.y = 0;
     int kp2kp3Width = kp4X - kp2X;
     kp2kp3Width = kp2kp3Width/2;
 
-    for (int i = rLowFinal.rows; i > leftPointHorizontalLine.y; --i) {
-        for (int j = kp2X; j < kp4X; ++j) {
-            if(contourImg.at<uchar>(i,j) == 255){
-                if(keyPoint6.y <= i && j <= (kp2X + kp2kp3Width)){
-                    keyPoint6.y = i;
-                    keyPoint6.x = j;
+    for (int i = kp2X; i < kp4X; ++i) {
+        for (int j = rLowFinal.rows; j > leftPointHorizontalLine.y; --j) {
+            if(contourImg.at<uchar>(j, i) == 255){
+                if(keyPoint6.y <= j && i <= (kp2X + kp2kp3Width)){
+                    keyPoint6.y = j;
+                    keyPoint6.x = i;
+                    break;
                 }
             }
         }
