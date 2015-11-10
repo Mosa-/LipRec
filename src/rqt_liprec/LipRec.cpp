@@ -70,6 +70,12 @@ void LipRec::initPlugin(qt_gui_cpp::PluginContext& context)
     QObject::connect(ui_.pbUPDP, SIGNAL(clicked()), this, SLOT(clickedUtteranceDiffPlot()));
     QObject::connect(ui_.pbContinueVideo, SIGNAL(clicked()), this, SLOT(clickedContinueVideo()));
 
+    QObject::connect(ui_.pbToggleKpLines, SIGNAL(clicked(bool)), this, SLOT(toggleKpLines(bool)));
+    drawKeyPointLines = false;
+
+    QObject::connect(ui_.pbToggleSupportLines, SIGNAL(clicked(bool)), this, SLOT(toggleSupportLines(bool)));
+    drawSupportLines = false;
+
     faceROITimer.start(timeoutROIdetection);
     mouthROITimer.start(timeoutROIdetection);
     ui_.groupBoxWidget->setShown(false);
@@ -278,6 +284,16 @@ void LipRec::processImage(Mat img)
     Mat rLowFinal(mouthImg.rows, mouthImg.cols, CV_8UC1);
 
     Point keyPoint1, keyPoint2, keyPoint3, keyPoint4, keyPoint5, keyPoint6;
+    ///        P2         P4
+    ///       --X-- P3  --X--
+    ///      /     \_X_/     \
+    ///     /                 \
+    /// P1 X-------------------X P5
+    ///     \                 /
+    ///      \               /
+    ///       \______X______/
+    ///              P6
+
 
     if(!useMonoImage){
         if(ui_.cbLipSeg->isChecked()){
@@ -327,165 +343,79 @@ void LipRec::processImage(Mat img)
         cv::Point upLinePoint(mouthROI.width/2, 0);
         cv::Point bottomLinePoint(mouthROI.width/2, mouthROI.height);
 
-        //        double luminanceMean = 0.0;
-        //        double pseudoHueMean = 0.0;
-        //        for (int i = 0; i < mouthImg.cols/2; ++i) {
-        //            for (int j = 0; j < mouthImg.rows; ++j) {
-        //                luminanceMean += luminancePxl(mouthImg, i, j);
-        //                pseudoHueMean += pseudoHuePxl(mouthImg, i, j);
-        //            }
-        //        }
-        //        luminanceMean /= (mouthImg.cols*mouthImg.rows);
-        //        pseudoHueMean /= (mouthImg.cols*mouthImg.rows);
 
-
-        //        double lowestLuminance = 1000;
-        //        double highestPseudoHue = 0;
-        //        for (int i = 0; i < mouthImg.cols/2; ++i) {
-        //            for (int j = 0; j < mouthImg.rows; ++j) {
-        //                    if(pseudoHuePxl(mouthImg, i, j) > pseudoHueMean && pseudoHuePxl(mouthImg, i, j) > highestPseudoHue){
-        //                        if(luminancePxl(mouthImg, i, j) < luminanceMean && luminancePxl(mouthImg, i, j) < lowestLuminance){
-
-        //                        lowestLuminance = luminancePxl(mouthImg, i, j);
-        //                        highestPseudoHue = pseudoHuePxl(mouthImg, i, j);
-        //                        keyPoint1.x = i;
-        //                        keyPoint1.y = j;
-        //                    }
-        //                }
-        //            }
-        //        }
-
-
-
-
-        this->extractCupidsBowKeyPoints(rTopFinal, keyPoint2, keyPoint3, keyPoint4, leftLinePoint, 25, 10);
-        this->extractLowerLipKeyPoint(rLowFinal, keyPoint6, keyPoint2.x, keyPoint4.x, leftLinePoint, 40, 16);
+        this->extractMouthCornerKeyPoints(rMidFinal, mouthImg, keyPoint1, keyPoint5, 24, 10);
+        this->extractCupidsBowKeyPoints(rTopFinal, keyPoint2, keyPoint3, keyPoint4, keyPoint1, 25, 10);
+        this->extractLowerLipKeyPoint(rLowFinal, keyPoint6, keyPoint2.x, keyPoint4.x, keyPoint1, 40, 16);
 
         if(ui_.rbLipsNone->isChecked()){
-            line(mouthImg, leftLinePoint, rightLinePoint, cv::Scalar(255,255,255), 1);
+            if(drawSupportLines){
+                line(mouthImg, keyPoint1, rightLinePoint, cv::Scalar(255,255,255), 1);
+            }
+
+            if(drawKeyPointLines){
+//                line(mouthImg, keyPoint1, keyPoint2, cv::Scalar(255,255,255), 1);
+//                line(mouthImg, keyPoint2, keyPoint3, cv::Scalar(255,255,255), 1);
+//                line(mouthImg, keyPoint3, keyPoint4, cv::Scalar(255,255,255), 1);
+//                line(mouthImg, keyPoint4, keyPoint5, cv::Scalar(255,255,255), 1);
+//                line(mouthImg, keyPoint5, keyPoint6, cv::Scalar(255,255,255), 1);
+//                line(mouthImg, keyPoint6, keyPoint1, cv::Scalar(255,255,255), 1);
+
+                vector<Point> points(6);
+                points.push_back(keyPoint1);
+                points.push_back(keyPoint2);
+                points.push_back(keyPoint3);
+                points.push_back(keyPoint4);
+                points.push_back(keyPoint5);
+                points.push_back(keyPoint6);
+                vector<Point> approxCurve;
+                double epsilon = 5;
+                approxPolyDP(points, approxCurve, epsilon, true);
+
+                  for( int i = 0; i< points.size(); i++ )
+              {
+                  Scalar color = Scalar(255,255,255);
+                  drawContours( mouthImg, approxCurve, i, color, 1, 8 );
+              }
+            }
+
+            circle(mouthImg, keyPoint6, 1, Scalar(255,255,255));
+
+            circle(mouthImg, keyPoint1, 1, Scalar(255,255,255));
+            circle(mouthImg, keyPoint5, 1, Scalar(255,255,255));
+
+            circle(mouthImg, keyPoint2, 1, Scalar(255,255,255));
+            circle(mouthImg, keyPoint4, 1, Scalar(255,255,255));
+            circle(mouthImg, keyPoint3, 1, Scalar(255,255,255));
+
             this->showLips(mouthImg);
         }else if(ui_.rbRLow->isChecked()){
 
             circle(rLowFinal, keyPoint6, 1, Scalar(255,255,255));
 
-            line(rLowFinal, upLinePoint, bottomLinePoint, Scalar(255,255,255));
-            line(rLowFinal, leftLinePoint, rightLinePoint, cv::Scalar(255,255,255), 1);
+            if(drawSupportLines){
+                line(rLowFinal, upLinePoint, bottomLinePoint, Scalar(255,255,255));
+                line(rLowFinal, keyPoint1, rightLinePoint, cv::Scalar(255,255,255), 1);
+            }
             this->showLips(rLowFinal, true);
         }else if(ui_.rbRMid->isChecked()){
-            QList<PossibleKeyPoint> possibleKeyPoints;
-            PossibleKeyPoint possibleKeyPoint;
-
-            int thresholdDifferenceToAvg = 24;
-            int totalLineCheck = 10;
-
-            for (int i = 0; i < rMidFinal.cols; ++i) {
-                for (int j = rMidFinal.rows-totalLineCheck; j > totalLineCheck/2; --j) {
-
-                    int currentDiffToAvg = 0;
-
-                    for (int k = 1; k < totalLineCheck/2 + 1; ++k) {
-                        currentDiffToAvg += rMidFinal.at<uchar>(j-k,i) + rMidFinal.at<uchar>(j+k,i);
-
-                    }
-                    currentDiffToAvg = currentDiffToAvg / totalLineCheck;
-
-                    if(currentDiffToAvg > 0){
-                        currentDiffToAvg = 100 - (rMidFinal.at<uchar>(j,i) * 100 / currentDiffToAvg);
-                    }
-
-                    if(currentDiffToAvg > thresholdDifferenceToAvg){
-                        possibleKeyPoint.differenceToAvg = currentDiffToAvg;
-                        possibleKeyPoint.keyPoint.x  = i;
-                        possibleKeyPoint.keyPoint.y  = j;
-                        possibleKeyPoints.append(possibleKeyPoint);
-                    }
-                }
-            }
-
-            Mat contourImg(rMidFinal.rows, rMidFinal.cols, CV_8UC1, Scalar(0,0,0));
-            Point p;
-            for (int i = 0; i < possibleKeyPoints.size(); ++i) {
-                p = possibleKeyPoints.at(i).keyPoint;
-                contourImg.at<uchar>(p.y, p.x) = 255;
-            }
-            Mat _img;
-            double otsu_thresh_val = cv::threshold(
-                        contourImg, _img, 0, 255, CV_THRESH_BINARY | CV_THRESH_OTSU
-                        );
-
-            Canny(contourImg, contourImg, otsu_thresh_val*0.5, otsu_thresh_val, 3, true);
-
-            vector<vector<Point> > contours;
-            vector<Vec4i> hierarchy;
-            findContours( contourImg, contours, hierarchy, CV_RETR_TREE, CV_CHAIN_APPROX_SIMPLE, Point(0, 0) );
-            for( int i = 0; i< contours.size(); i++ )
-            {
-                drawContours( contourImg, contours, i, Scalar(255,255,255), 1, 8, hierarchy, 1, Point() );
-            }
-
-
-            double luminanceMean = 0.0;
-            double pseudoHueMean = 0.0;
-            for (int i = 0; i < mouthImg.cols/2; ++i) {
-                for (int j = 0; j < mouthImg.rows; ++j) {
-                    luminanceMean += luminancePxl(mouthImg, i, j);
-                    pseudoHueMean += pseudoHuePxl(mouthImg, i, j);
-                }
-            }
-            luminanceMean /= (mouthImg.cols*mouthImg.rows);
-            pseudoHueMean /= (mouthImg.cols*mouthImg.rows);
-
-            QList<PossibleKeyPoint> pKPoints;
-            PossibleKeyPoint pKPoint;
-
-            for (int i = mouthImg.cols/2-(mouthImg.cols/2*0.4); i > 0; --i) {
-                for (int j = mouthImg.rows; j > 0; --j) {
-                    if(contourImg.at<uchar>(j,i) == 255
-                            && pseudoHuePxl(mouthImg, i, j) > pseudoHueMean){
-                        pKPoint.keyPoint.x = i;
-                        pKPoint.keyPoint.y = j;
-                        pKPoints.append(pKPoint);
-                        break;
-                    }
-                }
-            }
-
-
-            ROS_INFO("##############1################");
-            keyPoint1.x = 1000;
-            for (int i = 0; i < pKPoints.size(); ++i) {
-                int diffY = 0;
-                if(i > 0){
-                    diffY = abs(pKPoints.at(i).keyPoint.y - pKPoints.at(i-1).keyPoint.y);
-                    ROS_INFO("diff: %d", abs(pKPoints.at(i).keyPoint.y - pKPoints.at(i-1).keyPoint.y));
-                }
-
-                if(diffY > 3){
-                    break;
-                }
-
-                if(keyPoint1.x > pKPoints.at(i).keyPoint.x){
-                    keyPoint1.x = pKPoints.at(i).keyPoint.x;
-                    keyPoint1.y = pKPoints.at(i).keyPoint.y;
-                }
-                //circle(rMidFinal, pKPoints.at(i).keyPoint, 2, Scalar(255,255,255));
-            }
-            ROS_INFO("##############2################");
-
-
-
 
             circle(rMidFinal, keyPoint1, 1, Scalar(255,255,255));
+            circle(rMidFinal, keyPoint5, 1, Scalar(255,255,255));
 
-            line(rMidFinal, leftLinePoint, rightLinePoint, cv::Scalar(255,255,255), 1);
+            if(drawSupportLines){
+                line(rMidFinal, keyPoint1, rightLinePoint, cv::Scalar(255,255,255), 1);
+            }
             this->showLips(rMidFinal, true);
         }else{
             circle(rTopFinal, keyPoint2, 1, Scalar(255,255,255));
             circle(rTopFinal, keyPoint4, 1, Scalar(255,255,255));
             circle(rTopFinal, keyPoint3, 1, Scalar(255,255,255));
 
-            line(rTopFinal, upLinePoint, bottomLinePoint, Scalar(255,255,255));
-            line(rTopFinal, leftLinePoint, rightLinePoint, Scalar(255,255,255));
+            if(drawSupportLines){
+                line(rTopFinal, upLinePoint, bottomLinePoint, Scalar(255,255,255));
+                line(rTopFinal, keyPoint1, rightLinePoint, Scalar(255,255,255));
+            }
 
             this->showLips(rTopFinal, true);
 
@@ -551,6 +481,149 @@ void LipRec::processImage(Mat img)
     //    }
 
     last = currentFrame;
+}
+
+void LipRec::extractMouthCornerKeyPoints(Mat &rMidFinal, Mat& mouthImg, Point &keyPoint1, Point &keyPoint5, int thresholdDifferenceToAvg, int totalLineCheck)
+{
+    QList<PossibleKeyPoint> possibleKeyPoints;
+    PossibleKeyPoint possibleKeyPoint;
+
+    for (int i = 0; i < rMidFinal.cols; ++i) {
+        for (int j = rMidFinal.rows-totalLineCheck; j > totalLineCheck/2; --j) {
+
+            int currentDiffToAvg = 0;
+
+            for (int k = 1; k < totalLineCheck/2 + 1; ++k) {
+                currentDiffToAvg += rMidFinal.at<uchar>(j-k,i) + rMidFinal.at<uchar>(j+k,i);
+
+            }
+            currentDiffToAvg = currentDiffToAvg / totalLineCheck;
+
+            if(currentDiffToAvg > 0){
+                currentDiffToAvg = 100 - (rMidFinal.at<uchar>(j,i) * 100 / currentDiffToAvg);
+            }
+
+            if(currentDiffToAvg > thresholdDifferenceToAvg){
+                possibleKeyPoint.differenceToAvg = currentDiffToAvg;
+                possibleKeyPoint.keyPoint.x  = i;
+                possibleKeyPoint.keyPoint.y  = j;
+                possibleKeyPoints.append(possibleKeyPoint);
+            }
+        }
+    }
+
+    Mat contourImg(rMidFinal.rows, rMidFinal.cols, CV_8UC1, Scalar(0,0,0));
+    Point p;
+    for (int i = 0; i < possibleKeyPoints.size(); ++i) {
+        p = possibleKeyPoints.at(i).keyPoint;
+        contourImg.at<uchar>(p.y, p.x) = 255;
+    }
+    Mat _img;
+    double otsu_thresh_val = cv::threshold(
+                contourImg, _img, 0, 255, CV_THRESH_BINARY | CV_THRESH_OTSU
+                );
+
+    Canny(contourImg, contourImg, otsu_thresh_val*0.5, otsu_thresh_val, 3, true);
+
+    vector<vector<Point> > contours;
+    vector<Vec4i> hierarchy;
+    findContours( contourImg, contours, hierarchy, CV_RETR_TREE, CV_CHAIN_APPROX_SIMPLE, Point(0, 0) );
+    for( int i = 0; i< contours.size(); i++ )
+    {
+        drawContours( contourImg, contours, i, Scalar(255,255,255), 1, 8, hierarchy, 1, Point() );
+    }
+
+    double luminanceMean = 0.0;
+    double pseudoHueMean = 0.0;
+    for (int i = 0; i < mouthImg.cols/2; ++i) {
+        for (int j = 0; j < mouthImg.rows; ++j) {
+            luminanceMean += luminancePxl(mouthImg, i, j);
+            pseudoHueMean += pseudoHuePxl(mouthImg, i, j);
+        }
+    }
+    luminanceMean /= (mouthImg.cols/2*mouthImg.rows);
+    pseudoHueMean /= (mouthImg.cols/2*mouthImg.rows);
+
+    QList<PossibleKeyPoint> pKPoints;
+    PossibleKeyPoint pKPoint;
+
+    for (int i = mouthImg.cols/2-(mouthImg.cols/2*0.4); i > 0; --i) {
+        for (int j = mouthImg.rows; j > 0; --j) {
+            if(contourImg.at<uchar>(j,i) == 255
+                    && pseudoHuePxl(mouthImg, i, j) > pseudoHueMean && luminancePxl(mouthImg, i, j) < luminanceMean){
+                pKPoint.keyPoint.x = i;
+                pKPoint.keyPoint.y = j;
+                pKPoints.append(pKPoint);
+                break;
+            }
+        }
+    }
+
+
+    keyPoint1.x = 1000;
+    for (int i = 0; i < pKPoints.size(); ++i) {
+        int diffY = 0;
+        if(i > 0){
+            diffY = abs(pKPoints.at(i).keyPoint.y - pKPoints.at(i-1).keyPoint.y);
+            //ROS_INFO("diff: %d", abs(pKPoints.at(i).keyPoint.y - pKPoints.at(i-1).keyPoint.y));
+        }
+
+        if(diffY > 3){
+            break;
+        }
+
+        if(keyPoint1.x > pKPoints.at(i).keyPoint.x){
+            keyPoint1.x = pKPoints.at(i).keyPoint.x;
+            keyPoint1.y = pKPoints.at(i).keyPoint.y;
+        }
+        //circle(rMidFinal, pKPoints.at(i).keyPoint, 2, Scalar(255,255,255));
+    }
+
+
+    luminanceMean = 0.0;
+    pseudoHueMean = 0.0;
+    for (int i = mouthImg.cols/2; i < mouthImg.cols; ++i) {
+        for (int j = 0; j < mouthImg.rows; ++j) {
+            luminanceMean += luminancePxl(mouthImg, i, j);
+            pseudoHueMean += pseudoHuePxl(mouthImg, i, j);
+        }
+    }
+    luminanceMean /= (mouthImg.cols/2*mouthImg.rows);
+    pseudoHueMean /= (mouthImg.cols/2*mouthImg.rows);
+
+    pKPoints.clear();
+
+    for (int i = mouthImg.cols/2+(mouthImg.cols/2*0.2); i < mouthImg.cols; ++i) {
+        for (int j = mouthImg.rows; j > 0; --j) {
+            if(contourImg.at<uchar>(j,i) == 255
+                    && pseudoHuePxl(mouthImg, i, j) > pseudoHueMean  && luminancePxl(mouthImg, i, j) < luminanceMean){
+                pKPoint.keyPoint.x = i;
+                pKPoint.keyPoint.y = j;
+                pKPoints.append(pKPoint);
+                break;
+            }
+        }
+    }
+
+
+    keyPoint5.x = 0;
+    for (int i = 0; i < pKPoints.size(); ++i) {
+        int diffY = 0;
+        if(i > 0){
+            diffY = abs(pKPoints.at(i).keyPoint.y - pKPoints.at(i-1).keyPoint.y);
+            //ROS_INFO("diff: %d", abs(pKPoints.at(i).keyPoint.y - pKPoints.at(i-1).keyPoint.y));
+        }
+
+        if(diffY > 3){
+            break;
+        }
+
+        if(keyPoint5.x < pKPoints.at(i).keyPoint.x){
+            keyPoint5.x = pKPoints.at(i).keyPoint.x;
+            keyPoint5.y = pKPoints.at(i).keyPoint.y;
+        }
+        //circle(rMidFinal, pKPoints.at(i).keyPoint, 2, Scalar(255,255,255));
+    }
 }
 
 void LipRec::extractCupidsBowKeyPoints(Mat& rTopFinal, Point& keyPoint2, Point& keyPoint3, Point& keyPoint4, Point& leftPointHorizontalLine, int thresholdDifferenceToAvg, int totalLineCheck)
@@ -1160,6 +1233,16 @@ void LipRec::clickedContinueVideo()
     this->loadUtterance = false;
 
     this->changeUseCam();
+}
+
+void LipRec::toggleKpLines(bool checked)
+{
+    drawKeyPointLines = checked;
+}
+
+void LipRec::toggleSupportLines(bool checked)
+{
+    drawSupportLines = checked;
 }
 
 void LipRec::changeUseCam()

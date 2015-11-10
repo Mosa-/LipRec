@@ -113,6 +113,9 @@ private:
     bool loadUtterance;
     bool useCam;
 
+    bool drawKeyPointLines;
+
+    bool drawSupportLines;
 
     ImageProcessing imageProcessing;
     Swt swt;
@@ -143,6 +146,7 @@ private:
     double pseudoHuePxl(Mat img, int x, int y);
     int luminancePxl(Mat img, int x, int y);
 
+    void extractMouthCornerKeyPoints(Mat& rMidFinal, Mat &mouthImg, Point& keyPoint1, Point& keyPoint5, int thresholdDifferenceToAvg, int totalLineCheck);
     void extractCupidsBowKeyPoints(Mat &rTopFinal, Point& keyPoint2, Point &keyPoint3, Point &keyPoint4, Point &leftPointHorizontalLine, int thresholdDifferenceToAvg, int totalLineCheck);
     void extractLowerLipKeyPoint(Mat& rLowFinal, Point& keyPoint6, int kp2X, int kp4X, Point &leftPointHorizontalLine, int thresholdDifferenceToAvg, int totalLineCheck);
 
@@ -160,6 +164,8 @@ private slots:
     void mouthROItimeout();
     void clickedUtteranceDiffPlot();
     void clickedContinueVideo();
+    void toggleKpLines(bool checked);
+    void toggleSupportLines(bool checked);
 
 
 
