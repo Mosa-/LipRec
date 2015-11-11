@@ -68,17 +68,21 @@ qt4_wrap_ui(rqt_liprec_UIS_H ${rqt_liprec_UIS})
 include_directories(${rqt_liprec_INCLUDE_DIRECTORIES} ${catkin_INCLUDE_DIRS} ${OpenCV_INCLUDE_DIRS})
 
 
+
 add_library(swt src/rqt_liprec/Swt.cpp)
 target_link_libraries(swt ${catkin_LIBRARIES} ${OpenCV_LIBRARIES} ${QT_QTCORE_LIBRARY} ${QT_QTGUI_LIBRARY})
 
 add_library(imageProcessing src/rqt_liprec/ImageProcessing.cpp)
 target_link_libraries(imageProcessing ${catkin_LIBRARIES} ${OpenCV_LIBRARIES} ${QT_QTCORE_LIBRARY} ${QT_QTGUI_LIBRARY})
 
+add_library(keyPointsDeliverer src/rqt_liprec/KeyPointsDeliverer.cpp)
+target_link_libraries(keyPointsDeliverer ${catkin_LIBRARIES} ${OpenCV_LIBRARIES} ${QT_QTCORE_LIBRARY} ${QT_QTGUI_LIBRARY} imageProcessing)
+
 add_library(zernikeMoments src/rqt_liprec/ZernikeMoments.cpp)
 target_link_libraries(zernikeMoments ${catkin_LIBRARIES} ${OpenCV_LIBRARIES} ${QT_QTCORE_LIBRARY} ${QT_QTGUI_LIBRARY})
 
 add_library(${PROJECT_NAME} ${rqt_liprec_SRCS} ${rqt_liprec_MOCS} ${rqt_liprec_UIS_H})
-target_link_libraries(${PROJECT_NAME} ${OpenCV_LIBRARIES} ${catkin_LIBRARIES} ${QT_QTCORE_LIBRARY} ${QT_QTGUI_LIBRARY} imageProcessing swt zernikeMoments)
+target_link_libraries(${PROJECT_NAME} ${OpenCV_LIBRARIES} ${catkin_LIBRARIES} ${QT_QTCORE_LIBRARY} ${QT_QTGUI_LIBRARY} imageProcessing keyPointsDeliverer swt zernikeMoments)
 
 find_package(class_loader)
 class_loader_hide_library_symbols(${PROJECT_NAME})

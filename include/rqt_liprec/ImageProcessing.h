@@ -40,6 +40,14 @@ public:
 	void applyHistogramForLightCorrectionAHE(Mat& mat, int clipLimit, Size size);
 	void applyBlur(Mat& mat, int sbMask, BlurType bt);
 
+    void applyLipsSegmentationSaturation(Mat &mouthImg, int saturationValue);
+    Mat calcColorHistogramEqualization(Mat &img);
+
+    double pseudoHuePxl(Mat img, int x, int y);
+    int luminancePxl(Mat img, int x, int y);
+
+
+
     int generatePixelDifference(Mat& currentFrame, Mat& lastFrame);
 	Mat createImageAbsDiff(Mat& currentFrame, Mat& lastFrame);
 

@@ -38,6 +38,7 @@
 #include <time.h>
 #include <QtAlgorithms>
 
+#include "KeyPointsDeliverer.h"
 #include "ImageProcessing.h"
 #include "Swt.h"
 
@@ -66,11 +67,6 @@ public:
     void imageCallback(const sensor_msgs::ImageConstPtr& msg);
     void faceROICallback(const sensor_msgs::RegionOfInterestConstPtr& msg);
     void mouthROICallback(const sensor_msgs::RegionOfInterestConstPtr& msg);
-
-    struct PossibleKeyPoint{
-        int differenceToAvg;
-        Point keyPoint;
-    };
 
 private:
     Ui_Form ui_;
@@ -113,10 +109,11 @@ private:
     bool loadUtterance;
     bool useCam;
 
-    bool drawKeyPointLines;
+    int drawKeyPointState;
 
     bool drawSupportLines;
 
+    KeyPointsDeliverer keyPointsDeliverer;
     ImageProcessing imageProcessing;
     Swt swt;
 
@@ -141,16 +138,6 @@ private:
 
     void setupModel();
 
-    void applyLipsSegmentationSaturation(Mat &mouthImg);
-    Mat calcColorHistogramEqualization(Mat &img);
-    double pseudoHuePxl(Mat img, int x, int y);
-    int luminancePxl(Mat img, int x, int y);
-
-    void extractMouthCornerKeyPoints(Mat& rMidFinal, Mat &mouthImg, Point& keyPoint1, Point& keyPoint5, int thresholdDifferenceToAvg, int totalLineCheck);
-    void extractCupidsBowKeyPoints(Mat &rTopFinal, Point& keyPoint2, Point &keyPoint3, Point &keyPoint4, Point &leftPointHorizontalLine, int thresholdDifferenceToAvg, int totalLineCheck);
-    void extractLowerLipKeyPoint(Mat& rLowFinal, Point& keyPoint6, int kp2X, int kp4X, Point &leftPointHorizontalLine, int thresholdDifferenceToAvg, int totalLineCheck);
-
-    //void extractKeyPoint2And3And4(Mat &rTopFinal, Point &keyPoint2, Point &keyPoint3, Point &keyPoint4, Point& leftPointHorizontalLine, int thresholdDiffToAvg);
 public slots:
     void getCamPic(cv::Mat img);
 
@@ -164,7 +151,7 @@ private slots:
     void mouthROItimeout();
     void clickedUtteranceDiffPlot();
     void clickedContinueVideo();
-    void toggleKpLines(bool checked);
+    void toggleKpLines();
     void toggleSupportLines(bool checked);
 
 

@@ -48,7 +48,127 @@ void ImageProcessing::applyBlur(Mat& mat, int sbMask, BlurType bt){
         medianBlur(mat, mat, sbMaskValue);
     }else if(bt == GAUSSIAN){
         GaussianBlur(mat, mat, Size(sbMaskValue,sbMaskValue),0,0);
-	}
+    }
+}
+
+void ImageProcessing::applyLipsSegmentationSaturation(Mat &mouthImg, int saturationValue)
+{
+    double saturation = 0.0;
+    double r,g,b;
+    int saturationHistogram[100] = {};
+    int s;
+    int noPixelImg = 0;
+
+    for (int y = 0; y < mouthImg.rows; ++y) {
+        for (int x = 0; x < mouthImg.cols; ++x) {
+            //ROS_INFO("%d %d: B=%d G=%d R=%d", y, x, mouthImg.at<cv::Vec3b>(Point(x, y))[0], mouthImg.at<cv::Vec3b>(Point(x, y))[1], mouthImg.at<cv::Vec3b>(Point(x, y))[2]);
+            b = mouthImg.at<cv::Vec3b>(Point(x, y))[B];
+            g = mouthImg.at<cv::Vec3b>(Point(x, y))[G];
+            r = mouthImg.at<cv::Vec3b>(Point(x, y))[R];
+            saturation = fabs(2 * atan((r-g)/r)/M_PI);
+            s = saturation * 100;
+            if(s > 0){
+                saturationHistogram[s-1]++;
+            }else{
+                saturationHistogram[s]++;
+            }
+            noPixelImg++;
+            //ROS_INFO("saturation: %f b: %.0f g: %.0f r: %.0f", saturation, b, g, r);
+        }
+    }
+
+    int amountFacePixel = noPixelImg - (noPixelImg*saturationValue/100);
+    int thresholdIndex = 0;
+
+
+    for (int i = 0; i < 100; ++i) {
+        if(saturationHistogram[i] > 0){
+            //ROS_INFO("oneThirdMouthPxl %d, saturationHistogram[i] %d i %d", oneThirdMouthPxl, saturationHistogram[i], i);
+            amountFacePixel -= saturationHistogram[i];
+        }
+
+        if(amountFacePixel <= 0){
+            thresholdIndex = i;
+            break;
+        }
+    }
+
+    for (int y = 0; y < mouthImg.rows; ++y) {
+        for (int x = 0; x < mouthImg.cols; ++x) {
+            b = mouthImg.at<cv::Vec3b>(Point(x, y))[B];
+            g = mouthImg.at<cv::Vec3b>(Point(x, y))[G];
+            r = mouthImg.at<cv::Vec3b>(Point(x, y))[R];
+            saturation = fabs(2 * atan((r-g)/r)/M_PI);
+            s = saturation * 100;
+            int newS = 0;
+
+            if(s > 0){
+                newS = s-1;
+            }else{
+                newS = s;
+            }
+
+
+            if(newS >= thresholdIndex){
+                mouthImg.at<cv::Vec3b>(Point(x, y))[B] = 255;
+                mouthImg.at<cv::Vec3b>(Point(x, y))[G] = 255;
+                mouthImg.at<cv::Vec3b>(Point(x, y))[R] = 255;
+            }
+        }
+    }
+
+
+    //        int noPixel = 0;
+    //        for (int i = 0; i < 100; ++i) {
+    //            ROS_INFO("saturation: %d, amount: %d", i, saturationHistogram[i]);
+    //            noPixel += saturationHistogram[i];
+    //        }
+    //        ROS_INFO("saturationHistogram[i] noPixel: %d <> noPixelImg: %d", noPixel, noPixelImg);
+}
+
+Mat ImageProcessing::calcColorHistogramEqualization(Mat &img)
+{
+    vector<Mat> channels;
+    Mat imgHistEqualized;
+
+    cvtColor(img, imgHistEqualized, CV_BGR2YCrCb); //change the color image from BGR to YCrCb format
+
+    split(imgHistEqualized, channels);
+
+    equalizeHist(channels[0], channels[0]);
+
+    merge(channels, imgHistEqualized);
+
+    cvtColor(imgHistEqualized, imgHistEqualized, CV_YCrCb2BGR);
+
+    return imgHistEqualized;
+}
+
+double ImageProcessing::pseudoHuePxl(Mat img, int x, int y)
+{
+    double r,g,b;
+    b = img.at<cv::Vec3b>(Point(x, y))[B];
+    g = img.at<cv::Vec3b>(Point(x, y))[G];
+    r = img.at<cv::Vec3b>(Point(x, y))[R];
+
+    if(g+r == 0){
+        return 0;
+    }
+
+    return (r/(g+r));
+}
+
+int ImageProcessing::luminancePxl(Mat img, int x, int y)
+{
+    double r,g,b;
+    b = img.at<cv::Vec3b>(Point(x, y))[B];
+    g = img.at<cv::Vec3b>(Point(x, y))[G];
+    r = img.at<cv::Vec3b>(Point(x, y))[R];
+
+    /// http://stackoverflow.com/questions/596216/formula-to-determine-brightness-of-rgb-color
+    return (int) (0.2126*r + 0.7152*g + 0.0722*b);
+    // return (int) (0.299*r + 0.587*g + 0.114*b);
+    // return (int) (0.33*r + 0.5*g + 0.16*b);
 }
 
 int ImageProcessing::generatePixelDifference(Mat& currentFrame, Mat& lastFrame){
