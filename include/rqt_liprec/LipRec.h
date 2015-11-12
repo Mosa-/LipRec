@@ -113,6 +113,8 @@ private:
 
     bool drawSupportLines;
 
+    bool printFeatures;
+
     KeyPointsDeliverer keyPointsDeliverer;
     ImageProcessing imageProcessing;
     Swt swt;
@@ -153,6 +155,7 @@ private slots:
     void clickedContinueVideo();
     void toggleKpLines();
     void toggleSupportLines(bool checked);
+    void clickedPrintFeatures();
 
 
 

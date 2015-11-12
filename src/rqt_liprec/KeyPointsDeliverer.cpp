@@ -144,6 +144,7 @@ void KeyPointsDeliverer::extractMouthCornerKeyPoints(Mat &mouthImg, int threshol
         }
     }
 
+
     keyPoint1.x = 1000;
     for (int i = 0; i < pKPoints.size(); ++i) {
         int diffY = 0;
@@ -207,6 +208,7 @@ void KeyPointsDeliverer::extractMouthCornerKeyPoints(Mat &mouthImg, int threshol
 //        }
 //    }
 
+
     keyPoint5.x = 0;
     for (int i = 0; i < pKPoints.size(); ++i) {
         int diffY = 0;
@@ -226,6 +228,7 @@ void KeyPointsDeliverer::extractMouthCornerKeyPoints(Mat &mouthImg, int threshol
         }
         //circle(rMidFinal, pKPoints.at(i).keyPoint, 2, Scalar(255,255,255));
     }
+
 }
 
 void KeyPointsDeliverer::extractCupidsBowKeyPoints(int thresholdDifferenceToAvg, int totalLineCheck)
@@ -277,6 +280,7 @@ void KeyPointsDeliverer::extractCupidsBowKeyPoints(int thresholdDifferenceToAvg,
         drawContours( contourImg, contours, i, Scalar(255,255,255), 1, 8, hierarchy, 1, Point() );
     }
 
+
     keyPoint2.y = 1000;
     for (int i = 0; i < rTopFinal.rows; ++i) {
         for (int j = rTopFinal.cols/2; j > 0; --j) {
@@ -289,6 +293,7 @@ void KeyPointsDeliverer::extractCupidsBowKeyPoints(int thresholdDifferenceToAvg,
         }
     }
 
+
     keyPoint4.y = 1000;
     for (int i = 0; i < rTopFinal.rows; ++i) {
         for (int j = rTopFinal.cols/2; j < rTopFinal.cols; ++j) {
@@ -300,6 +305,7 @@ void KeyPointsDeliverer::extractCupidsBowKeyPoints(int thresholdDifferenceToAvg,
             }
         }
     }
+
 
     keyPoint3.y = 0;
     int kp2kp3Width = keyPoint4.x  - keyPoint2.x;
@@ -371,7 +377,7 @@ void KeyPointsDeliverer::extractLowerLipKeyPoint(int thresholdDifferenceToAvg, i
     kp2kp3Width = kp2kp3Width/2;
 
     for (int i = keyPoint2.x; i < keyPoint4.x; ++i) {
-        for (int j = rLowFinal.rows; j > keyPoint1.y; --j) {
+        for (int j = rLowFinal.rows-(rLowFinal.rows*0.2); j > keyPoint1.y; --j) {
             if(contourImg.at<uchar>(j, i) == 255){
                 if(keyPoint6.y <= j && i <= (keyPoint2.x + kp2kp3Width)){
                     keyPoint6.y = j;

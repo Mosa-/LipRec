@@ -70,6 +70,8 @@ void LipRec::initPlugin(qt_gui_cpp::PluginContext& context)
     QObject::connect(ui_.pbUPDP, SIGNAL(clicked()), this, SLOT(clickedUtteranceDiffPlot()));
     QObject::connect(ui_.pbContinueVideo, SIGNAL(clicked()), this, SLOT(clickedContinueVideo()));
 
+    QObject::connect(ui_.pbPrintFeatures, SIGNAL(clicked()), this, SLOT(clickedPrintFeatures()));
+
     QObject::connect(ui_.pbToggleKpLines, SIGNAL(clicked()), this, SLOT(toggleKpLines()));
 
     drawKeyPointState = 0;
@@ -152,6 +154,7 @@ void LipRec::initPlugin(qt_gui_cpp::PluginContext& context)
     loadUtterance = false;
     initVideoWriter = false;
     useCam = true;
+    printFeatures = false;
 
     QObject::connect(this, SIGNAL(updateCam(cv::Mat)), this, SLOT(getCamPic(cv::Mat)));
 }
@@ -279,29 +282,30 @@ void LipRec::processImage(Mat img)
 
     imageProcessing.applyBlur(mouthImg, ui_.sbMask->value(), blur);
 
+    Mat showMouthImg;
+
     Mat rTopFinal(mouthImg.rows, mouthImg.cols, CV_8UC1);
     Mat rMidFinal(mouthImg.rows, mouthImg.cols, CV_8UC1);
     Mat rLowFinal(mouthImg.rows, mouthImg.cols, CV_8UC1);
 
     Point keyPoint1, keyPoint2, keyPoint3, keyPoint4, keyPoint5, keyPoint6;
 
+    showMouthImg = mouthImg;
 
     if(!useMonoImage){
         if(ui_.cbLipSeg->isChecked()){
             if(ui_.rbSaturation->isChecked()){
                 imageProcessing.applyLipsSegmentationSaturation(mouthImg, ui_.sbSaturation->value());
-                this->showLips(mouthImg);
+                showMouthImg = mouthImg;
             }else if(ui_.rbPseudoHue->isChecked()){
                 keyPointsDeliverer.calcGradientImages(mouthImg);
                 rTopFinal = keyPointsDeliverer.getRTop();
                 rMidFinal = keyPointsDeliverer.getRMid();
                 rLowFinal = keyPointsDeliverer.getRLow();
 
-                cv::Point rightLinePoint(mouthROI.width, mouthROI.height/2);
-
-                cv::Point upLinePoint(mouthROI.width/2, 0);
-                cv::Point bottomLinePoint(mouthROI.width/2, mouthROI.height);
-
+                Point rightLinePoint(mouthROI.width, mouthROI.height/2);
+                Point upLinePoint(mouthROI.width/2, 0);
+                Point bottomLinePoint(mouthROI.width/2, mouthROI.height);
 
                 keyPointsDeliverer.extractMouthCornerKeyPoints(mouthImg, ui_.sbTHMouthCorners->value(), ui_.sbLLMouthCorners->value());
                 keyPointsDeliverer.extractCupidsBowKeyPoints(ui_.sbTHCupidsBow->value(), ui_.sbLLCupidsBow->value());
@@ -314,6 +318,36 @@ void LipRec::processImage(Mat img)
                 keyPoint5 = keyPointsDeliverer.getKeyPoint5();
                 keyPoint6 = keyPointsDeliverer.getKeyPoint6();
 
+                double mouthWidth = norm(keyPoint5-keyPoint1);
+                double mouthHeight = norm(keyPoint6-keyPoint3);
+                double wh = mouthWidth / mouthHeight;
+                double hw = mouthHeight / mouthWidth;
+
+                double distanceKp12 = norm(keyPoint1-keyPoint2);
+                double distanceKp23 = norm(keyPoint2-keyPoint3);
+                double distanceKp34 = norm(keyPoint3-keyPoint4);
+                double distanceKp45 = norm(keyPoint4-keyPoint5);
+                double distanceKp56 = norm(keyPoint5-keyPoint6);
+                double distanceKp61 = norm(keyPoint6-keyPoint1);
+
+                double distanceKp13 = norm(keyPoint1-keyPoint3);
+                double distanceKp35 = norm(keyPoint3-keyPoint5);
+                double distanceKp36 = mouthHeight;
+
+                // half perimeter of Triangle (hpot)
+                double hpotA = (distanceKp12 + distanceKp23 + distanceKp13)/2;
+                double hpotB = (distanceKp34 + distanceKp45 + distanceKp35)/2;
+                double hpotC = (distanceKp13 + distanceKp36 + distanceKp61)/2;
+                double hpotD = (distanceKp36 + distanceKp35 + distanceKp56)/2;
+
+                double areaOfTriangleA = sqrt(hpotA*(hpotA-distanceKp12)*(hpotA-distanceKp23)*(hpotA-distanceKp13));
+                double areaOfTriangleB = sqrt(hpotB*(hpotB-distanceKp34)*(hpotB-distanceKp45)*(hpotB-distanceKp35));
+                double areaOfTriangleC = sqrt(hpotC*(hpotC-distanceKp13)*(hpotC-distanceKp36)*(hpotC-distanceKp61));
+                double areaOfTriangleD = sqrt(hpotD*(hpotD-distanceKp36)*(hpotD-distanceKp35)*(hpotD-distanceKp56));
+
+                if(printFeatures){
+                    ROS_INFO("MW:%f MH:%f W/H:%f H/W:%f Area:%f", mouthWidth, mouthHeight, wh, hw, areaOfTriangleA + areaOfTriangleB + areaOfTriangleC + areaOfTriangleD);
+                }
 
                 if(ui_.rbLipsNone->isChecked()){
                     if(drawSupportLines){
@@ -348,7 +382,6 @@ void LipRec::processImage(Mat img)
                                   8 );
                     }
 
-
                     circle(mouthImg, keyPoint6, 1, Scalar(255,255,255));
 
                     circle(mouthImg, keyPoint1, 1, Scalar(255,255,255));
@@ -358,7 +391,7 @@ void LipRec::processImage(Mat img)
                     circle(mouthImg, keyPoint4, 1, Scalar(255,255,255));
                     circle(mouthImg, keyPoint3, 1, Scalar(255,255,255));
 
-                    this->showLips(mouthImg);
+                    showMouthImg = mouthImg;
                 }else if(ui_.rbRLow->isChecked()){
 
                     circle(rLowFinal, keyPoint6, 1, Scalar(255,255,255));
@@ -367,7 +400,7 @@ void LipRec::processImage(Mat img)
                         line(rLowFinal, upLinePoint, bottomLinePoint, Scalar(255,255,255));
                         line(rLowFinal, keyPoint1, rightLinePoint, Scalar(255,255,255));
                     }
-                    this->showLips(rLowFinal, true);
+                    showMouthImg = rLowFinal;
                 }else if(ui_.rbRMid->isChecked()){
 
                     circle(rMidFinal, keyPoint1, 1, Scalar(255,255,255));
@@ -377,7 +410,7 @@ void LipRec::processImage(Mat img)
                         line(rMidFinal, upLinePoint, bottomLinePoint, Scalar(255,255,255));
                         line(rMidFinal, keyPoint1, rightLinePoint, Scalar(255,255,255));
                     }
-                    this->showLips(rMidFinal, true);
+                    showMouthImg = rMidFinal;
                 }else{
                     circle(rTopFinal, keyPoint2, 1, Scalar(255,255,255));
                     circle(rTopFinal, keyPoint4, 1, Scalar(255,255,255));
@@ -388,19 +421,13 @@ void LipRec::processImage(Mat img)
                         line(rTopFinal, keyPoint1, rightLinePoint, Scalar(255,255,255));
                     }
 
-                    this->showLips(rTopFinal, true);
+                    showMouthImg = rTopFinal;
                 }
-            }else{
-                this->showLips(mouthImg);
             }
-        }else{
-            this->showLips(mouthImg);
         }
-
-    }else{
-        this->showLips(mouthImg, true);
     }
 
+    this->showLips(showMouthImg);
 
 
     //    if(mouthImg.cols != 0){
@@ -509,8 +536,14 @@ void LipRec::drawFaceMouthROI(Mat& img){
 
 void LipRec::showLips(Mat& mouthImg, bool useMonoImage){
     QPixmap pixMap;
+    bool monoImg = false;
     if(ui_.cbLips->isChecked()){
-        pixMap = imageProcessing.getPixmap(mouthImg, useMonoImage);
+
+        if(mouthImg.type() == CV_8UC1){
+            monoImg = true;
+        }
+        pixMap = imageProcessing.getPixmap(mouthImg, monoImg);
+
         pixMap = pixMap.scaled(ui_.lbl_lips->maximumWidth(), ui_.lbl_lips->maximumHeight(), Qt::KeepAspectRatio, Qt::SmoothTransformation);
         ui_.lbl_lips->setPixmap(pixMap);
     }else{
@@ -836,6 +869,16 @@ void LipRec::toggleSupportLines(bool checked)
     ui_.pbToggleSupportLines->setIconSize(pixmap.rect().size()/2.5);
     ui_.pbToggleSupportLines->setMaximumSize(pixmap.rect().size()/2.5);
 
+}
+
+void LipRec::clickedPrintFeatures()
+{
+    if(printFeatures){
+        ROS_INFO(">>>>>>>>>>>End");
+    }else{
+        ROS_INFO(">>>>>>>>>>>Start");
+    }
+    printFeatures = !printFeatures;
 }
 
 void LipRec::changeUseCam()
