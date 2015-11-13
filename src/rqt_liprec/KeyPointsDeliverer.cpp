@@ -39,7 +39,8 @@ void KeyPointsDeliverer::calcGradientImages(Mat& mouthImg)
     rTopTemp.convertTo(rTopFinal, CV_8UC1, 255.0/(maxVal - minVal), -minVal * 255.0/(maxVal - minVal));
 
     Mat rMidTemp;
-    Sobel(rMid, rMidTemp, CV_32FC1, 0, 1);
+    //Sobel(rMid, rMidTemp, CV_32FC1, 0, 1);
+    Scharr(rMid, rMidTemp, CV_32FC1, 0, 1);
     minMaxLoc(rMidTemp, &minVal, &maxVal);
     rMidTemp.convertTo(rMidFinal, CV_8UC1, 255.0/(maxVal - minVal), -minVal * 255.0/(maxVal - minVal));
 
@@ -218,7 +219,7 @@ void KeyPointsDeliverer::extractMouthCornerKeyPoints(Mat &mouthImg, int threshol
             //ROS_INFO("diff: %d", abs(pKPoints.at(i).keyPoint.y - pKPoints.at(i-1).keyPoint.y));
         }
 
-        if(diffY > 3){
+        if(diffY > 4){
             break;
         }
 

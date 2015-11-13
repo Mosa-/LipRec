@@ -284,6 +284,8 @@ void LipRec::processImage(Mat img)
 
     Mat showMouthImg;
 
+    Mat mouthFeatures(mouthImg.rows, mouthImg.cols, CV_8UC3, Scalar(0,0,0));
+
     Mat rTopFinal(mouthImg.rows, mouthImg.cols, CV_8UC1);
     Mat rMidFinal(mouthImg.rows, mouthImg.cols, CV_8UC1);
     Mat rLowFinal(mouthImg.rows, mouthImg.cols, CV_8UC1);
@@ -345,8 +347,11 @@ void LipRec::processImage(Mat img)
                 double areaOfTriangleC = sqrt(hpotC*(hpotC-distanceKp13)*(hpotC-distanceKp36)*(hpotC-distanceKp61));
                 double areaOfTriangleD = sqrt(hpotD*(hpotD-distanceKp36)*(hpotD-distanceKp35)*(hpotD-distanceKp56));
 
+                this->drawMouthFeatures(mouthFeatures, keyPoint1, keyPoint2, keyPoint3, keyPoint4, keyPoint5, keyPoint6);
+
                 if(printFeatures){
-                    ROS_INFO("MW:%f MH:%f W/H:%f H/W:%f Area:%f", mouthWidth, mouthHeight, wh, hw, areaOfTriangleA + areaOfTriangleB + areaOfTriangleC + areaOfTriangleD);
+                    //ROS_INFO("MW:%f MH:%f W/H:%f H/W:%f Area:%f", mouthWidth, mouthHeight, wh, hw, areaOfTriangleA + areaOfTriangleB + areaOfTriangleC + areaOfTriangleD);
+                    ROS_INFO("H/W:%f Area:%f", hw, areaOfTriangleA + areaOfTriangleB + areaOfTriangleC + areaOfTriangleD);
                 }
 
                 if(ui_.rbLipsNone->isChecked()){
@@ -792,6 +797,114 @@ void LipRec::averageSignalSmoothing(QList<int>& signalsSmoothing){
     for (int i = 0; i < tmpSignalsSmoothing.size(); ++i) {
         if(i > 0 && i < tmpSignalsSmoothing.size()-1){
             signalsSmoothing[i] = (tmpSignalsSmoothing[i-1] + tmpSignalsSmoothing[i] + tmpSignalsSmoothing[i+1]) / 3;
+        }
+    }
+}
+
+void LipRec::drawMouthFeatures(Mat &mouthFeatures, Point keyPoint1, Point keyPoint2, Point keyPoint3, Point keyPoint4, Point keyPoint5, Point keyPoint6)
+{
+    circle(mouthFeatures, keyPoint6, 1, Scalar(255,255,255));
+
+    circle(mouthFeatures, keyPoint1, 1, Scalar(255,255,255));
+    circle(mouthFeatures, keyPoint5, 1, Scalar(255,255,255));
+
+    circle(mouthFeatures, keyPoint2, 1, Scalar(255,255,255));
+    circle(mouthFeatures, keyPoint4, 1, Scalar(255,255,255));
+    circle(mouthFeatures, keyPoint3, 1, Scalar(255,255,255));
+
+    if(drawKeyPointState == 1){
+        line(mouthFeatures, keyPoint1, keyPoint2, Scalar(255,255,255));
+        line(mouthFeatures, keyPoint2, keyPoint3, Scalar(255,255,255));
+        line(mouthFeatures, keyPoint3, keyPoint4, Scalar(255,255,255));
+        line(mouthFeatures, keyPoint4, keyPoint5, Scalar(255,255,255));
+        line(mouthFeatures, keyPoint5, keyPoint6, Scalar(255,255,255));
+        line(mouthFeatures, keyPoint6, keyPoint1, Scalar(255,255,255));
+    }else if(drawKeyPointState == 2){
+        Point points[1][3];
+        points[0][0] = keyPoint1;
+        points[0][1] = keyPoint2;
+        points[0][2] = keyPoint3;
+
+        const Point* ppt[1] = { points[0] };
+        int npt[] = { 3 };
+
+        fillPoly( mouthFeatures,
+                  ppt,
+                  npt,
+                  1,
+                  Scalar( 255, 0, 0 ),
+                  8 );
+
+        points[0][0] = keyPoint3;
+        points[0][1] = keyPoint4;
+        points[0][2] = keyPoint5;
+
+        ppt[0] = points[0];
+
+        fillPoly( mouthFeatures,
+                  ppt,
+                  npt,
+                  1,
+                  Scalar( 0, 255, 0 ),
+                  8 );
+
+        points[0][0] = keyPoint3;
+        points[0][1] = keyPoint5;
+        points[0][2] = keyPoint6;
+
+        ppt[0] = points[0];
+
+        fillPoly( mouthFeatures,
+                  ppt,
+                  npt,
+                  1,
+                  Scalar( 0, 0, 255 ),
+                  8 );
+
+        points[0][0] = keyPoint1;
+        points[0][1] = keyPoint3;
+        points[0][2] = keyPoint6;
+
+        ppt[0] = points[0];
+
+        fillPoly( mouthFeatures,
+                  ppt,
+                  npt,
+                  1,
+                  Scalar( 0, 255, 255 ),
+                  8 );
+
+        putText(mouthFeatures, "P1", Point(keyPoint1.x-13, keyPoint1.y+3), CV_FONT_HERSHEY_PLAIN, 0.5, Scalar(255,255,255));
+        putText(mouthFeatures, "P2", Point(keyPoint2.x-3, keyPoint2.y-6), CV_FONT_HERSHEY_PLAIN, 0.5, Scalar(255,255,255));
+        putText(mouthFeatures, "P3", Point(keyPoint3.x-3, keyPoint3.y-6), CV_FONT_HERSHEY_PLAIN, 0.5, Scalar(255,255,255));
+        putText(mouthFeatures, "P4", Point(keyPoint4.x-3, keyPoint4.y-6), CV_FONT_HERSHEY_PLAIN, 0.5, Scalar(255,255,255));
+        putText(mouthFeatures, "P5", Point(keyPoint5.x+5, keyPoint5.y+3), CV_FONT_HERSHEY_PLAIN, 0.5, Scalar(255,255,255));
+        putText(mouthFeatures, "P6", Point(keyPoint6.x-3, keyPoint6.y+10), CV_FONT_HERSHEY_PLAIN, 0.5, Scalar(255,255,255));
+
+        Point a(keyPoint1.x+((keyPoint3.x-keyPoint1.x)/2), keyPoint2.y+5);
+        Point b(keyPoint5.x-((keyPoint5.x-keyPoint3.x)/2), keyPoint4.y+5);
+        Point c(keyPoint6.x+((keyPoint5.x-keyPoint6.x)/2)-5, keyPoint3.y+((keyPoint6.y-keyPoint3.y)/2));
+        Point d(keyPoint6.x-((keyPoint6.x - keyPoint1.x)/2), keyPoint3.y+((keyPoint6.y-keyPoint3.y)/2));
+
+        putText(mouthFeatures, "A", a, CV_FONT_HERSHEY_PLAIN, 0.5, Scalar(0,0,0));
+        putText(mouthFeatures, "B", b, CV_FONT_HERSHEY_PLAIN, 0.5, Scalar(0,0,0));
+        putText(mouthFeatures, "C", c, CV_FONT_HERSHEY_PLAIN, 0.5, Scalar(0,0,0));
+        putText(mouthFeatures, "D", d, CV_FONT_HERSHEY_PLAIN, 0.5, Scalar(0,0,0));
+
+        QPixmap pixMap;
+        bool monoImg = false;
+        if(ui_.cbLips->isChecked()){
+
+            if(mouthFeatures.type() == CV_8UC1){
+                monoImg = true;
+            }
+            pixMap = imageProcessing.getPixmap(mouthFeatures, monoImg);
+
+            pixMap = pixMap.scaled(ui_.lbl_MHI->maximumWidth(), ui_.lbl_MHI->maximumHeight(), Qt::KeepAspectRatio, Qt::SmoothTransformation);
+            ui_.lbl_MHI->setPixmap(pixMap);
+        }else{
+            QPixmap empty;
+            ui_.lbl_MHI->setPixmap(empty);
         }
     }
 }

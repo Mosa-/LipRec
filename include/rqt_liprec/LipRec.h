@@ -136,6 +136,8 @@ private:
     void applySignalSmoothing(int graphicView, SignalSmoothingType type);
     void averageSignalSmoothing(QList<int>& signalsSmoothing);
 
+    void drawMouthFeatures(Mat& mouth, Point keyPoint1, Point keyPoint2, Point keyPoint3, Point keyPoint4, Point keyPoint5, Point keyPoint6);
+
     void printMat(Mat& data);
 
     void setupModel();
