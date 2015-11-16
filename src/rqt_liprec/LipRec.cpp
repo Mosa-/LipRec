@@ -886,26 +886,26 @@ void LipRec::drawMouthFeatures(Mat &mouthFeatures, Point keyPoint1, Point keyPoi
         Point c(keyPoint6.x+((keyPoint5.x-keyPoint6.x)/2)-5, keyPoint3.y+((keyPoint6.y-keyPoint3.y)/2));
         Point d(keyPoint6.x-((keyPoint6.x - keyPoint1.x)/2), keyPoint3.y+((keyPoint6.y-keyPoint3.y)/2));
 
-        putText(mouthFeatures, "A", a, CV_FONT_HERSHEY_PLAIN, 0.5, Scalar(0,0,0));
-        putText(mouthFeatures, "B", b, CV_FONT_HERSHEY_PLAIN, 0.5, Scalar(0,0,0));
+        putText(mouthFeatures, "A", a, CV_FONT_HERSHEY_PLAIN, 0.5, Scalar(255,255,255));
+        putText(mouthFeatures, "B", b, CV_FONT_HERSHEY_PLAIN, 0.5, Scalar(255,255,255));
         putText(mouthFeatures, "C", c, CV_FONT_HERSHEY_PLAIN, 0.5, Scalar(0,0,0));
         putText(mouthFeatures, "D", d, CV_FONT_HERSHEY_PLAIN, 0.5, Scalar(0,0,0));
+    }
 
-        QPixmap pixMap;
-        bool monoImg = false;
-        if(ui_.cbLips->isChecked()){
+    QPixmap pixMap;
+    bool monoImg = false;
+    if(ui_.cbLips->isChecked()){
 
-            if(mouthFeatures.type() == CV_8UC1){
-                monoImg = true;
-            }
-            pixMap = imageProcessing.getPixmap(mouthFeatures, monoImg);
-
-            pixMap = pixMap.scaled(ui_.lbl_MHI->maximumWidth(), ui_.lbl_MHI->maximumHeight(), Qt::KeepAspectRatio, Qt::SmoothTransformation);
-            ui_.lbl_MHI->setPixmap(pixMap);
-        }else{
-            QPixmap empty;
-            ui_.lbl_MHI->setPixmap(empty);
+        if(mouthFeatures.type() == CV_8UC1){
+            monoImg = true;
         }
+        pixMap = imageProcessing.getPixmap(mouthFeatures, monoImg);
+
+        pixMap = pixMap.scaled(ui_.lbl_MHI->maximumWidth(), ui_.lbl_MHI->maximumHeight(), Qt::KeepAspectRatio, Qt::SmoothTransformation);
+        ui_.lbl_MHI->setPixmap(pixMap);
+    }else{
+        QPixmap empty;
+        ui_.lbl_MHI->setPixmap(empty);
     }
 }
 
