@@ -40,6 +40,7 @@
 
 #include "KeyPointsDeliverer.h"
 #include "ImageProcessing.h"
+#include "Dtw.h"
 #include "Swt.h"
 
 using namespace std_msgs;
@@ -118,6 +119,7 @@ private:
     KeyPointsDeliverer keyPointsDeliverer;
     ImageProcessing imageProcessing;
     Swt swt;
+    Dtw dtw;
 
     void processImage(Mat img);
 

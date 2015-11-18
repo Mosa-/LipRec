@@ -246,6 +246,102 @@ void LipRec::processImage(Mat img)
         imageProcessing.closeVideoWriter();
     }
 
+    ///TEST DTW
+    QList<double> t1;
+    QList<double> t2;
+
+//    t1 << 0.43 << 0.12 << 0.8 << 0.9 << 0.5;
+//    t2 << 0.334 << 0.23 << 0.53 << 0.82 << 0.3 << 0.11 << 0.4;
+//    t1 << 0.490196 << 0.490196 << 0.490196 << 0.4999 << 0.48068 << 0.501497 << 0.520833 << 0.666667 << 0.773059 << 0.704364 << 0.599408
+//       << 0.565217 << 0.553191 << 0.604036 << 0.617021 << 0.705431 << 0.583207 << 0.608696 << 0.681115 << 0.790484 << 0.860233 << 0.929792
+//       <<0.891566 << 0.894737 << 0.837209 << 0.777778 << 0.738956 << 0.638153 << 0.604036 << 0.559888 << 0.54 << 0.52 << 0.490196
+//       <<0.48 << 0.461453 << 0.48 << 0.479904 << 0.501497 << 0.5003 << 0.4999 << 0.479904;
+
+//    t2 << 0.479904 << 0.48 << 0.490102 << 0.5 << 0.480769 << 0.470588 << 0.470498 << 0.470498 << 0.490494 << 0.587359 << 0.674419 << 0.737886 <<
+//          0.808608 << 0.789844 << 0.766613 << 0.644444 << 0.586403 << 0.608552 << 0.651558 << 0.680235 << 0.651558 << 0.59561 << 0.599852 <<
+//          0.636199 << 0.727085 << 0.837276 << 0.889787 << 0.918349 << 0.823971 << 0.811749 << 0.695488 << 0.637721 << 0.616882 << 0.59561 <<
+//          0.562398 << 0.519584 << 0.4999 << 0.510098 << 0.50978 << 0.50978 << 0.4996 << 0.4996 << 0.5 << 0.479904 << 0.479904 << 0.48 << 0.479904;
+
+    t1 << 881 << 873.5 << 865.5 << 853.5 << 875.5 << 846.5 << 822 << 862.5 << 900 << 918.5 << 840.5 << 844 << 866 << 944.5 << 933 << 817.5 << 927.5 <<
+          882 << 894.5 << 952.5 << 1043.5 << 1035 << 793 << 839 << 1010.5 << 1022 << 1031 << 944 << 920 << 929 << 885.5 << 876 << 856.5 << 823.5 << 846.5 <<
+          823.5 << 831.5 << 824.5 << 847 << 843.5 << 818.5;
+
+    t2 << 830.5 << 826 << 870.5 << 851 << 880 << 852 << 857.5 << 857.5 << 867.5 << 814.5 << 806.5 << 856.5 << 926 << 974.5 << 942 << 865 << 853 << 883.5 <<
+          927.5 << 993 << 934.5 << 906 << 848.5 << 839 << 943.5 << 1034 << 863 << 740.5 << 850 << 934 << 967.5 << 948 << 900.5 << 871 << 855 << 870 << 828.5 <<
+          823.5 << 810 << 810 << 824 << 830 << 831.5 << 824.5 << 819 << 814 << 825;
+
+
+
+
+    dtw.seed(t1, t2);
+
+    Mat dtwMat;
+    Mat dtwMatTemp;
+    QList<Point> warpingPath;
+
+    ROS_INFO("ABS");
+    dtw.calculateDistanceMatrix(Dtw::ABS);
+    //dtw.printDistanceMatrix();
+    dtwMat = dtw.calculateDtwDistanceMatrix();
+    dtwMatTemp = dtwMat;
+    warpingPath = dtw.calculateGreedyWarpingPath();
+
+    //dtw.printDtwDistanceMatric();
+    ROS_INFO("SQUARE");
+    dtw.calculateDistanceMatrix(Dtw::SQUARE);
+    //dtw.printDistanceMatrix();
+    dtw.calculateDtwDistanceMatrix();
+
+
+    //dtw.printDtwDistanceMatric();
+    ROS_INFO("SQUARE2");
+    dtw.calculateDistanceMatrix(Dtw::SQUARE2);
+    //dtw.printDistanceMatrix();
+    dtw.calculateDtwDistanceMatrix();
+
+    //dtw.printDtwDistanceMatric();
+
+    Mat dtwMat2(dtwMat.rows-1, dtwMat.cols-1, CV_64F);
+
+    //dtwMat.convertTo(dtwMat, CV_8U);
+    for (int i = 1; i < dtwMat.cols; ++i) {
+        for (int j = 1; j < dtwMat.rows; ++j) {
+            dtwMat2.at<double>(j-1,i-1) = dtwMat.at<double>(j,i);
+            //ROS_INFO("%f", dtwMat2.at<double>(j-1,i-1));
+        }
+    }
+
+    double min = 0.0;
+    double max = 0.0;
+    minMaxIdx(dtwMat2, &min, &max);
+    dtwMat = Mat(dtwMat2.rows, dtwMat2.cols, CV_8U);
+
+    double oldRange = max - min;
+    double newRange = 255.0 - 0;
+    double newValue = 0.0;
+    for (int i = 0; i < dtwMat.cols; ++i) {
+        for (int j = 0; j < dtwMat.rows; ++j) {
+            newValue = (((dtwMat2.at<double>(j,i)-min) *newRange)/oldRange) + 0;
+            dtwMat.at<uchar>(j,i) = (int) newValue;
+        }
+    }
+
+    double sum = 0.0;
+    for (int i = 0; i < warpingPath.size(); ++i) {
+       circle(dtwMat, warpingPath.at(i), 1, Scalar(255,255,255));
+       sum += dtwMatTemp.at<double>(warpingPath.at(i).y, warpingPath.at(i).x);
+    }
+    ROS_INFO("SUM %f", sum);
+    warpingPath.clear();
+
+    QPixmap dtwPixMap = imageProcessing.getPixmap(dtwMat, true);
+    dtwPixMap = dtwPixMap.scaled(ui_.lbl_rec_phonem->maximumWidth(), ui_.lbl_rec_phonem->maximumHeight(), Qt::KeepAspectRatio, Qt::SmoothTransformation);
+
+    ui_.lbl_rec_phonem->setPixmap(dtwPixMap);
+
+    ///TEST DTW
+
+
     NO_CYCLIC_FRAME = ui_.sbNOCF->value();
     int currentFrame = 0;
 

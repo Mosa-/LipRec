@@ -14,6 +14,7 @@ class Dtw {
 public:
     enum DistanceFunction{SQUARE, SQUARE2, ABS};
 
+    Dtw();
     Dtw(QList<double> trajectory1, QList<double> trajectory2);
     virtual ~Dtw();
 
@@ -22,7 +23,10 @@ public:
     Mat calculateDistanceMatrix(DistanceFunction distanceFunction);
     Mat calculateDtwDistanceMatrix();
 
+    QList<Point> calculateGreedyWarpingPath();
 
+    void printDistanceMatrix();
+    void printDtwDistanceMatric();
 
 private:
     QList<double> trajectory1;

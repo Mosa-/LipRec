@@ -1,6 +1,11 @@
 #include "rqt_liprec/Dtw.h"
 
 
+Dtw::Dtw()
+{
+
+}
+
 Dtw::Dtw(QList<double> trajectory1, QList<double> trajectory2){
 
     this->trajectory1 = trajectory1;
@@ -30,10 +35,11 @@ Mat Dtw::calculateDistanceMatrix(Dtw::DistanceFunction distanceFunction){
             }else{
                 distance = absDistance(trajectory1.at(j), trajectory2.at(i));
             }
-
             distanceMatrix.at<double>(j,i) = distance;
         }
     }
+
+    return distanceMatrix;
 }
 
 Mat Dtw::calculateDtwDistanceMatrix(){
@@ -41,8 +47,8 @@ Mat Dtw::calculateDtwDistanceMatrix(){
 
     vector<Mat> matrices;
 
-    Mat infRow(dtwDistanceMatrix.rows, 1, CV_64F, Scalar(-1));
-    Mat infCol(1, dtwDistanceMatrix.cols+1, CV_64F, Scalar(-1));
+    Mat infRow(dtwDistanceMatrix.rows, 1, CV_64F, Scalar(INT_MAX));
+    Mat infCol(1, dtwDistanceMatrix.cols+1, CV_64F, Scalar(INT_MAX));
 
     matrices.push_back(infRow);
     matrices.push_back(dtwDistanceMatrix);
@@ -71,6 +77,71 @@ Mat Dtw::calculateDtwDistanceMatrix(){
                     minimum(insertion, deletion, match);
         }
     }
+
+    return dtwDistanceMatrix;
+}
+
+QList<Point> Dtw::calculateGreedyWarpingPath()
+{
+    QList<Point> warpingPath;
+    int i = dtwDistanceMatrix.rows;
+    int j = dtwDistanceMatrix.cols;
+
+    double insertion = 0.0;
+    double deletion = 0.0;
+    double match = 0.0;
+
+    while(i>1 && j>1){
+        if(i==1){
+            j--;
+        }else if(j==1){
+            i--;
+        }else{
+            insertion = dtwDistanceMatrix.at<double>(i, j-1);
+            deletion = dtwDistanceMatrix.at<double>(i-1, j);
+            match = dtwDistanceMatrix.at<double>(i-1, j-1);
+
+            if(dtwDistanceMatrix.at<double>(i-1, j) == minimum(insertion, deletion, match)){
+                i--;
+            }else if(dtwDistanceMatrix.at<double>(i, j-1) == minimum(insertion, deletion, match)){
+                j--;
+            }else{
+                i--;
+                j--;
+            }
+            warpingPath.append(Point(j,i));
+        }
+    }
+
+    return warpingPath;
+}
+
+void Dtw::printDistanceMatrix()
+{
+    QString str = "";
+    ROS_INFO("########DistanceMatrix1########");
+    for (int i = 0; i < distanceMatrix.rows; ++i) {
+        str = "|";
+        for (int j = 0; j < distanceMatrix.cols; ++j) {
+            str += (QString::number(distanceMatrix.at<double>(i,j)) + "|");
+        }
+        ROS_INFO("%s", str.toStdString().c_str());
+    }
+    ROS_INFO("########DistanceMatrix2########");
+}
+
+void Dtw::printDtwDistanceMatric()
+{
+    QString str = "";
+    ROS_INFO("########DtwDistanceMatrix1########");
+    for (int i = 0; i < dtwDistanceMatrix.rows; ++i) {
+        str = "|";
+        for (int j = 0; j < dtwDistanceMatrix.cols; ++j) {
+            str += (QString::number(dtwDistanceMatrix.at<double>(i,j)) + "|");
+        }
+        ROS_INFO("%s", str.toStdString().c_str());
+    }
+    ROS_INFO("########DtwDistanceMatrix2########");
 }
 
 double Dtw::squareDistance(double val, double val2)
