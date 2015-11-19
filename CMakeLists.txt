@@ -19,6 +19,10 @@ find_package(catkin REQUIRED COMPONENTS
 )
 
 #find_package(Boost REQUIRED system filesystem date_time thread iostreams)
+set(Boost_USE_STATIC_LIBS        ON)
+set(Boost_USE_MULTITHREADED      ON)
+set(Boost_USE_STATIC_RUNTIME    OFF)
+find_package(Boost COMPONENTS thread filesystem system program_options REQUIRED)
 
 find_package(OpenCV REQUIRED)
 
@@ -67,11 +71,6 @@ qt4_wrap_ui(rqt_liprec_UIS_H ${rqt_liprec_UIS})
 
 include_directories(${rqt_liprec_INCLUDE_DIRECTORIES} ${catkin_INCLUDE_DIRS} ${OpenCV_INCLUDE_DIRS})
 
-
-
-add_library(swt src/rqt_liprec/Swt.cpp)
-target_link_libraries(swt ${catkin_LIBRARIES} ${OpenCV_LIBRARIES} ${QT_QTCORE_LIBRARY} ${QT_QTGUI_LIBRARY})
-
 add_library(dtw src/rqt_liprec/Dtw.cpp)
 target_link_libraries(dtw ${catkin_LIBRARIES} ${OpenCV_LIBRARIES} ${QT_QTCORE_LIBRARY} ${QT_QTGUI_LIBRARY})
 
@@ -81,11 +80,8 @@ target_link_libraries(imageProcessing ${catkin_LIBRARIES} ${OpenCV_LIBRARIES} ${
 add_library(keyPointsDeliverer src/rqt_liprec/KeyPointsDeliverer.cpp)
 target_link_libraries(keyPointsDeliverer ${catkin_LIBRARIES} ${OpenCV_LIBRARIES} ${QT_QTCORE_LIBRARY} ${QT_QTGUI_LIBRARY} imageProcessing)
 
-add_library(zernikeMoments src/rqt_liprec/ZernikeMoments.cpp)
-target_link_libraries(zernikeMoments ${catkin_LIBRARIES} ${OpenCV_LIBRARIES} ${QT_QTCORE_LIBRARY} ${QT_QTGUI_LIBRARY})
-
 add_library(${PROJECT_NAME} ${rqt_liprec_SRCS} ${rqt_liprec_MOCS} ${rqt_liprec_UIS_H})
-target_link_libraries(${PROJECT_NAME} ${OpenCV_LIBRARIES} ${catkin_LIBRARIES} ${QT_QTCORE_LIBRARY} ${QT_QTGUI_LIBRARY} imageProcessing keyPointsDeliverer swt dtw zernikeMoments)
+target_link_libraries(${PROJECT_NAME} ${Boost_LIBRARIES} /usr/lib/libmongoclient.a /usr/lib/i386-linux-gnu/libssl.a /usr/lib/i386-linux-gnu/libcrypto.a ${OpenCV_LIBRARIES} ${catkin_LIBRARIES} ${QT_QTCORE_LIBRARY} ${QT_QTGUI_LIBRARY} imageProcessing keyPointsDeliverer dtw)
 
 find_package(class_loader)
 class_loader_hide_library_symbols(${PROJECT_NAME})

@@ -34,6 +34,7 @@
 #include "opencv2/video/tracking.hpp"
 #include <opencv2/imgproc/imgproc.hpp>
 #include <opencv2/highgui/highgui.hpp>
+#include <mongo/client/dbclient.h>
 
 #include <time.h>
 #include <QtAlgorithms>
@@ -41,12 +42,12 @@
 #include "KeyPointsDeliverer.h"
 #include "ImageProcessing.h"
 #include "Dtw.h"
-#include "Swt.h"
 
 using namespace std_msgs;
 using namespace std;
 using namespace ros;
 using namespace cv;
+using namespace mongo;
 
 namespace rqt_liprec {
 
@@ -118,7 +119,6 @@ private:
 
     KeyPointsDeliverer keyPointsDeliverer;
     ImageProcessing imageProcessing;
-    Swt swt;
     Dtw dtw;
 
     void processImage(Mat img);

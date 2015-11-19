@@ -226,6 +226,8 @@ void LipRec::getCamPic(cv::Mat img){
     }
 }
 
+static bool write = false;
+
 void LipRec::processImage(Mat img)
 {
     currentUtteranceFrame = img.clone();
@@ -271,8 +273,6 @@ void LipRec::processImage(Mat img)
           823.5 << 810 << 810 << 824 << 830 << 831.5 << 824.5 << 819 << 814 << 825;
 
 
-
-
     dtw.seed(t1, t2);
 
     Mat dtwMat;
@@ -285,20 +285,18 @@ void LipRec::processImage(Mat img)
     dtwMat = dtw.calculateDtwDistanceMatrix();
     dtwMatTemp = dtwMat;
     warpingPath = dtw.calculateGreedyWarpingPath();
-
     //dtw.printDtwDistanceMatric();
+
     ROS_INFO("SQUARE");
     dtw.calculateDistanceMatrix(Dtw::SQUARE);
     //dtw.printDistanceMatrix();
     dtw.calculateDtwDistanceMatrix();
-
-
     //dtw.printDtwDistanceMatric();
+
     ROS_INFO("SQUARE2");
     dtw.calculateDistanceMatrix(Dtw::SQUARE2);
     //dtw.printDistanceMatrix();
     dtw.calculateDtwDistanceMatrix();
-
     //dtw.printDtwDistanceMatric();
 
     Mat dtwMat2(dtwMat.rows-1, dtwMat.cols-1, CV_64F);
@@ -334,6 +332,8 @@ void LipRec::processImage(Mat img)
     ROS_INFO("SUM %f", sum);
     warpingPath.clear();
 
+    dtwMat = 255 - dtwMat;
+
     QPixmap dtwPixMap = imageProcessing.getPixmap(dtwMat, true);
     dtwPixMap = dtwPixMap.scaled(ui_.lbl_rec_phonem->maximumWidth(), ui_.lbl_rec_phonem->maximumHeight(), Qt::KeepAspectRatio, Qt::SmoothTransformation);
 
@@ -341,6 +341,67 @@ void LipRec::processImage(Mat img)
 
     ///TEST DTW
 
+    if(!write){
+        DBClientConnection c;
+        try {
+            c.connect("localhost");
+//            BSONObjBuilder b;
+//            b.append("command", "move forward");
+
+//            BSONArray arr = BSON_ARRAY(
+//                            BSON_ARRAY(BSON("id" << 1) << BSON("value" << 0.52)) <<
+//                            BSON_ARRAY(BSON("id" << 2) << BSON("value" << 0.1))
+//                        );
+//            b.appendArray("aspect ratio", arr);
+
+//            BSONObj p = b.obj();
+//            c.insert("liprec.persons", p);
+            ROS_INFO("blub");
+
+            BSONObj p ;
+            BSONObj s;
+
+            BSONObj query;
+            auto_ptr<DBClientCursor> cursor =
+               c.query("liprec.persons", query);
+             while (cursor->more()) {
+               p = cursor->next();
+               BSONElement bElem = p.getField("command");
+               //BSONObjIterator fields (p.getObjectField("aspect ratio"));
+
+               if(!bElem.isNull()){
+                   ROS_INFO("%s", bElem.str().c_str());
+               }
+
+               std::set<std::string> fields;
+
+               if(p.hasField("aspect ratio")){
+                   s = p.getObjectField("aspect ratio");
+                   ROS_INFO("%s",s.toString().c_str());
+               }
+
+
+               ROS_INFO("FIELDTAIN");
+//               vector<BSONElement> array = p["aspect ratio"].Array();
+//               for (vector<BSONElement>::iterator ar = array.begin(); ar != array.end(); ++ar){
+//                   //cout << *ar << endl;
+//                   vector<BSONElement> elem = ar->Array();
+//                   for (vector<BSONElement>::iterator it = elem.begin(); it != elem.end(); ++it){
+//                       ROS_INFO("%s", it->str().c_str());
+////                       cout << *it << endl;
+//                   }
+//               }
+
+
+               //ROS_INFO("%s",p.jsonString().c_str());
+             }
+
+
+        } catch(DBException &e) {
+            ROS_INFO("caught %s",e.what());
+        }
+        write = true;
+    }
 
     NO_CYCLIC_FRAME = ui_.sbNOCF->value();
     int currentFrame = 0;
@@ -752,21 +813,8 @@ void LipRec::changeLipActivationState(int activation, Mat& imageAbsDiff, int cur
 
             imageProcessing.squareImage(mt);
 
+            pixMap = imageProcessing.getPixmap(mt, useMonoImage);
 
-            if(ui_.rbSWT->isChecked()){
-                Mat ca = Mat::zeros(mt.rows, mt.cols, CV_8UC1);
-                Mat ch = Mat::zeros(mt.rows, mt.cols, CV_8UC1);
-                Mat cd = Mat::zeros(mt.rows, mt.cols, CV_8UC1);
-                Mat cv = Mat::zeros(mt.rows, mt.cols, CV_8UC1);
-
-                swt.applySwt(mt, ca, ch, cd, cv, 1, Swt::Haar);
-
-                pixMap = imageProcessing.getPixmap(ca, useMonoImage);
-            }else if(ui_.rbDCT->isChecked()){
-                pixMap = imageProcessing.getPixmap(mt, useMonoImage);
-            }else{
-                pixMap = imageProcessing.getPixmap(mt, useMonoImage);
-            }
             pixMap = pixMap.scaled(ui_.lbl_lips->maximumWidth(), ui_.lbl_lips->maximumHeight(), Qt::KeepAspectRatio, Qt::SmoothTransformation);
             ui_.lbl_rec_word->setPixmap(pixMap);
 
