@@ -80,8 +80,11 @@ target_link_libraries(imageProcessing ${catkin_LIBRARIES} ${OpenCV_LIBRARIES} ${
 add_library(keyPointsDeliverer src/rqt_liprec/KeyPointsDeliverer.cpp)
 target_link_libraries(keyPointsDeliverer ${catkin_LIBRARIES} ${OpenCV_LIBRARIES} ${QT_QTCORE_LIBRARY} ${QT_QTGUI_LIBRARY} imageProcessing)
 
+add_library(clustering src/rqt_liprec/Clustering.cpp)
+target_link_libraries(clustering ${catkin_LIBRARIES} ${OpenCV_LIBRARIES} ${QT_QTCORE_LIBRARY} ${QT_QTGUI_LIBRARY} dtw)
+
 add_library(${PROJECT_NAME} ${rqt_liprec_SRCS} ${rqt_liprec_MOCS} ${rqt_liprec_UIS_H})
-target_link_libraries(${PROJECT_NAME} ${Boost_LIBRARIES} /usr/lib/libmongoclient.a /usr/lib/i386-linux-gnu/libssl.a /usr/lib/i386-linux-gnu/libcrypto.a ${OpenCV_LIBRARIES} ${catkin_LIBRARIES} ${QT_QTCORE_LIBRARY} ${QT_QTGUI_LIBRARY} imageProcessing keyPointsDeliverer dtw)
+target_link_libraries(${PROJECT_NAME} ${Boost_LIBRARIES} /usr/lib/libmongoclient.a /usr/lib/i386-linux-gnu/libssl.a /usr/lib/i386-linux-gnu/libcrypto.a ${OpenCV_LIBRARIES} ${catkin_LIBRARIES} ${QT_QTCORE_LIBRARY} ${QT_QTGUI_LIBRARY} imageProcessing clustering keyPointsDeliverer dtw)
 
 find_package(class_loader)
 class_loader_hide_library_symbols(${PROJECT_NAME})

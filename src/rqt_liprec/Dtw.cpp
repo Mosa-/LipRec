@@ -22,7 +22,7 @@ void Dtw::seed(QList<double> trajectory1, QList<double> trajectory2)
     this->trajectory2 = trajectory2;
 }
 
-Mat Dtw::calculateDistanceMatrix(Dtw::DistanceFunction distanceFunction){
+Mat Dtw::calculateDistanceMatrix(DistanceFunction distanceFunction){
     distanceMatrix = Mat(trajectory1.size(), trajectory2.size(), CV_64F, Scalar(0.0));
 
     double distance = 0.0;
@@ -113,7 +113,20 @@ QList<Point> Dtw::calculateGreedyWarpingPath()
         }
     }
 
+    this->warpingPath = warpingPath;
+
     return warpingPath;
+}
+
+double Dtw::getWarpingPathCost()
+{
+    double cost = 0.0;
+
+    for (int i = 0; i < this->warpingPath.size(); ++i) {
+        cost += dtwDistanceMatrix.at<double>(warpingPath.at(i).y,warpingPath.at(i).x);
+    }
+
+    return cost;
 }
 
 void Dtw::printDistanceMatrix()

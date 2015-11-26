@@ -223,7 +223,7 @@ QPixmap ImageProcessing::getPixmap(Mat& iplImg, bool useMonoImage){
     QImage dest;
     Mat temp;
     if(!iplImg.empty()){
-        if(useMonoImage){
+        if(useMonoImage || iplImg.type() == CV_16UC1 || iplImg.type() == CV_8U){
             dest = QImage((const uchar *) iplImg.data, iplImg.cols, iplImg.rows, iplImg.step, QImage::Format_Indexed8);
         }else{
             cvtColor(iplImg, temp, CV_BGR2RGB);

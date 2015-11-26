@@ -25,6 +25,12 @@ enum RGB{
     R = 2
 };
 
+enum DistanceFunction{
+    SQUARE,
+    SQUARE2,
+    ABS
+};
+
 
 
 

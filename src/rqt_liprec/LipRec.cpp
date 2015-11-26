@@ -51,9 +51,10 @@ void LipRec::initPlugin(qt_gui_cpp::PluginContext& context)
     string kinectTopic;
     //camImage = getNodeHandle().subscribe("/liprecKinect/rgb/image_raw", 10, &LipRec::imageCallback, this);
     if(useMonoImage){
-        kinectTopic = "/kinect2/qhd/image_mono";
+        kinectTopic = "/kinect2/qhd/image_mono_rect";
     }else{
-        kinectTopic = "/kinect2/qhd/image_color";
+        kinectTopic = "/kinect2/qhd/image_color_rect";
+        //kinectTopic = "/kinect2/qhd/image_depth_rect";
     }
     this->imageProcessing.setUseMonoImage(useMonoImage);
 
@@ -196,6 +197,7 @@ void LipRec::imageCallback(const sensor_msgs::ImageConstPtr& msg){
             cv_ptr = cv_bridge::toCvCopy(msg, sensor_msgs::image_encodings::TYPE_8UC1);
         }else{
             cv_ptr = cv_bridge::toCvCopy(msg, sensor_msgs::image_encodings::BGR8);
+            //cv_ptr = cv_bridge::toCvCopy(msg, sensor_msgs::image_encodings::TYPE_16UC1);
         }
     }
     catch (cv_bridge::Exception& e)
@@ -230,6 +232,9 @@ static bool write = false;
 
 void LipRec::processImage(Mat img)
 {
+    if(img.type() == CV_16UC1){
+        img.convertTo(img, CV_8U, 0.00390625);
+    }
     currentUtteranceFrame = img.clone();
 
     if(recordVideo && !recordUtterance){
@@ -280,7 +285,7 @@ void LipRec::processImage(Mat img)
     QList<Point> warpingPath;
 
     ROS_INFO("ABS");
-    dtw.calculateDistanceMatrix(Dtw::ABS);
+    dtw.calculateDistanceMatrix(ABS);
     //dtw.printDistanceMatrix();
     dtwMat = dtw.calculateDtwDistanceMatrix();
     dtwMatTemp = dtwMat;
@@ -288,13 +293,13 @@ void LipRec::processImage(Mat img)
     //dtw.printDtwDistanceMatric();
 
     ROS_INFO("SQUARE");
-    dtw.calculateDistanceMatrix(Dtw::SQUARE);
+    dtw.calculateDistanceMatrix(SQUARE);
     //dtw.printDistanceMatrix();
     dtw.calculateDtwDistanceMatrix();
     //dtw.printDtwDistanceMatric();
 
     ROS_INFO("SQUARE2");
-    dtw.calculateDistanceMatrix(Dtw::SQUARE2);
+    dtw.calculateDistanceMatrix(SQUARE2);
     //dtw.printDistanceMatrix();
     dtw.calculateDtwDistanceMatrix();
     //dtw.printDtwDistanceMatric();
