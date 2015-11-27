@@ -232,9 +232,6 @@ static bool write = false;
 
 void LipRec::processImage(Mat img)
 {
-    if(img.type() == CV_16UC1){
-        img.convertTo(img, CV_8U, 0.00390625);
-    }
     currentUtteranceFrame = img.clone();
 
     if(recordVideo && !recordUtterance){
@@ -346,65 +343,15 @@ void LipRec::processImage(Mat img)
 
     ///TEST DTW
 
+    tdm.connectToDatabase("localhost");
     if(!write){
-        DBClientConnection c;
-        try {
-            c.connect("localhost");
-//            BSONObjBuilder b;
-//            b.append("command", "move forward");
+        //tdm.insertTrajectory(t2, "move forward", "area");
+        QList<QList<double> > trajectories = tdm.getTrajectory("move forward", "area");
 
-//            BSONArray arr = BSON_ARRAY(
-//                            BSON_ARRAY(BSON("id" << 1) << BSON("value" << 0.52)) <<
-//                            BSON_ARRAY(BSON("id" << 2) << BSON("value" << 0.1))
-//                        );
-//            b.appendArray("aspect ratio", arr);
-
-//            BSONObj p = b.obj();
-//            c.insert("liprec.persons", p);
-            ROS_INFO("blub");
-
-            BSONObj p ;
-            BSONObj s;
-
-            BSONObj query;
-            auto_ptr<DBClientCursor> cursor =
-               c.query("liprec.persons", query);
-             while (cursor->more()) {
-               p = cursor->next();
-               BSONElement bElem = p.getField("command");
-               //BSONObjIterator fields (p.getObjectField("aspect ratio"));
-
-               if(!bElem.isNull()){
-                   ROS_INFO("%s", bElem.str().c_str());
-               }
-
-               std::set<std::string> fields;
-
-               if(p.hasField("aspect ratio")){
-                   s = p.getObjectField("aspect ratio");
-                   ROS_INFO("%s",s.toString().c_str());
-               }
-
-
-               ROS_INFO("FIELDTAIN");
-//               vector<BSONElement> array = p["aspect ratio"].Array();
-//               for (vector<BSONElement>::iterator ar = array.begin(); ar != array.end(); ++ar){
-//                   //cout << *ar << endl;
-//                   vector<BSONElement> elem = ar->Array();
-//                   for (vector<BSONElement>::iterator it = elem.begin(); it != elem.end(); ++it){
-//                       ROS_INFO("%s", it->str().c_str());
-////                       cout << *it << endl;
-//                   }
-//               }
-
-
-               //ROS_INFO("%s",p.jsonString().c_str());
-             }
-
-
-        } catch(DBException &e) {
-            ROS_INFO("caught %s",e.what());
+        for (int i = 0; i < trajectories.size(); ++i) {
+            ROS_INFO("%d", trajectories.at(i).size());
         }
+
         write = true;
     }
 

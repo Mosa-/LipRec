@@ -1,5 +1,10 @@
 #include "rqt_liprec/Clustering.h"
 
+Clustering::Clustering()
+{
+
+}
+
 Clustering::Clustering(int k){
     this->k = k;
 }
@@ -101,7 +106,7 @@ QList<QList<double> > Clustering::kMedoidsClustering(DistanceFunction df)
     return kMedoids;
 }
 
-QList<QList<double> > Clustering::ownClustering(DistanceFunction df)
+QList<QList<double> > Clustering::ownClustering(DistanceFunction df, int noExceptTrajectories)
 {
     QList<QList<double> > kClusterTrajectories;
 
@@ -114,7 +119,7 @@ QList<QList<double> > Clustering::ownClustering(DistanceFunction df)
     int lowTrajectoriesCostCounter = 0;
     QMap<int, int> trajectoryLowCost;
 
-    while(currentTrajectories.size() > 0) {
+    while(currentTrajectories.size() > noExceptTrajectories) {
         for (int i = 0; i < currentTrajectories.size(); ++i) {
             lowTrajectoriesCostCounter = 0;
             average = 0.0;

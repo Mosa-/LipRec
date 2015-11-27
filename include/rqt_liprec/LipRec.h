@@ -34,7 +34,6 @@
 #include "opencv2/video/tracking.hpp"
 #include <opencv2/imgproc/imgproc.hpp>
 #include <opencv2/highgui/highgui.hpp>
-#include <mongo/client/dbclient.h>
 
 #include <time.h>
 #include <QtAlgorithms>
@@ -42,6 +41,7 @@
 #include "KeyPointsDeliverer.h"
 #include "ImageProcessing.h"
 #include "Dtw.h"
+#include "TrajectoriesDataManager.h"
 
 using namespace std_msgs;
 using namespace std;
@@ -120,6 +120,7 @@ private:
     KeyPointsDeliverer keyPointsDeliverer;
     ImageProcessing imageProcessing;
     Dtw dtw;
+    TrajectoriesDataManager tdm;
 
     void processImage(Mat img);
 

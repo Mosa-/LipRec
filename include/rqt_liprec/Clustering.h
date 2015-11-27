@@ -21,7 +21,7 @@ public:
     virtual ~Clustering();
 
     QList<QList<double> > kMedoidsClustering(DistanceFunction df);
-    QList<QList<double> > ownClustering(DistanceFunction df);
+    QList<QList<double> > ownClustering(DistanceFunction df, int noExceptTrajectories);
 
     void addTrajectory(QList<double> trajectory);
     void setK(int k);

@@ -18,11 +18,11 @@ find_package(catkin REQUIRED COMPONENTS
   rqt_gui_py
 )
 
-#find_package(Boost REQUIRED system filesystem date_time thread iostreams)
+find_package(Boost REQUIRED system filesystem date_time thread iostreams)
 set(Boost_USE_STATIC_LIBS        ON)
 set(Boost_USE_MULTITHREADED      ON)
 set(Boost_USE_STATIC_RUNTIME    OFF)
-find_package(Boost COMPONENTS thread filesystem system program_options REQUIRED)
+#find_package(Boost COMPONENTS thread filesystem system program_options REQUIRED)
 
 find_package(OpenCV REQUIRED)
 
@@ -74,6 +74,9 @@ include_directories(${rqt_liprec_INCLUDE_DIRECTORIES} ${catkin_INCLUDE_DIRS} ${O
 add_library(dtw src/rqt_liprec/Dtw.cpp)
 target_link_libraries(dtw ${catkin_LIBRARIES} ${OpenCV_LIBRARIES} ${QT_QTCORE_LIBRARY} ${QT_QTGUI_LIBRARY})
 
+add_library(trajectoriesDataManager src/rqt_liprec/TrajectoriesDataManager.cpp)
+target_link_libraries(trajectoriesDataManager ${catkin_LIBRARIES} ${Boost_LIBRARIES} /usr/lib/libmongoclient.a /usr/lib/i386-linux-gnu/libssl.a /usr/lib/i386-linux-gnu/libcrypto.a ${OpenCV_LIBRARIES} ${QT_QTCORE_LIBRARY} ${QT_QTGUI_LIBRARY})
+
 add_library(imageProcessing src/rqt_liprec/ImageProcessing.cpp)
 target_link_libraries(imageProcessing ${catkin_LIBRARIES} ${OpenCV_LIBRARIES} ${QT_QTCORE_LIBRARY} ${QT_QTGUI_LIBRARY})
 
@@ -84,7 +87,7 @@ add_library(clustering src/rqt_liprec/Clustering.cpp)
 target_link_libraries(clustering ${catkin_LIBRARIES} ${OpenCV_LIBRARIES} ${QT_QTCORE_LIBRARY} ${QT_QTGUI_LIBRARY} dtw)
 
 add_library(${PROJECT_NAME} ${rqt_liprec_SRCS} ${rqt_liprec_MOCS} ${rqt_liprec_UIS_H})
-target_link_libraries(${PROJECT_NAME} ${Boost_LIBRARIES} /usr/lib/libmongoclient.a /usr/lib/i386-linux-gnu/libssl.a /usr/lib/i386-linux-gnu/libcrypto.a ${OpenCV_LIBRARIES} ${catkin_LIBRARIES} ${QT_QTCORE_LIBRARY} ${QT_QTGUI_LIBRARY} imageProcessing clustering keyPointsDeliverer dtw)
+target_link_libraries(${PROJECT_NAME} ${OpenCV_LIBRARIES} ${catkin_LIBRARIES} ${QT_QTCORE_LIBRARY} ${QT_QTGUI_LIBRARY} imageProcessing clustering keyPointsDeliverer trajectoriesDataManager dtw)
 
 find_package(class_loader)
 class_loader_hide_library_symbols(${PROJECT_NAME})
