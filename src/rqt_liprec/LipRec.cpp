@@ -75,6 +75,11 @@ void LipRec::initPlugin(qt_gui_cpp::PluginContext& context)
 
     QObject::connect(ui_.pbToggleKpLines, SIGNAL(clicked()), this, SLOT(toggleKpLines()));
 
+    QObject::connect(ui_.pbRecordStopTrajectory, SIGNAL(clicked()), this, SLOT(clickedRecordStopTrajectory()));
+    QObject::connect(ui_.pbSaveTrajectory, SIGNAL(clicked()), this, SLOT(clickedSaveTrajectory()));
+    QObject::connect(ui_.pbAbortTrajectory, SIGNAL(clicked()), this, SLOT(clickedAbortTrajectory()));
+
+
     drawKeyPointState = 0;
     ui_.pbToggleKpLines->setToolTip("Show keypoint lines.");
     QPixmap pixmap("src/liprec/res/lips.png");
@@ -150,12 +155,18 @@ void LipRec::initPlugin(qt_gui_cpp::PluginContext& context)
     ui_.pbContinueVideo->setIconSize(pixmap.rect().size()/2.5);
     ui_.pbContinueVideo->setMaximumSize(pixmap.rect().size()/2.5);
 
+    ui_.lblDbName->setText("liprec");
+    QFont font = QFont("Times New Roman", 12, QFont::DemiBold);
+    font.setUnderline(true);
+    ui_.lblDbName->setFont(font);
+
     recordVideo = false;
     recordUtterance = false;
     loadUtterance = false;
     initVideoWriter = false;
     useCam = true;
     printFeatures = false;
+    recordTrajectory = false;
 
     QObject::connect(this, SIGNAL(updateCam(cv::Mat)), this, SLOT(getCamPic(cv::Mat)));
 }
@@ -352,8 +363,41 @@ void LipRec::processImage(Mat img)
             ROS_INFO("%d", trajectories.at(i).size());
         }
 
+        QMap<QString, int> commandsWithCount = tdm.getAllCommandsWithCount();
+        QStringList strL = tdm.getFeatures("move forward");
+
+        for (int i = 0; i < strL.size(); ++i) {
+            ROS_INFO("%s", strL.at(i).toStdString().c_str());
+        }
+
+        foreach (QString command, commandsWithCount.keys()) {
+            ROS_INFO("%s : %d", command.toStdString().c_str(), commandsWithCount[command]);
+        }
+
         write = true;
     }
+
+    QMap<QString, int> commandsWithCount = tdm.getAllCommandsWithCount();
+
+    QString commands = "";
+
+    QString features = "";
+    QString featuresForCmd = "";
+
+    foreach (QString command, commandsWithCount.keys()) {
+        QStringList strL = tdm.getFeatures(command);
+        foreach (QString feature, strL) {
+            featuresForCmd = featuresForCmd + feature + ", ";
+        }
+        commands = commands + command + " (" + QString::number(commandsWithCount[command]) +")" + " |";
+        features = features + featuresForCmd + "\n";
+    }
+
+    ui_.lblTrajectoriesCommand->setText(commands);
+    ui_.lblTrajectoriesCommand->setFont(QFont("Times New Roman", 10, QFont::Normal));
+    ui_.lblTrajectoriesFeatures->setText(features);
+    ui_.lblTrajectoriesFeatures->setFont(QFont("Times New Roman", 10, QFont::Normal));
+
 
     NO_CYCLIC_FRAME = ui_.sbNOCF->value();
     int currentFrame = 0;
@@ -1088,6 +1132,52 @@ void LipRec::clickedPrintFeatures()
         ROS_INFO(">>>>>>>>>>>Start");
     }
     printFeatures = !printFeatures;
+}
+
+void LipRec::clickedRecordStopTrajectory()
+{
+    if (!recordTrajectory && !ui_.pbSaveTrajectory->isEnabled()) {
+        ui_.pbRecordStopTrajectory->setText("Stop recording");
+
+        recordTrajectory = true;
+    }else{
+        ui_.pbRecordStopTrajectory->setText("Record trajectory");
+
+        ui_.pbRecordStopTrajectory->setEnabled(false);
+        ui_.pbSaveTrajectory->setEnabled(true);
+        ui_.pbAbortTrajectory->setEnabled(true);
+        recordTrajectory = false;
+    }
+
+}
+
+void LipRec::clickedSaveTrajectory()
+{
+    QTimer::singleShot(1500, this, SLOT(clickedAbortOrSaveTrajectory()));
+    QString fontColor = tr("<font color='%1'>%2</font>");
+    ui_.lblMsg->setText( fontColor.arg( "red", "Saved" ) );
+    ui_.lblMsg->setFont(QFont("Times New Roman", 10, QFont::Bold));
+    ui_.pbRecordStopTrajectory->setEnabled(true);
+    ui_.pbSaveTrajectory->setEnabled(false);
+    ui_.pbAbortTrajectory->setEnabled(false);
+    ui_.gbNewTrajectory->setEnabled(true);
+}
+
+void LipRec::clickedAbortTrajectory()
+{
+    QTimer::singleShot(1500, this, SLOT(clickedAbortOrSaveTrajectory()));
+    QString fontColor = tr("<font color='%1'>%2</font>");
+    ui_.lblMsg->setText( fontColor.arg( "red", "Abort" ) );
+    ui_.lblMsg->setFont(QFont("Times New Roman", 10, QFont::Bold));
+    ui_.pbRecordStopTrajectory->setEnabled(true);
+    ui_.pbSaveTrajectory->setEnabled(false);
+    ui_.pbAbortTrajectory->setEnabled(false);
+}
+
+void LipRec::clickedAbortOrSaveTrajectory()
+{
+    ui_.lblMsg->setText("");
+    ui_.gbNewTrajectory->setEnabled(false);
 }
 
 void LipRec::changeUseCam()

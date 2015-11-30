@@ -41,16 +41,16 @@ void TrajectoriesDataManager::insertTrajectory(QList<double> trajectory, QString
 
     bsonBuilder.appendArray("values", bab.arr());
 
-    mongoDB.insert("liprec.persons", bsonBuilder.obj());
+    mongoDB.insert("liprec.liprec", bsonBuilder.obj());
 }
 
 QList<QList<double> > TrajectoriesDataManager::getTrajectory(QString command, QString feature)
 {
     QList<QList<double> > trajectories;
-    BSONObj p ;
+    BSONObj p;
 
     auto_ptr<DBClientCursor> cursor =
-            mongoDB.query("liprec.persons", QUERY("command" << command.toStdString() << "feature" << feature.toStdString()));
+            mongoDB.query("liprec.liprec", QUERY("command" << command.toStdString() << "feature" << feature.toStdString()));
 
     QList<double> trajectory;
     while (cursor->more()) {
@@ -69,4 +69,42 @@ QList<QList<double> > TrajectoriesDataManager::getTrajectory(QString command, QS
     }
 
     return trajectories;
+}
+
+QMap<QString, int> TrajectoriesDataManager::getAllCommandsWithCount()
+{
+    QMap<QString, int> commandsWithCount;
+
+    BSONObj p;
+
+    auto_ptr<DBClientCursor> cursor =
+            mongoDB.query("liprec.liprec", "");
+
+    while (cursor->more()) {
+        p = cursor->next();
+        QString commandStr = QString::fromStdString(p.getField("command").str());
+        commandsWithCount[commandStr]++;
+    }
+
+    return commandsWithCount;
+}
+
+QStringList TrajectoriesDataManager::getFeatures(QString command)
+{
+    QStringList features;
+    BSONObj p;
+
+    auto_ptr<DBClientCursor> cursor =
+            mongoDB.query("liprec.liprec", QUERY("command" << command.toStdString()));
+
+    QList<double> trajectory;
+    while (cursor->more()) {
+        p = cursor->next();
+
+        QString featureStr = QString::fromStdString(p.getField("feature").str());
+        if(!features.contains(featureStr)){
+            features.append(featureStr);
+        }
+    }
+    return features;
 }

@@ -27,6 +27,9 @@ public:
     void insertTrajectory(QList<double> trajectory, QString command, QString feature);
     QList<QList<double> > getTrajectory(QString command, QString feature);
 
+    QMap<QString, int> getAllCommandsWithCount();
+    QStringList getFeatures(QString command);
+
 private:
     DBClientConnection mongoDB;
 

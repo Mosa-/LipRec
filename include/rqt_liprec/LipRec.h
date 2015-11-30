@@ -47,7 +47,6 @@ using namespace std_msgs;
 using namespace std;
 using namespace ros;
 using namespace cv;
-using namespace mongo;
 
 namespace rqt_liprec {
 
@@ -117,6 +116,8 @@ private:
 
     bool printFeatures;
 
+    bool recordTrajectory;
+
     KeyPointsDeliverer keyPointsDeliverer;
     ImageProcessing imageProcessing;
     Dtw dtw;
@@ -161,6 +162,11 @@ private slots:
     void toggleKpLines();
     void toggleSupportLines(bool checked);
     void clickedPrintFeatures();
+
+    void clickedRecordStopTrajectory();
+    void clickedSaveTrajectory();
+    void clickedAbortTrajectory();
+    void clickedAbortOrSaveTrajectory();
 
 
 
