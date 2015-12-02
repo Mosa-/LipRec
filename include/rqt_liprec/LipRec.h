@@ -118,6 +118,8 @@ private:
 
     bool recordTrajectory;
 
+    QStringList availableTrajectories;
+
     KeyPointsDeliverer keyPointsDeliverer;
     ImageProcessing imageProcessing;
     Dtw dtw;

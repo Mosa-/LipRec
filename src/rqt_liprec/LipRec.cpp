@@ -168,6 +168,8 @@ void LipRec::initPlugin(qt_gui_cpp::PluginContext& context)
     printFeatures = false;
     recordTrajectory = false;
 
+    availableTrajectories << "all";
+
     QObject::connect(this, SIGNAL(updateCam(cv::Mat)), this, SLOT(getCamPic(cv::Mat)));
 }
 
@@ -391,6 +393,12 @@ void LipRec::processImage(Mat img)
         }
         commands = commands + command + " (" + QString::number(commandsWithCount[command]) +")" + " |";
         features = features + featuresForCmd + "\n";
+
+        if(!availableTrajectories.contains(command)){
+            availableTrajectories << command;
+            ui_.cbTrajectory->clear();
+            ui_.cbTrajectory->addItems(availableTrajectories);
+        }
     }
 
     ui_.lblTrajectoriesCommand->setText(commands);
