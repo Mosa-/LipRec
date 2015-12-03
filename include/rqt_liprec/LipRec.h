@@ -55,6 +55,13 @@ typedef enum{
     Utterance,
 }DetectStartEndFrame;
 
+enum RecordTrajectoryState{
+    None,
+    Recording,
+    Save,
+    Abort
+};
+
 class LipRec
         : public rqt_gui_cpp::Plugin
 {
@@ -116,7 +123,8 @@ private:
 
     bool printFeatures;
 
-    bool recordTrajectory;
+    RecordTrajectoryState recordTrajectoryState;
+    QMap<QString, QList<double> > recordTrajectory;
 
     QStringList availableTrajectories;
 

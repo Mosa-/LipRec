@@ -166,7 +166,7 @@ void LipRec::initPlugin(qt_gui_cpp::PluginContext& context)
     initVideoWriter = false;
     useCam = true;
     printFeatures = false;
-    recordTrajectory = false;
+    recordTrajectoryState = None;
 
     availableTrajectories << "all";
 
@@ -382,8 +382,6 @@ void LipRec::processImage(Mat img)
     QMap<QString, int> commandsWithCount = tdm.getAllCommandsWithCount();
 
     QString commands = "";
-
-    QString features = "";
     QString featuresForCmd = "";
 
     foreach (QString command, commandsWithCount.keys()) {
@@ -391,8 +389,7 @@ void LipRec::processImage(Mat img)
         foreach (QString feature, strL) {
             featuresForCmd = featuresForCmd + feature + ", ";
         }
-        commands = commands + command + " (" + QString::number(commandsWithCount[command]) +")" + " |";
-        features = features + featuresForCmd + "\n";
+        commands = commands + command + " (" + QString::number(commandsWithCount[command]) +")" + " : " +featuresForCmd + "\n";
 
         if(!availableTrajectories.contains(command)){
             availableTrajectories << command;
@@ -401,10 +398,8 @@ void LipRec::processImage(Mat img)
         }
     }
 
-    ui_.lblTrajectoriesCommand->setText(commands);
-    ui_.lblTrajectoriesCommand->setFont(QFont("Times New Roman", 10, QFont::Normal));
-    ui_.lblTrajectoriesFeatures->setText(features);
-    ui_.lblTrajectoriesFeatures->setFont(QFont("Times New Roman", 10, QFont::Normal));
+    ui_.lblTrajectoriesInfo->setText(commands);
+    ui_.lblTrajectoriesInfo->setFont(QFont("Times New Roman", 10, QFont::Normal));
 
 
     NO_CYCLIC_FRAME = ui_.sbNOCF->value();
@@ -509,6 +504,58 @@ void LipRec::processImage(Mat img)
                 double areaOfTriangleD = sqrt(hpotD*(hpotD-distanceKp36)*(hpotD-distanceKp35)*(hpotD-distanceKp56));
 
                 this->drawMouthFeatures(mouthFeatures, keyPoint1, keyPoint2, keyPoint3, keyPoint4, keyPoint5, keyPoint6);
+
+                double areaMean = 0.0;
+                double aspectRatioMean = 0.0;
+
+                switch (recordTrajectoryState) {
+                case None:
+                    break;
+                case Recording:
+                    if(ui_.cbAspectRatio->isChecked()){
+                        recordTrajectory[ui_.cbAspectRatio->text()].append(hw);
+                    }
+
+                    if(ui_.cbArea->isChecked()){
+                        recordTrajectory[ui_.cbArea->text()].append(areaOfTriangleA + areaOfTriangleB + areaOfTriangleC + areaOfTriangleD);
+                    }
+
+                    break;
+                case Save:
+                    if(ui_.cbAspectRatio->isChecked()){
+                        tdm.insertTrajectory(recordTrajectory[ui_.cbAspectRatio->text()], ui_.leCommand->text(), ui_.cbAspectRatio->text());
+                    }
+
+                    if(ui_.cbArea->isChecked()){
+                        tdm.insertTrajectory(recordTrajectory[ui_.cbArea->text()], ui_.leCommand->text(), ui_.cbAspectRatio->text());
+                    }
+
+                    ui_.lblNTValues->setText(QString::number(recordTrajectory[ui_.cbAspectRatio->text()].size()));
+
+                    if(recordTrajectory[ui_.cbAspectRatio->text()].size() > 0){
+                        for (int i = 0; i < ui_.cbAspectRatio->size(); ++i) {
+                            aspectRatioMean += recordTrajectory[ui_.cbAspectRatio->text()].at(i);
+                        }
+                    }
+
+                    if(recordTrajectory[ui_.cbArea->text()].size() > 0){
+                        for (int i = 0; i < recordTrajectory[ui_.cbArea->text()].size(); ++i) {
+                            areaMean += recordTrajectory[ui_.cbArea->text()].at(i);
+                        }
+                    }
+
+                    areaMean /= recordTrajectory[ui_.cbAspectRatio->text()].size();
+                    aspectRatioMean /= recordTrajectory[ui_.cbAspectRatio->text()].size();
+
+                    ui_.lblNTMean->setText(QString("area: %1 ; aspect ratio: %2").arg(areaMean, aspectRatioMean));
+
+                    recordTrajectoryState = None;
+                    break;
+                case Abort:
+                    break;
+                default:
+                    break;
+                }
 
                 if(printFeatures){
                     //ROS_INFO("MW:%f MH:%f W/H:%f H/W:%f Area:%f", mouthWidth, mouthHeight, wh, hw, areaOfTriangleA + areaOfTriangleB + areaOfTriangleC + areaOfTriangleD);
@@ -1144,17 +1191,18 @@ void LipRec::clickedPrintFeatures()
 
 void LipRec::clickedRecordStopTrajectory()
 {
-    if (!recordTrajectory && !ui_.pbSaveTrajectory->isEnabled()) {
+    if (recordTrajectoryState == None && recordTrajectoryState == Save && recordTrajectoryState == Abort
+            && !ui_.pbSaveTrajectory->isEnabled()) {
         ui_.pbRecordStopTrajectory->setText("Stop recording");
 
-        recordTrajectory = true;
+        recordTrajectoryState = Recording;
     }else{
         ui_.pbRecordStopTrajectory->setText("Record trajectory");
 
         ui_.pbRecordStopTrajectory->setEnabled(false);
         ui_.pbSaveTrajectory->setEnabled(true);
         ui_.pbAbortTrajectory->setEnabled(true);
-        recordTrajectory = false;
+        recordTrajectoryState = None;
     }
 
 }
@@ -1169,6 +1217,7 @@ void LipRec::clickedSaveTrajectory()
     ui_.pbSaveTrajectory->setEnabled(false);
     ui_.pbAbortTrajectory->setEnabled(false);
     ui_.gbNewTrajectory->setEnabled(true);
+    recordTrajectoryState = Save;
 }
 
 void LipRec::clickedAbortTrajectory()
@@ -1180,6 +1229,7 @@ void LipRec::clickedAbortTrajectory()
     ui_.pbRecordStopTrajectory->setEnabled(true);
     ui_.pbSaveTrajectory->setEnabled(false);
     ui_.pbAbortTrajectory->setEnabled(false);
+    recordTrajectoryState = Abort;
 }
 
 void LipRec::clickedAbortOrSaveTrajectory()

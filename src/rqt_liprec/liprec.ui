@@ -324,7 +324,7 @@ QPushButton:checked{
                 <item row="0" column="0">
                  <widget class="QCheckBox" name="cbArea">
                   <property name="text">
-                   <string>Area</string>
+                   <string>area</string>
                   </property>
                   <property name="checked">
                    <bool>true</bool>
@@ -334,7 +334,7 @@ QPushButton:checked{
                 <item row="0" column="1">
                  <widget class="QCheckBox" name="cbAspectRatio">
                   <property name="text">
-                   <string>Aspect ratio</string>
+                   <string>aspect ratio</string>
                   </property>
                   <property name="checked">
                    <bool>true</bool>
@@ -510,20 +510,14 @@ font: 8pt;
           <bool>false</bool>
          </property>
          <layout class="QGridLayout" name="gridLayout_22">
-          <property name="leftMargin">
-           <number>0</number>
-          </property>
-          <property name="rightMargin">
-           <number>0</number>
-          </property>
-          <property name="bottomMargin">
-           <number>0</number>
-          </property>
-          <property name="horizontalSpacing">
-           <number>0</number>
-          </property>
           <item row="0" column="0">
            <widget class="QLabel" name="label">
+            <property name="maximumSize">
+             <size>
+              <width>80</width>
+              <height>16777215</height>
+             </size>
+            </property>
             <property name="text">
              <string>Database:</string>
             </property>
@@ -536,10 +530,10 @@ font: 8pt;
             </property>
            </widget>
           </item>
-          <item row="1" column="0">
+          <item row="1" column="0" colspan="2">
            <widget class="QLabel" name="label_2">
             <property name="text">
-             <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:10pt; font-weight:600;&quot;&gt;Trajectories&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+             <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:10pt; font-weight:600;&quot;&gt;Trajectories&lt;/span&gt;&lt;/p&gt;&lt;p&gt;&lt;span style=&quot; font-size:7pt;&quot;&gt;Command (counts) &amp;nbsp; : features&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
             </property>
            </widget>
           </item>
@@ -552,24 +546,8 @@ font: 8pt;
              <enum>QFrame::Sunken</enum>
             </property>
             <layout class="QGridLayout" name="gridLayout_21">
-             <item row="2" column="0">
-              <spacer name="verticalSpacer">
-               <property name="orientation">
-                <enum>Qt::Vertical</enum>
-               </property>
-               <property name="sizeType">
-                <enum>QSizePolicy::Expanding</enum>
-               </property>
-               <property name="sizeHint" stdset="0">
-                <size>
-                 <width>20</width>
-                 <height>477</height>
-                </size>
-               </property>
-              </spacer>
-             </item>
-             <item row="1" column="0">
-              <widget class="QLabel" name="lblTrajectoriesCommand">
+             <item row="0" column="1">
+              <widget class="QLabel" name="lblTrajectoriesInfo">
                <property name="minimumSize">
                 <size>
                  <width>109</width>
@@ -581,29 +559,8 @@ font: 8pt;
                </property>
               </widget>
              </item>
-             <item row="0" column="0" colspan="2">
-              <widget class="QLabel" name="label_20">
-               <property name="text">
-                <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:8pt;&quot;&gt;Command (count) |&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
-               </property>
-              </widget>
-             </item>
-             <item row="0" column="2">
-              <widget class="QLabel" name="label_21">
-               <property name="text">
-                <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:8pt;&quot;&gt;features&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
-               </property>
-              </widget>
-             </item>
-             <item row="1" column="1" colspan="2">
-              <widget class="QLabel" name="lblTrajectoriesFeatures">
-               <property name="text">
-                <string/>
-               </property>
-              </widget>
-             </item>
-             <item row="2" column="2">
-              <spacer name="verticalSpacer_7">
+             <item row="1" column="1">
+              <spacer name="verticalSpacer">
                <property name="orientation">
                 <enum>Qt::Vertical</enum>
                </property>
@@ -674,7 +631,7 @@ font: 8pt;
             </property>
             <layout class="QGridLayout" name="gridLayout_29">
              <item row="1" column="1">
-              <widget class="QLabel" name="lblNTMean_2">
+              <widget class="QLabel" name="lblResultValues">
                <property name="text">
                 <string/>
                </property>
@@ -695,7 +652,7 @@ font: 8pt;
               </widget>
              </item>
              <item row="0" column="1">
-              <widget class="QLabel" name="lblNTValues_2">
+              <widget class="QLabel" name="lblResultK">
                <property name="text">
                 <string/>
                </property>
@@ -885,8 +842,21 @@ font: 8pt;
          </layout>
         </widget>
        </item>
-       <item row="2" column="0">
+       <item row="4" column="0">
         <spacer name="verticalSpacer_5">
+         <property name="orientation">
+          <enum>Qt::Vertical</enum>
+         </property>
+         <property name="sizeHint" stdset="0">
+          <size>
+           <width>20</width>
+           <height>40</height>
+          </size>
+         </property>
+        </spacer>
+       </item>
+       <item row="0" column="0">
+        <spacer name="verticalSpacer_7">
          <property name="orientation">
           <enum>Qt::Vertical</enum>
          </property>
