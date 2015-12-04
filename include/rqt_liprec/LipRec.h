@@ -42,6 +42,7 @@
 #include "ImageProcessing.h"
 #include "Dtw.h"
 #include "TrajectoriesDataManager.h"
+#include "Clustering.h"
 
 using namespace std_msgs;
 using namespace std;
@@ -132,6 +133,7 @@ private:
     ImageProcessing imageProcessing;
     Dtw dtw;
     TrajectoriesDataManager tdm;
+    Clustering clustering;
 
     void processImage(Mat img);
 
@@ -177,6 +179,8 @@ private slots:
     void clickedSaveTrajectory();
     void clickedAbortTrajectory();
     void clickedAbortOrSaveTrajectory();
+
+    void clickedCluster();
 
 
 

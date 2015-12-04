@@ -79,6 +79,8 @@ void LipRec::initPlugin(qt_gui_cpp::PluginContext& context)
     QObject::connect(ui_.pbSaveTrajectory, SIGNAL(clicked()), this, SLOT(clickedSaveTrajectory()));
     QObject::connect(ui_.pbAbortTrajectory, SIGNAL(clicked()), this, SLOT(clickedAbortTrajectory()));
 
+    QObject::connect(ui_.pbCluster, SIGNAL(clicked()), this, SLOT(clickedCluster()));
+
 
     drawKeyPointState = 0;
     ui_.pbToggleKpLines->setToolTip("Show keypoint lines.");
@@ -170,6 +172,8 @@ void LipRec::initPlugin(qt_gui_cpp::PluginContext& context)
 
     availableTrajectories << "all";
 
+    tdm.connectToDatabase("localhost", "liprec", "liprec");
+
     QObject::connect(this, SIGNAL(updateCam(cv::Mat)), this, SLOT(getCamPic(cv::Mat)));
 }
 
@@ -241,8 +245,6 @@ void LipRec::getCamPic(cv::Mat img){
     }
 }
 
-static bool write = false;
-
 void LipRec::processImage(Mat img)
 {
     currentUtteranceFrame = img.clone();
@@ -294,7 +296,7 @@ void LipRec::processImage(Mat img)
     Mat dtwMatTemp;
     QList<Point> warpingPath;
 
-    ROS_INFO("ABS");
+    //ROS_INFO("ABS");
     dtw.calculateDistanceMatrix(ABS);
     //dtw.printDistanceMatrix();
     dtwMat = dtw.calculateDtwDistanceMatrix();
@@ -302,13 +304,13 @@ void LipRec::processImage(Mat img)
     warpingPath = dtw.calculateGreedyWarpingPath();
     //dtw.printDtwDistanceMatric();
 
-    ROS_INFO("SQUARE");
+    //ROS_INFO("SQUARE");
     dtw.calculateDistanceMatrix(SQUARE);
     //dtw.printDistanceMatrix();
     dtw.calculateDtwDistanceMatrix();
     //dtw.printDtwDistanceMatric();
 
-    ROS_INFO("SQUARE2");
+    //ROS_INFO("SQUARE2");
     dtw.calculateDistanceMatrix(SQUARE2);
     //dtw.printDistanceMatrix();
     dtw.calculateDtwDistanceMatrix();
@@ -344,7 +346,7 @@ void LipRec::processImage(Mat img)
        circle(dtwMat, warpingPath.at(i), 1, Scalar(255,255,255));
        sum += dtwMatTemp.at<double>(warpingPath.at(i).y, warpingPath.at(i).x);
     }
-    ROS_INFO("SUM %f", sum);
+    //ROS_INFO("SUM %f", sum);
     warpingPath.clear();
 
     dtwMat = 255 - dtwMat;
@@ -356,40 +358,42 @@ void LipRec::processImage(Mat img)
 
     ///TEST DTW
 
-    tdm.connectToDatabase("localhost");
-    if(!write){
-        //tdm.insertTrajectory(t2, "move forward", "area");
-        QList<QList<double> > trajectories = tdm.getTrajectory("move forward", "area");
+    tdm.setCollection(ui_.leCollection->text());
 
-        for (int i = 0; i < trajectories.size(); ++i) {
-            ROS_INFO("%d", trajectories.at(i).size());
-        }
+//    if(!write){
+//        //tdm.insertTrajectory(t2, "move forward", "area");
+//        QList<QList<double> > trajectories = tdm.getTrajectory("move forward", "area");
 
-        QMap<QString, int> commandsWithCount = tdm.getAllCommandsWithCount();
-        QStringList strL = tdm.getFeatures("move forward");
+//        for (int i = 0; i < trajectories.size(); ++i) {
+//            ROS_INFO("%d", trajectories.at(i).size());
+//        }
 
-        for (int i = 0; i < strL.size(); ++i) {
-            ROS_INFO("%s", strL.at(i).toStdString().c_str());
-        }
+//        QMap<QString, int> commandsWithCount = tdm.getAllCommandsWithCount();
+//        QStringList strL = tdm.getFeatures("move forward");
 
-        foreach (QString command, commandsWithCount.keys()) {
-            ROS_INFO("%s : %d", command.toStdString().c_str(), commandsWithCount[command]);
-        }
+//        for (int i = 0; i < strL.size(); ++i) {
+//            ROS_INFO("%s", strL.at(i).toStdString().c_str());
+//        }
 
-        write = true;
-    }
+//        foreach (QString command, commandsWithCount.keys()) {
+//            ROS_INFO("%s : %d", command.toStdString().c_str(), commandsWithCount[command]);
+//        }
+
+//        write = true;
+//    }
 
     QMap<QString, int> commandsWithCount = tdm.getAllCommandsWithCount();
 
     QString commands = "";
     QString featuresForCmd = "";
 
+    int i = 1;
     foreach (QString command, commandsWithCount.keys()) {
         QStringList strL = tdm.getFeatures(command);
         foreach (QString feature, strL) {
             featuresForCmd = featuresForCmd + feature + ", ";
         }
-        commands = commands + command + " (" + QString::number(commandsWithCount[command]) +")" + " : " +featuresForCmd + "\n";
+        commands = QString::number(i++)+ ") " + commands + command + " (" + QString::number(commandsWithCount[command]) +")" + " :\n" +featuresForCmd + "\n";
 
         if(!availableTrajectories.contains(command)){
             availableTrajectories << command;
@@ -399,7 +403,7 @@ void LipRec::processImage(Mat img)
     }
 
     ui_.lblTrajectoriesInfo->setText(commands);
-    ui_.lblTrajectoriesInfo->setFont(QFont("Times New Roman", 10, QFont::Normal));
+    ui_.lblTrajectoriesInfo->setFont(QFont("Times New Roman", 11, QFont::Normal));
 
 
     NO_CYCLIC_FRAME = ui_.sbNOCF->value();
@@ -527,13 +531,13 @@ void LipRec::processImage(Mat img)
                     }
 
                     if(ui_.cbArea->isChecked()){
-                        tdm.insertTrajectory(recordTrajectory[ui_.cbArea->text()], ui_.leCommand->text(), ui_.cbAspectRatio->text());
+                        tdm.insertTrajectory(recordTrajectory[ui_.cbArea->text()], ui_.leCommand->text(), ui_.cbArea->text());
                     }
 
                     ui_.lblNTValues->setText(QString::number(recordTrajectory[ui_.cbAspectRatio->text()].size()));
 
                     if(recordTrajectory[ui_.cbAspectRatio->text()].size() > 0){
-                        for (int i = 0; i < ui_.cbAspectRatio->size(); ++i) {
+                        for (int i = 0; i < recordTrajectory[ui_.cbAspectRatio->text()].size(); ++i) {
                             aspectRatioMean += recordTrajectory[ui_.cbAspectRatio->text()].at(i);
                         }
                     }
@@ -549,9 +553,15 @@ void LipRec::processImage(Mat img)
 
                     ui_.lblNTMean->setText(QString("area: %1 ; aspect ratio: %2").arg(areaMean, aspectRatioMean));
 
+                    recordTrajectory[ui_.cbAspectRatio->text()].clear();
+                    recordTrajectory[ui_.cbArea->text()].clear();
                     recordTrajectoryState = None;
                     break;
                 case Abort:
+
+                    recordTrajectory[ui_.cbAspectRatio->text()].clear();
+                    recordTrajectory[ui_.cbArea->text()].clear();
+                    recordTrajectoryState = None;
                     break;
                 default:
                     break;
@@ -868,7 +878,6 @@ void LipRec::changeLipActivationState(int activation, Mat& imageAbsDiff, int cur
 
             pixMap = pixMap.scaled(ui_.lbl_lips->maximumWidth(), ui_.lbl_lips->maximumHeight(), Qt::KeepAspectRatio, Qt::SmoothTransformation);
             ui_.lbl_rec_word->setPixmap(pixMap);
-
 
             QString currentTextSignalWindow1 = ui_.cbSignalWindow1->currentText();
             QString currentTextSignalWindow2 = ui_.cbSignalWindow2->currentText();
@@ -1191,7 +1200,7 @@ void LipRec::clickedPrintFeatures()
 
 void LipRec::clickedRecordStopTrajectory()
 {
-    if (recordTrajectoryState == None && recordTrajectoryState == Save && recordTrajectoryState == Abort
+    if ((recordTrajectoryState == None || recordTrajectoryState == Save || recordTrajectoryState == Abort)
             && !ui_.pbSaveTrajectory->isEnabled()) {
         ui_.pbRecordStopTrajectory->setText("Stop recording");
 
@@ -1236,6 +1245,20 @@ void LipRec::clickedAbortOrSaveTrajectory()
 {
     ui_.lblMsg->setText("");
     ui_.gbNewTrajectory->setEnabled(false);
+}
+
+void LipRec::clickedCluster()
+{
+    clustering.setK(ui_.sbKMedoids->value());
+    QList<QList<double> > traj = tdm.getTrajectory("move forward", ui_.cbAspectRatio->text());
+    for (int i = 0; i < traj.size(); ++i) {
+        clustering.addTrajectory(traj.at(i));
+    }
+
+    traj = clustering.kMedoidsClustering(ABS);
+
+    ROS_INFO("brabs %d", traj.size());
+
 }
 
 void LipRec::changeUseCam()

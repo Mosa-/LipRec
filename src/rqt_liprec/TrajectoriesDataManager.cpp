@@ -16,10 +16,12 @@ TrajectoriesDataManager::~TrajectoriesDataManager(){
 
 }
 
-void TrajectoriesDataManager::connectToDatabase(string host)
+void TrajectoriesDataManager::connectToDatabase(string host, QString database, QString collection)
 {
     try{
         mongoDB.connect(host);
+        this->database = database;
+        this->collection = collection;
     } catch(DBException &e) {
         ROS_INFO("caught %s",e.what());
     }
@@ -41,7 +43,7 @@ void TrajectoriesDataManager::insertTrajectory(QList<double> trajectory, QString
 
     bsonBuilder.appendArray("values", bab.arr());
 
-    mongoDB.insert("liprec.liprec", bsonBuilder.obj());
+    mongoDB.insert(QString(database+"."+collection).toStdString(), bsonBuilder.obj());
 }
 
 QList<QList<double> > TrajectoriesDataManager::getTrajectory(QString command, QString feature)
@@ -50,7 +52,7 @@ QList<QList<double> > TrajectoriesDataManager::getTrajectory(QString command, QS
     BSONObj p;
 
     auto_ptr<DBClientCursor> cursor =
-            mongoDB.query("liprec.liprec", QUERY("command" << command.toStdString() << "feature" << feature.toStdString()));
+            mongoDB.query(QString(database+"."+collection).toStdString(), QUERY("command" << command.toStdString() << "feature" << feature.toStdString()));
 
     QList<double> trajectory;
     while (cursor->more()) {
@@ -78,7 +80,7 @@ QMap<QString, int> TrajectoriesDataManager::getAllCommandsWithCount()
     BSONObj p;
 
     auto_ptr<DBClientCursor> cursor =
-            mongoDB.query("liprec.liprec", "");
+            mongoDB.query((database+"."+collection).toStdString(), "");
 
     while (cursor->more()) {
         p = cursor->next();
@@ -95,9 +97,8 @@ QStringList TrajectoriesDataManager::getFeatures(QString command)
     BSONObj p;
 
     auto_ptr<DBClientCursor> cursor =
-            mongoDB.query("liprec.liprec", QUERY("command" << command.toStdString()));
+            mongoDB.query(QString(database+"."+collection).toStdString(), QUERY("command" << command.toStdString()));
 
-    QList<double> trajectory;
     while (cursor->more()) {
         p = cursor->next();
 
@@ -107,4 +108,9 @@ QStringList TrajectoriesDataManager::getFeatures(QString command)
         }
     }
     return features;
+}
+
+void TrajectoriesDataManager::setCollection(QString collection)
+{
+    this->collection = collection;
 }

@@ -22,7 +22,7 @@ public:
     TrajectoriesDataManager(string host);
     virtual ~TrajectoriesDataManager();
 
-    void connectToDatabase(string host);
+    void connectToDatabase(string host, QString database, QString collection);
 
     void insertTrajectory(QList<double> trajectory, QString command, QString feature);
     QList<QList<double> > getTrajectory(QString command, QString feature);
@@ -30,8 +30,12 @@ public:
     QMap<QString, int> getAllCommandsWithCount();
     QStringList getFeatures(QString command);
 
+    void setCollection(QString collection);
+
 private:
     DBClientConnection mongoDB;
+    QString database;
+    QString collection;
 
 
 };

@@ -190,6 +190,12 @@ QPushButton:checked{
       <layout class="QGridLayout" name="gridLayout_27">
        <item row="1" column="0">
         <widget class="QFrame" name="frame_14">
+         <property name="maximumSize">
+          <size>
+           <width>16777215</width>
+           <height>181</height>
+          </size>
+         </property>
          <property name="frameShape">
           <enum>QFrame::WinPanel</enum>
          </property>
@@ -237,7 +243,7 @@ QPushButton:checked{
              <bool>false</bool>
             </property>
             <layout class="QGridLayout" name="gridLayout_25">
-             <item row="2" column="0">
+             <item row="3" column="0">
               <spacer name="verticalSpacer_4">
                <property name="orientation">
                 <enum>Qt::Vertical</enum>
@@ -264,17 +270,17 @@ QPushButton:checked{
                </property>
               </widget>
              </item>
-             <item row="1" column="1">
-              <widget class="QLabel" name="lblNTMean">
-               <property name="text">
-                <string/>
-               </property>
-              </widget>
-             </item>
              <item row="0" column="0">
               <widget class="QLabel" name="label_24">
                <property name="text">
                 <string>Values:</string>
+               </property>
+              </widget>
+             </item>
+             <item row="2" column="0" colspan="2">
+              <widget class="QLabel" name="lblNTMean">
+               <property name="text">
+                <string/>
                </property>
               </widget>
              </item>
@@ -357,19 +363,6 @@ QPushButton:checked{
                 <string>Command</string>
                </property>
               </widget>
-             </item>
-             <item row="2" column="4">
-              <spacer name="verticalSpacer_3">
-               <property name="orientation">
-                <enum>Qt::Vertical</enum>
-               </property>
-               <property name="sizeHint" stdset="0">
-                <size>
-                 <width>20</width>
-                 <height>28</height>
-                </size>
-               </property>
-              </spacer>
              </item>
              <item row="4" column="0">
               <spacer name="horizontalSpacer_7">
@@ -492,6 +485,19 @@ font: 8pt;
                </property>
               </widget>
              </item>
+             <item row="2" column="4">
+              <spacer name="verticalSpacer_3">
+               <property name="orientation">
+                <enum>Qt::Vertical</enum>
+               </property>
+               <property name="sizeHint" stdset="0">
+                <size>
+                 <width>20</width>
+                 <height>28</height>
+                </size>
+               </property>
+              </spacer>
+             </item>
             </layout>
            </widget>
           </item>
@@ -530,14 +536,14 @@ font: 8pt;
             </property>
            </widget>
           </item>
-          <item row="1" column="0" colspan="2">
+          <item row="2" column="0" colspan="2">
            <widget class="QLabel" name="label_2">
             <property name="text">
-             <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:10pt; font-weight:600;&quot;&gt;Trajectories&lt;/span&gt;&lt;/p&gt;&lt;p&gt;&lt;span style=&quot; font-size:7pt;&quot;&gt;Command (counts) &amp;nbsp; : features&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+             <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:10pt; font-weight:600;&quot;&gt;Trajectories&lt;/span&gt;&lt;/p&gt;&lt;p&gt;&lt;span style=&quot; font-size:7pt;&quot;&gt;Command (counts) with features&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
             </property>
            </widget>
           </item>
-          <item row="2" column="0" colspan="2">
+          <item row="3" column="0" colspan="2">
            <widget class="QFrame" name="frame_10">
             <property name="frameShape">
              <enum>QFrame::StyledPanel</enum>
@@ -576,6 +582,32 @@ font: 8pt;
               </spacer>
              </item>
             </layout>
+           </widget>
+          </item>
+          <item row="1" column="0">
+           <widget class="QLabel" name="label_20">
+            <property name="maximumSize">
+             <size>
+              <width>80</width>
+              <height>16777215</height>
+             </size>
+            </property>
+            <property name="text">
+             <string>Collection:</string>
+            </property>
+           </widget>
+          </item>
+          <item row="1" column="1">
+           <widget class="QLineEdit" name="leCollection">
+            <property name="maximumSize">
+             <size>
+              <width>100</width>
+              <height>16777215</height>
+             </size>
+            </property>
+            <property name="text">
+             <string>liprec</string>
+            </property>
            </widget>
           </item>
          </layout>
@@ -676,6 +708,12 @@ font: 8pt;
           </item>
           <item row="0" column="0">
            <widget class="QGroupBox" name="groupBox_2">
+            <property name="maximumSize">
+             <size>
+              <width>16777215</width>
+              <height>135</height>
+             </size>
+            </property>
             <property name="title">
              <string>Clustering</string>
             </property>
@@ -775,7 +813,7 @@ font: 8pt;
                  </widget>
                 </item>
                 <item row="0" column="1">
-                 <widget class="QSpinBox" name="spinBox">
+                 <widget class="QSpinBox" name="sbKMedoids">
                   <property name="minimum">
                    <number>1</number>
                   </property>
