@@ -84,8 +84,8 @@ Mat Dtw::calculateDtwDistanceMatrix(){
 QList<Point> Dtw::calculateGreedyWarpingPath()
 {
     QList<Point> warpingPath;
-    int i = dtwDistanceMatrix.rows;
-    int j = dtwDistanceMatrix.cols;
+    int i = dtwDistanceMatrix.rows-1;
+    int j = dtwDistanceMatrix.cols-1;
 
     double insertion = 0.0;
     double deletion = 0.0;

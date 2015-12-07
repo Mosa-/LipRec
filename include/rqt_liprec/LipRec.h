@@ -23,6 +23,7 @@
 #include <stdlib.h>
 #include <ros/ros.h>
 #include <ros/package.h>
+#include <ros/console.h>
 
 #include <std_msgs/String.h>
 #include <std_srvs/Empty.h>

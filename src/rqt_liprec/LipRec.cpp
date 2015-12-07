@@ -292,8 +292,8 @@ void LipRec::processImage(Mat img)
 
     dtw.seed(t1, t2);
 
-    Mat dtwMat;
-    Mat dtwMatTemp;
+    Mat dtwMat(t1.size(), t2.size(), CV_64F, Scalar(0.0));
+    Mat dtwMatTemp(t1.size(), t2.size(), CV_64F, Scalar(0.0));
     QList<Point> warpingPath;
 
     //ROS_INFO("ABS");
@@ -304,16 +304,17 @@ void LipRec::processImage(Mat img)
     warpingPath = dtw.calculateGreedyWarpingPath();
     //dtw.printDtwDistanceMatric();
 
+
     //ROS_INFO("SQUARE");
-    dtw.calculateDistanceMatrix(SQUARE);
+    //dtw.calculateDistanceMatrix(SQUARE);
     //dtw.printDistanceMatrix();
-    dtw.calculateDtwDistanceMatrix();
+    //dtw.calculateDtwDistanceMatrix();
     //dtw.printDtwDistanceMatric();
 
     //ROS_INFO("SQUARE2");
-    dtw.calculateDistanceMatrix(SQUARE2);
+    //dtw.calculateDistanceMatrix(SQUARE2);
     //dtw.printDistanceMatrix();
-    dtw.calculateDtwDistanceMatrix();
+    //dtw.calculateDtwDistanceMatrix();
     //dtw.printDtwDistanceMatric();
 
     Mat dtwMat2(dtwMat.rows-1, dtwMat.cols-1, CV_64F);
@@ -1251,13 +1252,15 @@ void LipRec::clickedCluster()
 {
     clustering.setK(ui_.sbKMedoids->value());
     QList<QList<double> > traj = tdm.getTrajectory("move forward", ui_.cbAspectRatio->text());
+    ROS_INFO("trajectory size (DB): %d", traj.size());
     for (int i = 0; i < traj.size(); ++i) {
         clustering.addTrajectory(traj.at(i));
     }
 
-    traj = clustering.kMedoidsClustering(ABS);
+    //traj = clustering.kMedoidsClustering(ABS);
+    traj = clustering.mosaClustering(ABS, 2);
 
-    ROS_INFO("brabs %d", traj.size());
+    ROS_INFO("kMedoidsClustering trajectory size: %d", traj.size());
 
 }
 

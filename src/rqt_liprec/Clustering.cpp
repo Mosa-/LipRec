@@ -15,32 +15,44 @@ Clustering::~Clustering(){
 
 QList<QList<double> > Clustering::kMedoidsClustering(DistanceFunction df)
 {
+    ROS_INFO("size in clustering %d k: %d", this->trajectories.size(), this->k);
     QList<int> kIndices;
 
     int kRandom = 0;
     for (int i = 0; i < this->k; ++i) {
         kRandom = randInt(0, this->trajectories.size()-1);
 
+
         if(kIndices.empty()){
             kIndices.append(kRandom);
             assignCluster[kRandom].append(kRandom);
+
+            ROS_INFO("kRandom %d", kRandom);
+
         }else{
             while(kIndices.contains(kRandom)){
                 kRandom = randInt(0, this->trajectories.size()-1);
             }
             kIndices.append(kRandom);
             assignCluster[kRandom].append(kRandom);
-
+            ROS_INFO("kRandom %d",  kRandom);
         }
     }
 
     bool changes = true;
+    int cntTempForDebugBreak = 0;
 
     while(changes){
+        cntTempForDebugBreak++;
+        if(cntTempForDebugBreak > 15){
+            ROS_INFO("BREAK BRABS");
+            break;
+        }
+        ROS_INFO(">>>BEGIN assignEachTrajectoryToCluster");
         // assignEachTrajectoryToCluster
         int kIndex = 0;
         int lowCostTrajectoryIndex = -1;
-        double previousWarpingCost = 1000;
+        double previousWarpingCost = 10000;
         double tmpWarpingCost = 0;
         for (int i = 0; i < trajectories.size(); ++i) {
             if(!kIndices.contains(i)){
@@ -55,38 +67,56 @@ QList<QList<double> > Clustering::kMedoidsClustering(DistanceFunction df)
                     }
                 }
                 assignCluster[lowCostTrajectoryIndex].append(i);
+                ROS_INFO("trajektory: %d assign to cluster %d", i, lowCostTrajectoryIndex);
                 lowCostTrajectoryIndex = -1;
-                previousWarpingCost = 1000;
+                previousWarpingCost = 10000;
             }
         }
 
+        ROS_INFO(">>>END assignEachTrajectoryToCluster");
 
+
+        ROS_INFO(">>>BEGIN adjustClusterMedoidsCenter");
         // adjustClusterMedoidsCenter
         QMap<int, QList<int> > newAssignCluster;
         QList<int> cluster;
+        kIndices.clear();
         foreach (int k, assignCluster.keys()) {
             cluster = assignCluster[k];
 
             double average = 0.0;
-            double previousAverage = 1000.0;
+            double previousAverage = 10000.0;
             int newK = -1;
+
             for (int i = 0; i < cluster.size(); ++i) {
                 average = 0.0;
                 for (int j = 0; j < cluster.size(); ++j) {
                     if(i != j){
                         dtw.seed(trajectories.at(cluster.at(i)), trajectories.at(cluster.at(j)));
+                        //this->printTrajectory(trajectories.at(cluster.at(j)));
                         average += calcWarpingCost(df);
+                        ROS_INFO("currentAvg: %f", average);
                     }
                 }
 
-                average = average/ (cluster.size()-1);
+                average = average/ (cluster.size());
                 if(average < previousAverage){
-                    previousAverage = average;
-                    newK = cluster.at(i);
+                    if(cluster.size() > 1){
+                        ROS_INFO("average %f newK %d", average, cluster.at(i));
+
+                        previousAverage = average;
+                        newK = cluster.at(i);
+                    }
                 }
             }
-            newAssignCluster[newK].append(newK);
+            if(newK >= 0){
+                ROS_INFO("newAssignCluster k: %d", newK);
+                newAssignCluster[newK].append(newK);
+                kIndices.append(newK);
+            }
         }
+        ROS_INFO(">>>END adjustClusterMedoidsCenter");
+
 
         changes = false;
         foreach (int k, assignCluster.keys()) {
@@ -96,6 +126,8 @@ QList<QList<double> > Clustering::kMedoidsClustering(DistanceFunction df)
         }
         assignCluster.clear();
         assignCluster = newAssignCluster;
+
+
     }
 
     QList<QList<double> > kMedoids;
@@ -103,10 +135,12 @@ QList<QList<double> > Clustering::kMedoidsClustering(DistanceFunction df)
         kMedoids.append(trajectories.at(k));
     }
 
+    this->trajectories.clear();
+
     return kMedoids;
 }
 
-QList<QList<double> > Clustering::ownClustering(DistanceFunction df, int noExceptTrajectories)
+QList<QList<double> > Clustering::mosaClustering(DistanceFunction df, int noExceptTrajectories)
 {
     QList<QList<double> > kClusterTrajectories;
 
@@ -135,7 +169,7 @@ QList<QList<double> > Clustering::ownClustering(DistanceFunction df, int noExcep
                     trajectoryDistances[j] = warpingCost;
                 }
             }
-            average = average/(currentTrajectories.size()-1);
+            average = average/(currentTrajectories.size());
 
             foreach (int k, trajectoryDistances.keys()) {
                 if(trajectoryDistances[k] <= average){
@@ -169,7 +203,7 @@ QList<QList<double> > Clustering::ownClustering(DistanceFunction df, int noExcep
                 trajectoryDistances[i] = warpingCost;
             }
         }
-        average = average/(currentTrajectories.size()-1);
+        average = average/(currentTrajectories.size());
         foreach (int k, trajectoryDistances.keys()) {
             if(trajectoryDistances[k] > average){
                 remainTrajectories.append(currentTrajectories.at(k));
@@ -184,11 +218,24 @@ QList<QList<double> > Clustering::ownClustering(DistanceFunction df, int noExcep
 
 double Clustering::calcWarpingCost(DistanceFunction df)
 {
+    double warpingCost = 0.0;
+
     dtw.calculateDistanceMatrix(df);
     dtw.calculateDtwDistanceMatrix();
     dtw.calculateGreedyWarpingPath();
 
-    return dtw.getWarpingPathCost();
+    warpingCost = dtw.getWarpingPathCost();
+
+    return warpingCost;
+}
+
+void Clustering::printTrajectory(QList<double> trajectory)
+{
+    ROS_INFO(">>>Start printTrajectory");
+    for (int i = 0; i < trajectory.size(); ++i) {
+        ROS_INFO("%f", trajectory.at(i));
+    }
+    ROS_INFO(">>>End printTrajectory");
 }
 
 void Clustering::addTrajectory(QList<double> trajectory)
