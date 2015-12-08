@@ -31,11 +31,17 @@ public:
     QStringList getFeatures(QString command);
 
     void setCollection(QString collection);
+    void setCollectionCluster(QString collection);
+
+    void insertClusterTrajectories(QList<QList<double> > trajectories, QString command, QString feature, QString clusterMethod);
+    void updateClusterTrajectories(QList<QList<double> > trajectories, QString command, QString feature, QString clusterMethod);
+    QList<QList<double> > getClusterTrajectories(QString command, QString feature, QString clusterMethod);
 
 private:
     DBClientConnection mongoDB;
     QString database;
     QString collection;
+    QString collectionCluster;
 
 
 };

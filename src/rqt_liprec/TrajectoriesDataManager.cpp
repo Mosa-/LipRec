@@ -73,6 +73,84 @@ QList<QList<double> > TrajectoriesDataManager::getTrajectory(QString command, QS
     return trajectories;
 }
 
+
+void TrajectoriesDataManager::insertClusterTrajectories(QList<QList<double> > trajectories, QString command, QString feature, QString clusterMethod)
+{
+    BSONObjBuilder bsonBuilder;
+    bsonBuilder.append("command", command.toStdString());
+    bsonBuilder.append("feature", feature.toStdString());
+    bsonBuilder.append("clusterMethod", clusterMethod.toStdString());
+
+
+    BSONArrayBuilder bab2;
+
+    for (int i = 0; i < trajectories.size(); ++i) {
+        BSONArrayBuilder bab;
+        BSONObj bo;
+
+        for (int k = 0; k < trajectories.at(i).size(); ++k) {
+            bo = BSON("id" << k << "value" << trajectories.at(i).at(k));
+            bab.append(bo);
+        }
+        bab2.append(bab.arr());
+    }
+    bsonBuilder.appendArray("values", bab2.arr());
+
+    mongoDB.insert(QString(database+"."+collectionCluster).toStdString(), bsonBuilder.obj());
+}
+
+void TrajectoriesDataManager::updateClusterTrajectories(QList<QList<double> > trajectories, QString command, QString feature, QString clusterMethod)
+{
+    BSONObjBuilder bsonBuilder;
+
+    BSONArrayBuilder bab2;
+
+    for (int i = 0; i < trajectories.size(); ++i) {
+        BSONArrayBuilder bab;
+        BSONObj bo;
+
+        for (int k = 0; k < trajectories.at(i).size(); ++k) {
+            bo = BSON("id" << k << "value" << trajectories.at(i).at(k));
+            bab.append(bo);
+        }
+        bab2.append(bab.arr());
+    }
+    bsonBuilder.appendArray("values", bab2.arr());
+    BSONObj bsonData = BSON("$set" << bsonBuilder.obj());
+
+    mongoDB.update(QString(database+"."+collectionCluster).toStdString(),
+                   QUERY("command" << command.toStdString() << "feature" << feature.toStdString() << "clusterMethod" << clusterMethod.toStdString()), bsonData);
+
+}
+
+QList<QList<double> > TrajectoriesDataManager::getClusterTrajectories(QString command, QString feature, QString clusterMethod){
+    QList<QList<double> > trajectories;
+    BSONObj p;
+
+    auto_ptr<DBClientCursor> cursor =
+            mongoDB.query(QString(database+"."+collectionCluster).toStdString(),
+                          QUERY("command" << command.toStdString() << "feature" << feature.toStdString() << "clusterMethod" << clusterMethod.toStdString()));
+
+    QList<double> trajectory;
+    while (cursor->more()) {
+        p = cursor->next();
+
+        vector<BSONElement> array = p["values"].Array();
+        for (vector<BSONElement>::iterator ar = array.begin(); ar != array.end(); ++ar){
+            vector<BSONElement> array2 = ar->Array();
+            trajectory.clear();
+            for (vector<BSONElement>::iterator ar2 = array2.begin(); ar2 != array2.end(); ++ar2) {
+                BSONObj bo = ar2->embeddedObject();
+                trajectory.append(bo.getField("value").Double());
+            }
+            trajectories.append(trajectory);
+        }
+    }
+
+    return trajectories;
+
+}
+
 QMap<QString, int> TrajectoriesDataManager::getAllCommandsWithCount()
 {
     QMap<QString, int> commandsWithCount;
@@ -113,4 +191,9 @@ QStringList TrajectoriesDataManager::getFeatures(QString command)
 void TrajectoriesDataManager::setCollection(QString collection)
 {
     this->collection = collection;
+}
+
+void TrajectoriesDataManager::setCollectionCluster(QString collection)
+{
+    this->collectionCluster = collection;
 }

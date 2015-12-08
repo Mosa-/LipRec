@@ -173,6 +173,25 @@ void LipRec::initPlugin(qt_gui_cpp::PluginContext& context)
     availableTrajectories << "all";
 
     tdm.connectToDatabase("localhost", "liprec", "liprec");
+    tdm.setCollectionCluster("clustering");
+
+    QMap<QString, int> commandsWithCount = tdm.getAllCommandsWithCount();
+    foreach (QString command, commandsWithCount.keys()) {
+        QStringList strL = tdm.getFeatures(command);
+        foreach (QString feature, strL) {
+
+            QList<QList<double> > clusterT = tdm.getClusterTrajectories(command, feature, ui_.rbKmedoids->text());
+            if(clusterT.size() > 0){
+                this->setClusterTrajectories(clusterT, command, feature, ui_.rbKmedoids->text());
+            }
+
+            clusterT = tdm.getClusterTrajectories(command, feature, ui_.rbMosaCluster->text());
+            if(clusterT.size() > 0){
+                this->setClusterTrajectories(clusterT, command, feature, ui_.rbMosaCluster->text());
+            }
+        }
+    }
+
 
     QObject::connect(this, SIGNAL(updateCam(cv::Mat)), this, SLOT(getCamPic(cv::Mat)));
 }
@@ -953,6 +972,18 @@ void LipRec::recordUtteranceFrame(Mat currentFrame)
     }
 }
 
+QList<QList<double> > LipRec::getClusterTrajectories(QString command, QString feature, QString clusterMethod)
+{
+    QString clusterKey(QString("%1_%2_%3").arg(clusterMethod, command,feature));
+
+    return clusterTrajectoriesOfCommand[clusterKey];
+}
+
+void LipRec::setClusterTrajectories(QList<QList<double> > clusterT, QString command, QString feature, QString clusterMethod)
+{
+    clusterTrajectoriesOfCommand[QString("%1_%2_%3").arg(clusterMethod, command, feature)] = clusterT;
+}
+
 void LipRec::applySignalSmoothing(int graphicView, SignalSmoothingType type)
 {
     QGraphicsView* gv;
@@ -1250,18 +1281,130 @@ void LipRec::clickedAbortOrSaveTrajectory()
 
 void LipRec::clickedCluster()
 {
-    clustering.setK(ui_.sbKMedoids->value());
-    QList<QList<double> > traj = tdm.getTrajectory("move forward", ui_.cbAspectRatio->text());
-    ROS_INFO("trajectory size (DB): %d", traj.size());
-    for (int i = 0; i < traj.size(); ++i) {
-        clustering.addTrajectory(traj.at(i));
+
+//    clustering.setK(ui_.sbKMethod->value());
+//    QList<QList<double> > traj = tdm.getTrajectory("move forward", ui_.cbAspectRatio->text());
+//    ROS_INFO("trajectory size (DB): %d", traj.size());
+//    for (int i = 0; i < traj.size(); ++i) {
+//        clustering.addTrajectory(traj.at(i));
+//    }
+
+//    //traj = clustering.kMedoidsClustering(ABS);
+//    traj = clustering.mosaClustering(ABS, 2);
+
+//    ROS_INFO("kMedoidsClustering trajectory size: %d", traj.size());
+
+    QList<double> t1;
+    QList<double> t2;
+
+
+//    t1 << 881 << 873.5 << 865.5 << 853.5 << 875.5 << 846.5 << 822 << 862.5 << 900 << 918.5 << 840.5 << 844 << 866 << 944.5 << 933 << 817.5 << 927.5 <<
+//          882 << 894.5 << 952.5 << 1043.5 << 1035 << 793 << 839 << 1010.5 << 1022 << 1031 << 944 << 920 << 929 << 885.5 << 876 << 856.5 << 823.5 << 846.5 <<
+//          823.5 << 831.5 << 824.5 << 847 << 843.5 << 818.5;
+
+//    t2 << 830.5 << 826 << 870.5 << 851 << 880 << 852 << 857.5 << 857.5 << 867.5 << 814.5 << 806.5 << 856.5 << 926 << 974.5 << 942 << 865 << 853 << 883.5 <<
+//          927.5 << 993 << 934.5 << 906 << 848.5 << 839 << 943.5 << 1034 << 863 << 740.5 << 850 << 934 << 967.5 << 948 << 900.5 << 871 << 855 << 870 << 828.5 <<
+//          823.5 << 810 << 810 << 824 << 830 << 831.5 << 824.5 << 819 << 814 << 825;
+
+        t1 << 0.490196 << 0.490196 << 0.490196 << 0.4999 << 0.48068 << 0.501497 << 0.520833 << 0.666667 << 0.773059 << 0.704364 << 0.599408
+           << 0.565217 << 0.553191 << 0.604036 << 0.617021 << 0.705431 << 0.583207 << 0.608696 << 0.681115 << 0.790484 << 0.860233 << 0.929792
+           <<0.891566 << 0.894737 << 0.837209 << 0.777778 << 0.738956 << 0.638153 << 0.604036 << 0.559888 << 0.54 << 0.52 << 0.490196
+           <<0.48 << 0.461453 << 0.48 << 0.479904 << 0.501497 << 0.5003 << 0.4999 << 0.479904;
+
+        t2 << 0.479904 << 0.48 << 0.490102 << 0.5 << 0.480769 << 0.470588 << 0.470498 << 0.470498 << 0.490494 << 0.587359 << 0.674419 << 0.737886 <<
+              0.808608 << 0.789844 << 0.766613 << 0.644444 << 0.586403 << 0.608552 << 0.651558 << 0.680235 << 0.651558 << 0.59561 << 0.599852 <<
+              0.636199 << 0.727085 << 0.837276 << 0.889787 << 0.918349 << 0.823971 << 0.811749 << 0.695488 << 0.637721 << 0.616882 << 0.59561 <<
+              0.562398 << 0.519584 << 0.4999 << 0.510098 << 0.50978 << 0.50978 << 0.4996 << 0.4996 << 0.5 << 0.479904 << 0.479904 << 0.48 << 0.479904;
+
+//    QList<QList<double> > clusterT;
+//    clusterT.append(t1);
+//    clusterT.append(t2);
+
+
+
+
+//    //tdm.insertClusterTrajectories(clusterT, "move forward", "area");
+//    QList<QList<double> > s = tdm.getClusterTrajectories("move forward", "area");
+
+//    for (int i = 0; i < s.size(); ++i) {
+//        ROS_INFO("siztein %d", s.at(i).size());
+//    }
+
+
+    QString clusterMethod;
+    DistanceFunction df;
+
+    if(ui_.rbKmedoids->isChecked()){
+        clusterMethod = ui_.rbKmedoids->text();
+    }else{
+        clusterMethod = ui_.rbMosaCluster->text();
     }
 
-    //traj = clustering.kMedoidsClustering(ABS);
-    traj = clustering.mosaClustering(ABS, 2);
+    if(ui_.rbABS->isChecked()){
+        df = ABS;
+    }else if(ui_.rbSQUARE->isChecked()){
+        df = SQUARE;
+    }else{
+        df = SQUARE2;
+    }
+    clustering.clearTrajectoriesSet();
 
-    ROS_INFO("kMedoidsClustering trajectory size: %d", traj.size());
+    if(ui_.cbTrajectory->currentText() == "all"){
 
+        QMap<QString, int> commandsWithCount = tdm.getAllCommandsWithCount();
+        foreach (QString command, commandsWithCount.keys()) {
+            if(ui_.cbArea->isChecked()){
+                this->applyCluster(clusterMethod, df, command, ui_.cbArea->text());
+            }
+
+            clustering.clearTrajectoriesSet();
+
+            if(ui_.cbAspectRatio->isChecked()){
+                this->applyCluster(clusterMethod, df, command, ui_.cbAspectRatio->text());
+            }
+
+            clustering.clearTrajectoriesSet();
+        }
+
+    }else{
+
+        if(ui_.cbArea->isChecked()){
+            this->applyCluster(clusterMethod, df, ui_.cbTrajectory->currentText(), ui_.cbArea->text());
+        }
+
+        clustering.clearTrajectoriesSet();
+
+        if(ui_.cbAspectRatio->isChecked()){
+            this->applyCluster(clusterMethod, df, ui_.cbTrajectory->currentText(), ui_.cbAspectRatio->text());
+        }
+
+    }
+}
+
+void LipRec::applyCluster(QString clusterMethod, DistanceFunction df, QString command, QString feature){
+    QList<QList<double> > clusterT = tdm.getClusterTrajectories(command, feature, clusterMethod);
+    QList<QList<double> > traj = tdm.getTrajectory(command, feature);
+
+    if(traj.size() > 0){
+        clustering.addTrajectories(traj);
+
+        if(ui_.rbKmedoids->isChecked()){
+            clustering.setK(ui_.sbKMethod->value());
+            traj = clustering.kMedoidsClustering(df);
+        }else{
+            traj = clustering.mosaClustering(df, ui_.sbKMethod->value());
+        }
+
+        this->setClusterTrajectories(traj, command, feature, clusterMethod);
+
+        if(clusterT.size() > 0){
+            tdm.updateClusterTrajectories(traj, command, feature, clusterMethod);
+        }else{
+            tdm.insertClusterTrajectories(traj, command, feature, clusterMethod);
+        }
+    }else{
+        ROS_INFO("No trajectories found for %s:%s", command.toStdString().c_str(), feature.toStdString().c_str());
+    }
 }
 
 void LipRec::changeUseCam()

@@ -216,6 +216,19 @@ QList<QList<double> > Clustering::mosaClustering(DistanceFunction df, int noExce
     return kClusterTrajectories;
 }
 
+void Clustering::addTrajectories(QList<QList<double> > trajectories)
+{
+    for (int i = 0; i < trajectories.size(); ++i) {
+        this->addTrajectory(trajectories.at(i));
+    }
+}
+
+void Clustering::addTrajectory(QList<double> trajectory)
+{
+    this->trajectories.append(trajectory);
+}
+
+
 double Clustering::calcWarpingCost(DistanceFunction df)
 {
     double warpingCost = 0.0;
@@ -238,11 +251,6 @@ void Clustering::printTrajectory(QList<double> trajectory)
     ROS_INFO(">>>End printTrajectory");
 }
 
-void Clustering::addTrajectory(QList<double> trajectory)
-{
-    this->trajectories.append(trajectory);
-}
-
 void Clustering::setK(int k)
 {
     this->k = k;
@@ -251,6 +259,7 @@ void Clustering::setK(int k)
 void Clustering::clearTrajectoriesSet()
 {
     this->trajectories.clear();
+    this->assignCluster.clear();
 }
 
 int Clustering::randInt(int low, int high)

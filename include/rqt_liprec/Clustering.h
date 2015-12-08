@@ -23,6 +23,7 @@ public:
     QList<QList<double> > kMedoidsClustering(DistanceFunction df);
     QList<QList<double> > mosaClustering(DistanceFunction df, int noExceptTrajectories);
 
+    void addTrajectories(QList<QList<double> > trajectories);
     void addTrajectory(QList<double> trajectory);
     void setK(int k);
     void clearTrajectoriesSet();

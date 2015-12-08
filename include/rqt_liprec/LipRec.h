@@ -130,6 +130,8 @@ private:
 
     QStringList availableTrajectories;
 
+    QMap<QString, QList<QList<double> > > clusterTrajectoriesOfCommand;
+
     KeyPointsDeliverer keyPointsDeliverer;
     ImageProcessing imageProcessing;
     Dtw dtw;
@@ -148,6 +150,9 @@ private:
 
     void recordUtteranceFrame(Mat currentFrame);
 
+    QList<QList<double> > getClusterTrajectories(QString command, QString feature, QString clusterMethod);
+    void setClusterTrajectories(QList<QList<double> > clusterT, QString command, QString feature, QString clusterMethod);
+
     void changeUseCam();
 
     void applySignalSmoothing(int graphicView, SignalSmoothingType type);
@@ -159,6 +164,7 @@ private:
 
     void setupModel();
 
+    void applyCluster(QString clusterMethod, DistanceFunction df, QString command, QString feature);
 public slots:
     void getCamPic(cv::Mat img);
 
