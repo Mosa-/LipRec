@@ -1353,6 +1353,7 @@ void LipRec::clickedCluster()
 
         QMap<QString, int> commandsWithCount = tdm.getAllCommandsWithCount();
         foreach (QString command, commandsWithCount.keys()) {
+
             if(ui_.cbArea->isChecked()){
                 this->applyCluster(clusterMethod, df, command, ui_.cbArea->text());
             }

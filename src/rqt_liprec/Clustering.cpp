@@ -52,7 +52,7 @@ QList<QList<double> > Clustering::kMedoidsClustering(DistanceFunction df)
         // assignEachTrajectoryToCluster
         int kIndex = 0;
         int lowCostTrajectoryIndex = -1;
-        double previousWarpingCost = 10000;
+        double previousWarpingCost = INT_MAX;
         double tmpWarpingCost = 0;
         for (int i = 0; i < trajectories.size(); ++i) {
             if(!kIndices.contains(i)){
@@ -69,7 +69,7 @@ QList<QList<double> > Clustering::kMedoidsClustering(DistanceFunction df)
                 assignCluster[lowCostTrajectoryIndex].append(i);
                 ROS_INFO("trajektory: %d assign to cluster %d", i, lowCostTrajectoryIndex);
                 lowCostTrajectoryIndex = -1;
-                previousWarpingCost = 10000;
+                previousWarpingCost = INT_MAX;
             }
         }
 
@@ -85,7 +85,7 @@ QList<QList<double> > Clustering::kMedoidsClustering(DistanceFunction df)
             cluster = assignCluster[k];
 
             double average = 0.0;
-            double previousAverage = 10000.0;
+            double previousAverage = INT_MAX;
             int newK = -1;
 
             for (int i = 0; i < cluster.size(); ++i) {

@@ -2296,7 +2296,7 @@ font: 8pt;
            <item row="1" column="1">
             <widget class="QSpinBox" name="sbLLMouthCorners">
              <property name="value">
-              <number>6</number>
+              <number>8</number>
              </property>
             </widget>
            </item>
