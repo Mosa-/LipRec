@@ -15,7 +15,7 @@ Clustering::~Clustering(){
 
 QList<QList<double> > Clustering::kMedoidsClustering(DistanceFunction df)
 {
-    ROS_INFO("size in clustering %d k: %d", this->trajectories.size(), this->k);
+    //ROS_INFO("size in clustering %d k: %d", this->trajectories.size(), this->k);
     QList<int> kIndices;
 
     int kRandom = 0;
@@ -27,7 +27,7 @@ QList<QList<double> > Clustering::kMedoidsClustering(DistanceFunction df)
             kIndices.append(kRandom);
             assignCluster[kRandom].append(kRandom);
 
-            ROS_INFO("kRandom %d", kRandom);
+            //ROS_INFO("kRandom %d", kRandom);
 
         }else{
             while(kIndices.contains(kRandom)){
@@ -35,7 +35,7 @@ QList<QList<double> > Clustering::kMedoidsClustering(DistanceFunction df)
             }
             kIndices.append(kRandom);
             assignCluster[kRandom].append(kRandom);
-            ROS_INFO("kRandom %d",  kRandom);
+            //ROS_INFO("kRandom %d",  kRandom);
         }
     }
 
@@ -48,7 +48,7 @@ QList<QList<double> > Clustering::kMedoidsClustering(DistanceFunction df)
             ROS_INFO("BREAK BRABS");
             break;
         }
-        ROS_INFO(">>>BEGIN assignEachTrajectoryToCluster");
+        //ROS_INFO(">>>BEGIN assignEachTrajectoryToCluster");
         // assignEachTrajectoryToCluster
         int kIndex = 0;
         int lowCostTrajectoryIndex = -1;
@@ -67,16 +67,16 @@ QList<QList<double> > Clustering::kMedoidsClustering(DistanceFunction df)
                     }
                 }
                 assignCluster[lowCostTrajectoryIndex].append(i);
-                ROS_INFO("trajektory: %d assign to cluster %d", i, lowCostTrajectoryIndex);
+                //ROS_INFO("trajektory: %d assign to cluster %d", i, lowCostTrajectoryIndex);
                 lowCostTrajectoryIndex = -1;
                 previousWarpingCost = INT_MAX;
             }
         }
 
-        ROS_INFO(">>>END assignEachTrajectoryToCluster");
+        //ROS_INFO(">>>END assignEachTrajectoryToCluster");
 
 
-        ROS_INFO(">>>BEGIN adjustClusterMedoidsCenter");
+        //ROS_INFO(">>>BEGIN adjustClusterMedoidsCenter");
         // adjustClusterMedoidsCenter
         QMap<int, QList<int> > newAssignCluster;
         QList<int> cluster;
@@ -95,14 +95,14 @@ QList<QList<double> > Clustering::kMedoidsClustering(DistanceFunction df)
                         dtw.seed(trajectories.at(cluster.at(i)), trajectories.at(cluster.at(j)));
                         //this->printTrajectory(trajectories.at(cluster.at(j)));
                         average += calcWarpingCost(df);
-                        ROS_INFO("currentAvg: %f", average);
+                        //ROS_INFO("currentAvg: %f", average);
                     }
                 }
 
                 average = average/ (cluster.size());
                 if(average < previousAverage){
                     if(cluster.size() > 1){
-                        ROS_INFO("average %f newK %d", average, cluster.at(i));
+                        //ROS_INFO("average %f newK %d", average, cluster.at(i));
 
                         previousAverage = average;
                         newK = cluster.at(i);
@@ -110,12 +110,12 @@ QList<QList<double> > Clustering::kMedoidsClustering(DistanceFunction df)
                 }
             }
             if(newK >= 0){
-                ROS_INFO("newAssignCluster k: %d", newK);
+                //ROS_INFO("newAssignCluster k: %d", newK);
                 newAssignCluster[newK].append(newK);
                 kIndices.append(newK);
             }
         }
-        ROS_INFO(">>>END adjustClusterMedoidsCenter");
+        //ROS_INFO(">>>END adjustClusterMedoidsCenter");
 
 
         changes = false;

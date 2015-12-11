@@ -38,6 +38,7 @@
 
 #include <time.h>
 #include <QtAlgorithms>
+#include <QDateTime>
 
 #include "KeyPointsDeliverer.h"
 #include "ImageProcessing.h"
@@ -124,6 +125,8 @@ private:
     bool drawSupportLines;
 
     bool printFeatures;
+
+    qint64 lcdUpdateTimeStamp;
 
     RecordTrajectoryState recordTrajectoryState;
     QMap<QString, QList<double> > recordTrajectory;

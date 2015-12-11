@@ -162,6 +162,11 @@ void LipRec::initPlugin(qt_gui_cpp::PluginContext& context)
     font.setUnderline(true);
     ui_.lblDbName->setFont(font);
 
+    ui_.lcdArea->setDigitCount(10);
+    ui_.lcdAspectRatio->setDigitCount(10);
+
+    lcdUpdateTimeStamp = QDateTime::currentMSecsSinceEpoch();
+
     recordVideo = false;
     recordUtterance = false;
     loadUtterance = false;
@@ -409,11 +414,12 @@ void LipRec::processImage(Mat img)
 
     int i = 1;
     foreach (QString command, commandsWithCount.keys()) {
+        featuresForCmd.clear();
         QStringList strL = tdm.getFeatures(command);
         foreach (QString feature, strL) {
             featuresForCmd = featuresForCmd + feature + ", ";
         }
-        commands = QString::number(i++)+ ") " + commands + command + " (" + QString::number(commandsWithCount[command]) +")" + " :\n" +featuresForCmd + "\n";
+        commands = commands + QString::number(i++)+ ") " + command + " (" + QString::number(commandsWithCount[command]) +")" + " :\n" +featuresForCmd + "\n";
 
         if(!availableTrajectories.contains(command)){
             availableTrajectories << command;
@@ -463,6 +469,7 @@ void LipRec::processImage(Mat img)
     imageProcessing.applyBlur(mouthImg, ui_.sbMask->value(), blur);
 
     Mat showMouthImg;
+    Mat rawMouthImg;
 
     Mat mouthFeatures(mouthImg.rows, mouthImg.cols, CV_8UC3, Scalar(0,0,0));
 
@@ -473,6 +480,7 @@ void LipRec::processImage(Mat img)
     Point keyPoint1, keyPoint2, keyPoint3, keyPoint4, keyPoint5, keyPoint6;
 
     showMouthImg = mouthImg;
+    mouthImg.copyTo(rawMouthImg);
 
     if(!useMonoImage){
         if(ui_.cbLipSeg->isChecked()){
@@ -587,6 +595,13 @@ void LipRec::processImage(Mat img)
                     break;
                 }
 
+
+                if(QDateTime::currentMSecsSinceEpoch() > lcdUpdateTimeStamp + 500){
+                    ui_.lcdArea->display(QString::number(areaOfTriangleA + areaOfTriangleB + areaOfTriangleC + areaOfTriangleD, 'f', 3));
+                    ui_.lcdAspectRatio->display(QString::number(hw,'f', 3));
+                    lcdUpdateTimeStamp = QDateTime::currentMSecsSinceEpoch();
+                }
+
                 if(printFeatures){
                     //ROS_INFO("MW:%f MH:%f W/H:%f H/W:%f Area:%f", mouthWidth, mouthHeight, wh, hw, areaOfTriangleA + areaOfTriangleB + areaOfTriangleC + areaOfTriangleD);
                     ROS_INFO("H/W:%f Area:%f", hw, areaOfTriangleA + areaOfTriangleB + areaOfTriangleC + areaOfTriangleD);
@@ -677,25 +692,25 @@ void LipRec::processImage(Mat img)
     //        //imageProcessing.squareImage(mouthImg);
     //    }
 
-    //    currentFrame = updateFrameBuffer(mouthImg);
-    //    Mat imageAbsDiff;
-    //    double d = 0;
+    currentFrame = updateFrameBuffer(rawMouthImg);
+    Mat imageAbsDiff;
+    double d = 0;
 
-    //    if(frameBuffer.at(last).cols == frameBuffer.at(currentFrame).cols
-    //                && frameBuffer.at(last).rows == frameBuffer.at(currentFrame).rows){
+    if(frameBuffer.at(last).cols == frameBuffer.at(currentFrame).cols
+                && frameBuffer.at(last).rows == frameBuffer.at(currentFrame).rows){
 
-    //        //temporal segmentation
-    //        d = imageProcessing.generatePixelDifference(frameBuffer[currentFrame], frameBuffer[last]);
+        //temporal segmentation
+        d = imageProcessing.generatePixelDifference(frameBuffer[currentFrame], frameBuffer[last]);
 
-    //        ui_.lcdPixelWiseDiff->display(QString::number(d,'f',0));
+        ui_.lcdPixelWiseDiff->display(QString::number(d,'f',0));
 
-    //        imageAbsDiff = imageProcessing.createImageAbsDiff(frameBuffer[currentFrame], frameBuffer[last]);
-    //    }
+        imageAbsDiff = imageProcessing.createImageAbsDiff(frameBuffer[currentFrame], frameBuffer[last]);
+    }
 
-    //    //temporal segmentation
-    //    int activation = QString::number(d,'f',0).toInt();
+    //temporal segmentation
+    int activation = QString::number(d,'f',0).toInt();
 
-    //    this->changeLipActivationState(activation, imageAbsDiff, currentFrame);
+    this->changeLipActivationState(activation, imageAbsDiff, currentFrame);
 
     //    if(!imageAbsDiff.empty()){
     //        pixMap = imageProcessing.getPixmap(imageAbsDiff);
