@@ -30,6 +30,8 @@ public:
     void printDistanceMatrix();
     void printDtwDistanceMatric();
 
+    double calcWarpingCost(DistanceFunction df);
+
 private:
     QList<double> trajectory1;
     QList<double> trajectory2;

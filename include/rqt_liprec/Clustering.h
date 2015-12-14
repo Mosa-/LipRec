@@ -28,6 +28,7 @@ public:
     void setK(int k);
     void clearTrajectoriesSet();
 
+
 private:
 
     Dtw dtw;

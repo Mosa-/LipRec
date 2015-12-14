@@ -167,6 +167,8 @@ void LipRec::initPlugin(qt_gui_cpp::PluginContext& context)
 
     lcdUpdateTimeStamp = QDateTime::currentMSecsSinceEpoch();
 
+    utter = false;
+
     recordVideo = false;
     recordUtterance = false;
     loadUtterance = false;
@@ -290,96 +292,96 @@ void LipRec::processImage(Mat img)
     }
 
     ///TEST DTW
-    QList<double> t1;
-    QList<double> t2;
+//    QList<double> t1;
+//    QList<double> t2;
 
-//    t1 << 0.43 << 0.12 << 0.8 << 0.9 << 0.5;
-//    t2 << 0.334 << 0.23 << 0.53 << 0.82 << 0.3 << 0.11 << 0.4;
-//    t1 << 0.490196 << 0.490196 << 0.490196 << 0.4999 << 0.48068 << 0.501497 << 0.520833 << 0.666667 << 0.773059 << 0.704364 << 0.599408
-//       << 0.565217 << 0.553191 << 0.604036 << 0.617021 << 0.705431 << 0.583207 << 0.608696 << 0.681115 << 0.790484 << 0.860233 << 0.929792
-//       <<0.891566 << 0.894737 << 0.837209 << 0.777778 << 0.738956 << 0.638153 << 0.604036 << 0.559888 << 0.54 << 0.52 << 0.490196
-//       <<0.48 << 0.461453 << 0.48 << 0.479904 << 0.501497 << 0.5003 << 0.4999 << 0.479904;
+////    t1 << 0.43 << 0.12 << 0.8 << 0.9 << 0.5;
+////    t2 << 0.334 << 0.23 << 0.53 << 0.82 << 0.3 << 0.11 << 0.4;
+////    t1 << 0.490196 << 0.490196 << 0.490196 << 0.4999 << 0.48068 << 0.501497 << 0.520833 << 0.666667 << 0.773059 << 0.704364 << 0.599408
+////       << 0.565217 << 0.553191 << 0.604036 << 0.617021 << 0.705431 << 0.583207 << 0.608696 << 0.681115 << 0.790484 << 0.860233 << 0.929792
+////       <<0.891566 << 0.894737 << 0.837209 << 0.777778 << 0.738956 << 0.638153 << 0.604036 << 0.559888 << 0.54 << 0.52 << 0.490196
+////       <<0.48 << 0.461453 << 0.48 << 0.479904 << 0.501497 << 0.5003 << 0.4999 << 0.479904;
 
-//    t2 << 0.479904 << 0.48 << 0.490102 << 0.5 << 0.480769 << 0.470588 << 0.470498 << 0.470498 << 0.490494 << 0.587359 << 0.674419 << 0.737886 <<
-//          0.808608 << 0.789844 << 0.766613 << 0.644444 << 0.586403 << 0.608552 << 0.651558 << 0.680235 << 0.651558 << 0.59561 << 0.599852 <<
-//          0.636199 << 0.727085 << 0.837276 << 0.889787 << 0.918349 << 0.823971 << 0.811749 << 0.695488 << 0.637721 << 0.616882 << 0.59561 <<
-//          0.562398 << 0.519584 << 0.4999 << 0.510098 << 0.50978 << 0.50978 << 0.4996 << 0.4996 << 0.5 << 0.479904 << 0.479904 << 0.48 << 0.479904;
+////    t2 << 0.479904 << 0.48 << 0.490102 << 0.5 << 0.480769 << 0.470588 << 0.470498 << 0.470498 << 0.490494 << 0.587359 << 0.674419 << 0.737886 <<
+////          0.808608 << 0.789844 << 0.766613 << 0.644444 << 0.586403 << 0.608552 << 0.651558 << 0.680235 << 0.651558 << 0.59561 << 0.599852 <<
+////          0.636199 << 0.727085 << 0.837276 << 0.889787 << 0.918349 << 0.823971 << 0.811749 << 0.695488 << 0.637721 << 0.616882 << 0.59561 <<
+////          0.562398 << 0.519584 << 0.4999 << 0.510098 << 0.50978 << 0.50978 << 0.4996 << 0.4996 << 0.5 << 0.479904 << 0.479904 << 0.48 << 0.479904;
 
-    t1 << 881 << 873.5 << 865.5 << 853.5 << 875.5 << 846.5 << 822 << 862.5 << 900 << 918.5 << 840.5 << 844 << 866 << 944.5 << 933 << 817.5 << 927.5 <<
-          882 << 894.5 << 952.5 << 1043.5 << 1035 << 793 << 839 << 1010.5 << 1022 << 1031 << 944 << 920 << 929 << 885.5 << 876 << 856.5 << 823.5 << 846.5 <<
-          823.5 << 831.5 << 824.5 << 847 << 843.5 << 818.5;
+//    t1 << 881 << 873.5 << 865.5 << 853.5 << 875.5 << 846.5 << 822 << 862.5 << 900 << 918.5 << 840.5 << 844 << 866 << 944.5 << 933 << 817.5 << 927.5 <<
+//          882 << 894.5 << 952.5 << 1043.5 << 1035 << 793 << 839 << 1010.5 << 1022 << 1031 << 944 << 920 << 929 << 885.5 << 876 << 856.5 << 823.5 << 846.5 <<
+//          823.5 << 831.5 << 824.5 << 847 << 843.5 << 818.5;
 
-    t2 << 830.5 << 826 << 870.5 << 851 << 880 << 852 << 857.5 << 857.5 << 867.5 << 814.5 << 806.5 << 856.5 << 926 << 974.5 << 942 << 865 << 853 << 883.5 <<
-          927.5 << 993 << 934.5 << 906 << 848.5 << 839 << 943.5 << 1034 << 863 << 740.5 << 850 << 934 << 967.5 << 948 << 900.5 << 871 << 855 << 870 << 828.5 <<
-          823.5 << 810 << 810 << 824 << 830 << 831.5 << 824.5 << 819 << 814 << 825;
-
-
-    dtw.seed(t1, t2);
-
-    Mat dtwMat(t1.size(), t2.size(), CV_64F, Scalar(0.0));
-    Mat dtwMatTemp(t1.size(), t2.size(), CV_64F, Scalar(0.0));
-    QList<Point> warpingPath;
-
-    //ROS_INFO("ABS");
-    dtw.calculateDistanceMatrix(ABS);
-    //dtw.printDistanceMatrix();
-    dtwMat = dtw.calculateDtwDistanceMatrix();
-    dtwMatTemp = dtwMat;
-    warpingPath = dtw.calculateGreedyWarpingPath();
-    //dtw.printDtwDistanceMatric();
+//    t2 << 830.5 << 826 << 870.5 << 851 << 880 << 852 << 857.5 << 857.5 << 867.5 << 814.5 << 806.5 << 856.5 << 926 << 974.5 << 942 << 865 << 853 << 883.5 <<
+//          927.5 << 993 << 934.5 << 906 << 848.5 << 839 << 943.5 << 1034 << 863 << 740.5 << 850 << 934 << 967.5 << 948 << 900.5 << 871 << 855 << 870 << 828.5 <<
+//          823.5 << 810 << 810 << 824 << 830 << 831.5 << 824.5 << 819 << 814 << 825;
 
 
-    //ROS_INFO("SQUARE");
-    //dtw.calculateDistanceMatrix(SQUARE);
-    //dtw.printDistanceMatrix();
-    //dtw.calculateDtwDistanceMatrix();
-    //dtw.printDtwDistanceMatric();
+//    dtw.seed(t1, t2);
 
-    //ROS_INFO("SQUARE2");
-    //dtw.calculateDistanceMatrix(SQUARE2);
-    //dtw.printDistanceMatrix();
-    //dtw.calculateDtwDistanceMatrix();
-    //dtw.printDtwDistanceMatric();
+//    Mat dtwMat(t1.size(), t2.size(), CV_64F, Scalar(0.0));
+//    Mat dtwMatTemp(t1.size(), t2.size(), CV_64F, Scalar(0.0));
+//    QList<Point> warpingPath;
 
-    Mat dtwMat2(dtwMat.rows-1, dtwMat.cols-1, CV_64F);
+//    //ROS_INFO("ABS");
+//    dtw.calculateDistanceMatrix(ABS);
+//    //dtw.printDistanceMatrix();
+//    dtwMat = dtw.calculateDtwDistanceMatrix();
+//    dtwMatTemp = dtwMat;
+//    warpingPath = dtw.calculateGreedyWarpingPath();
+//    //dtw.printDtwDistanceMatric();
 
-    //dtwMat.convertTo(dtwMat, CV_8U);
-    for (int i = 1; i < dtwMat.cols; ++i) {
-        for (int j = 1; j < dtwMat.rows; ++j) {
-            dtwMat2.at<double>(j-1,i-1) = dtwMat.at<double>(j,i);
-            //ROS_INFO("%f", dtwMat2.at<double>(j-1,i-1));
-        }
-    }
 
-    double min = 0.0;
-    double max = 0.0;
-    minMaxIdx(dtwMat2, &min, &max);
-    dtwMat = Mat(dtwMat2.rows, dtwMat2.cols, CV_8U);
+//    //ROS_INFO("SQUARE");
+//    //dtw.calculateDistanceMatrix(SQUARE);
+//    //dtw.printDistanceMatrix();
+//    //dtw.calculateDtwDistanceMatrix();
+//    //dtw.printDtwDistanceMatric();
 
-    double oldRange = max - min;
-    double newRange = 255.0 - 0;
-    double newValue = 0.0;
-    for (int i = 0; i < dtwMat.cols; ++i) {
-        for (int j = 0; j < dtwMat.rows; ++j) {
-            newValue = (((dtwMat2.at<double>(j,i)-min) *newRange)/oldRange) + 0;
-            dtwMat.at<uchar>(j,i) = (int) newValue;
-        }
-    }
+//    //ROS_INFO("SQUARE2");
+//    //dtw.calculateDistanceMatrix(SQUARE2);
+//    //dtw.printDistanceMatrix();
+//    //dtw.calculateDtwDistanceMatrix();
+//    //dtw.printDtwDistanceMatric();
 
-    double sum = 0.0;
-    for (int i = 0; i < warpingPath.size(); ++i) {
-       circle(dtwMat, warpingPath.at(i), 1, Scalar(255,255,255));
-       sum += dtwMatTemp.at<double>(warpingPath.at(i).y, warpingPath.at(i).x);
-    }
-    //ROS_INFO("SUM %f", sum);
-    warpingPath.clear();
+//    Mat dtwMat2(dtwMat.rows-1, dtwMat.cols-1, CV_64F);
 
-    dtwMat = 255 - dtwMat;
+//    //dtwMat.convertTo(dtwMat, CV_8U);
+//    for (int i = 1; i < dtwMat.cols; ++i) {
+//        for (int j = 1; j < dtwMat.rows; ++j) {
+//            dtwMat2.at<double>(j-1,i-1) = dtwMat.at<double>(j,i);
+//            //ROS_INFO("%f", dtwMat2.at<double>(j-1,i-1));
+//        }
+//    }
 
-    QPixmap dtwPixMap = imageProcessing.getPixmap(dtwMat, true);
-    dtwPixMap = dtwPixMap.scaled(ui_.lbl_rec_phonem->maximumWidth(), ui_.lbl_rec_phonem->maximumHeight(), Qt::KeepAspectRatio, Qt::SmoothTransformation);
+//    double min = 0.0;
+//    double max = 0.0;
+//    minMaxIdx(dtwMat2, &min, &max);
+//    dtwMat = Mat(dtwMat2.rows, dtwMat2.cols, CV_8U);
 
-    ui_.lbl_rec_phonem->setPixmap(dtwPixMap);
+//    double oldRange = max - min;
+//    double newRange = 255.0 - 0;
+//    double newValue = 0.0;
+//    for (int i = 0; i < dtwMat.cols; ++i) {
+//        for (int j = 0; j < dtwMat.rows; ++j) {
+//            newValue = (((dtwMat2.at<double>(j,i)-min) *newRange)/oldRange) + 0;
+//            dtwMat.at<uchar>(j,i) = (int) newValue;
+//        }
+//    }
+
+//    double sum = 0.0;
+//    for (int i = 0; i < warpingPath.size(); ++i) {
+//       circle(dtwMat, warpingPath.at(i), 1, Scalar(255,255,255));
+//       sum += dtwMatTemp.at<double>(warpingPath.at(i).y, warpingPath.at(i).x);
+//    }
+//    //ROS_INFO("SUM %f", sum);
+//    warpingPath.clear();
+
+//    dtwMat = 255 - dtwMat;
+
+//    QPixmap dtwPixMap = imageProcessing.getPixmap(dtwMat, true);
+//    dtwPixMap = dtwPixMap.scaled(ui_.lblDTW->maximumWidth(), ui_.lblDTW->maximumHeight(), Qt::KeepAspectRatio, Qt::SmoothTransformation);
+
+//    ui_.lblDTW->setPixmap(dtwPixMap);
 
     ///TEST DTW
 
@@ -482,6 +484,55 @@ void LipRec::processImage(Mat img)
     showMouthImg = mouthImg;
     mouthImg.copyTo(rawMouthImg);
 
+    //    if(mouthImg.cols != 0){
+    //        //imageProcessing.squareImage(mouthImg);
+    //    }
+
+    if(rawMouthImg.type() == CV_8UC3){
+        cvtColor(rawMouthImg, rawMouthImg, CV_BGR2GRAY);
+    }
+    currentFrame = updateFrameBuffer(rawMouthImg);
+    Mat imageAbsDiff;
+    double d = 0;
+
+    if(frameBuffer.at(last).cols == frameBuffer.at(currentFrame).cols
+                && frameBuffer.at(last).rows == frameBuffer.at(currentFrame).rows){
+
+        //temporal segmentation
+        d = imageProcessing.generatePixelDifference(frameBuffer[currentFrame], frameBuffer[last]);
+
+        ui_.lcdPixelWiseDiff->display(QString::number(d,'f',0));
+
+        imageAbsDiff = imageProcessing.createImageAbsDiff(frameBuffer[currentFrame], frameBuffer[last]);
+    }
+
+    //temporal segmentation
+    int activation = QString::number(d,'f',0).toInt();
+
+    this->changeLipActivationState(activation, imageAbsDiff, currentFrame);
+
+    if(!imageAbsDiff.empty()){
+        pixMap = imageProcessing.getPixmap(imageAbsDiff, true);
+        pixMap = pixMap.scaled(ui_.lblMouthDiff->maximumWidth(), ui_.lblMouthDiff->maximumHeight(), Qt::KeepAspectRatio, Qt::SmoothTransformation);
+        ui_.lblMouthDiff->setPixmap(pixMap);
+
+        //        if(mouthROI_detected && ui_.cbMHI->isChecked()){
+
+        //            Mat mask = imageProcessing.createMotionHistoryImage(imageAbsDiff, mhi, ui_.cbMHIBinarization->isChecked(),
+        //                ui_.dsbMHIThreshold->value(), MHI_DURATION);
+
+        //            pixMap = imageProcessing.getPixmap(mask);
+        //            pixMap = pixMap.scaled(ui_.lbl_lips->maximumWidth(), ui_.lbl_lips->maximumHeight(), Qt::KeepAspectRatio, Qt::SmoothTransformation);
+
+        //            ui_.lbl_MHI->setPixmap(pixMap);
+        //        }else{
+        //            QPixmap empty;
+        //            ui_.lbl_MHI->setPixmap(empty);
+        //            ui_.lbl_rec_phonem->setPixmap(empty);
+        //            ui_.lbl_rec_word->setPixmap(empty);
+        //        }
+    }
+
     if(!useMonoImage){
         if(ui_.cbLipSeg->isChecked()){
             if(ui_.rbSaturation->isChecked()){
@@ -497,7 +548,8 @@ void LipRec::processImage(Mat img)
                 Point upLinePoint(mouthROI.width/2, 0);
                 Point bottomLinePoint(mouthROI.width/2, mouthROI.height);
 
-                keyPointsDeliverer.extractMouthCornerKeyPoints(mouthImg, ui_.sbTHMouthCorners->value(), ui_.sbLLMouthCorners->value());
+                keyPointsDeliverer.extractMouthCornerKeyPoints(mouthImg, ui_.sbTHMouthCorners->value(), ui_.sbLLMouthCorners->value(),
+                                                               ui_.sbKP1BreakMouthCorners->value(), ui_.sbKP5BreakMouthCorners->value());
                 keyPointsDeliverer.extractCupidsBowKeyPoints(ui_.sbTHCupidsBow->value(), ui_.sbLLCupidsBow->value());
                 keyPointsDeliverer.extractLowerLipKeyPoint(ui_.sbTHLowerLip->value(), ui_.sbLLLowerLip->value());
 
@@ -507,6 +559,7 @@ void LipRec::processImage(Mat img)
                 keyPoint4 = keyPointsDeliverer.getKeyPoint4();
                 keyPoint5 = keyPointsDeliverer.getKeyPoint5();
                 keyPoint6 = keyPointsDeliverer.getKeyPoint6();
+
 
                 double mouthWidth = norm(keyPoint5-keyPoint1);
                 double mouthHeight = norm(keyPoint6-keyPoint3);
@@ -535,6 +588,49 @@ void LipRec::processImage(Mat img)
                 double areaOfTriangleC = sqrt(hpotC*(hpotC-distanceKp13)*(hpotC-distanceKp36)*(hpotC-distanceKp61));
                 double areaOfTriangleD = sqrt(hpotD*(hpotD-distanceKp36)*(hpotD-distanceKp35)*(hpotD-distanceKp56));
 
+                double area = areaOfTriangleA + areaOfTriangleB + areaOfTriangleC + areaOfTriangleD;
+
+
+                if(utter == true && stateDetectionStartEndFrame == Idle){
+
+                    QList<QList<double> > clusterT;
+                    double bestWarpingCost = INT_MAX;
+                    QString currentCommand = "";
+
+                    if(currentUtteranceTrajectories.size() > 0){
+                        foreach (QString command, availableTrajectories) {
+                            clusterT = this->getClusterTrajectories(command, ui_.cbArea->text(), ui_.rbKmedoids->text());
+
+                            double warpingCostTmp = 0.0;
+                            for (int i = 0; i < clusterT.size(); ++i) {
+
+                                dtw.seed(clusterT.at(i), currentUtteranceTrajectories[ui_.cbArea->text()]);
+
+                                warpingCostTmp =  dtw.calcWarpingCost(ABS);
+
+                                ROS_INFO("Command: %s(%d) ; Utterrance: %d -> %f",
+                                         command.toStdString().c_str(), clusterT.at(i).size(), currentUtteranceTrajectories[ui_.cbArea->text()].size(), warpingCostTmp);
+
+                                if(warpingCostTmp < bestWarpingCost){
+                                    bestWarpingCost = warpingCostTmp;
+                                    currentCommand = command;
+                                }
+                            }
+                        }
+                    }
+
+                    ROS_INFO("Recognize: %s", currentCommand.toStdString().c_str());
+
+
+                    currentUtteranceTrajectories.clear();
+                    utter = false;
+                }else if(utter){
+                    currentUtteranceTrajectories[ui_.cbArea->text()].append(area);
+                    currentUtteranceTrajectories[ui_.cbAspectRatio->text()].append(hw);
+                }
+
+
+
                 this->drawMouthFeatures(mouthFeatures, keyPoint1, keyPoint2, keyPoint3, keyPoint4, keyPoint5, keyPoint6);
 
                 double areaMean = 0.0;
@@ -549,7 +645,7 @@ void LipRec::processImage(Mat img)
                     }
 
                     if(ui_.cbArea->isChecked()){
-                        recordTrajectory[ui_.cbArea->text()].append(areaOfTriangleA + areaOfTriangleB + areaOfTriangleC + areaOfTriangleD);
+                        recordTrajectory[ui_.cbArea->text()].append(area);
                     }
 
                     break;
@@ -597,14 +693,14 @@ void LipRec::processImage(Mat img)
 
 
                 if(QDateTime::currentMSecsSinceEpoch() > lcdUpdateTimeStamp + 500){
-                    ui_.lcdArea->display(QString::number(areaOfTriangleA + areaOfTriangleB + areaOfTriangleC + areaOfTriangleD, 'f', 3));
+                    ui_.lcdArea->display(QString::number(area, 'f', 3));
                     ui_.lcdAspectRatio->display(QString::number(hw,'f', 3));
                     lcdUpdateTimeStamp = QDateTime::currentMSecsSinceEpoch();
                 }
 
                 if(printFeatures){
                     //ROS_INFO("MW:%f MH:%f W/H:%f H/W:%f Area:%f", mouthWidth, mouthHeight, wh, hw, areaOfTriangleA + areaOfTriangleB + areaOfTriangleC + areaOfTriangleD);
-                    ROS_INFO("H/W:%f Area:%f", hw, areaOfTriangleA + areaOfTriangleB + areaOfTriangleC + areaOfTriangleD);
+                    ROS_INFO("H/W:%f Area:%f", hw, area);
                 }
 
                 if(ui_.rbLipsNone->isChecked()){
@@ -686,53 +782,6 @@ void LipRec::processImage(Mat img)
     }
 
     this->showLips(showMouthImg);
-
-
-    //    if(mouthImg.cols != 0){
-    //        //imageProcessing.squareImage(mouthImg);
-    //    }
-
-    currentFrame = updateFrameBuffer(rawMouthImg);
-    Mat imageAbsDiff;
-    double d = 0;
-
-    if(frameBuffer.at(last).cols == frameBuffer.at(currentFrame).cols
-                && frameBuffer.at(last).rows == frameBuffer.at(currentFrame).rows){
-
-        //temporal segmentation
-        d = imageProcessing.generatePixelDifference(frameBuffer[currentFrame], frameBuffer[last]);
-
-        ui_.lcdPixelWiseDiff->display(QString::number(d,'f',0));
-
-        imageAbsDiff = imageProcessing.createImageAbsDiff(frameBuffer[currentFrame], frameBuffer[last]);
-    }
-
-    //temporal segmentation
-    int activation = QString::number(d,'f',0).toInt();
-
-    this->changeLipActivationState(activation, imageAbsDiff, currentFrame);
-
-    //    if(!imageAbsDiff.empty()){
-    //        pixMap = imageProcessing.getPixmap(imageAbsDiff);
-    //        pixMap = pixMap.scaled(ui_.lbl_lips->maximumWidth(), ui_.lbl_lips->maximumHeight(), Qt::KeepAspectRatio, Qt::SmoothTransformation);
-    //        ui_.lbl_rec_phonem->setPixmap(pixMap);
-
-    //        if(mouthROI_detected && ui_.cbMHI->isChecked()){
-
-    //            Mat mask = imageProcessing.createMotionHistoryImage(imageAbsDiff, mhi, ui_.cbMHIBinarization->isChecked(),
-    //                ui_.dsbMHIThreshold->value(), MHI_DURATION);
-
-    //            pixMap = imageProcessing.getPixmap(mask);
-    //            pixMap = pixMap.scaled(ui_.lbl_lips->maximumWidth(), ui_.lbl_lips->maximumHeight(), Qt::KeepAspectRatio, Qt::SmoothTransformation);
-
-    //            ui_.lbl_MHI->setPixmap(pixMap);
-    //        }else{
-    //            QPixmap empty;
-    //            ui_.lbl_MHI->setPixmap(empty);
-    //            ui_.lbl_rec_phonem->setPixmap(empty);
-    //            ui_.lbl_rec_word->setPixmap(empty);
-    //        }
-    //    }
 
     last = currentFrame;
 }
@@ -834,6 +883,7 @@ void LipRec::changeLipActivationState(int activation, Mat& imageAbsDiff, int cur
 
         // Uterrance detected
         if(activation > ui_.sbST->value()){
+            utter = true;
             stateDetectionStartEndFrame = Utterance;
             utterancePixelDiff.append(activation);
 
@@ -911,8 +961,8 @@ void LipRec::changeLipActivationState(int activation, Mat& imageAbsDiff, int cur
 
             pixMap = imageProcessing.getPixmap(mt, useMonoImage);
 
-            pixMap = pixMap.scaled(ui_.lbl_lips->maximumWidth(), ui_.lbl_lips->maximumHeight(), Qt::KeepAspectRatio, Qt::SmoothTransformation);
-            ui_.lbl_rec_word->setPixmap(pixMap);
+            pixMap = pixMap.scaled(ui_.lblMouthDiffSum->maximumWidth(), ui_.lblMouthDiffSum->maximumHeight(), Qt::KeepAspectRatio, Qt::SmoothTransformation);
+            ui_.lblMouthDiffSum->setPixmap(pixMap);
 
             QString currentTextSignalWindow1 = ui_.cbSignalWindow1->currentText();
             QString currentTextSignalWindow2 = ui_.cbSignalWindow2->currentText();
@@ -966,7 +1016,9 @@ void LipRec::changeLipActivationState(int activation, Mat& imageAbsDiff, int cur
     default:
         break;
     }
+
 }
+
 
 void LipRec::recordUtteranceFrame(Mat currentFrame)
 {
@@ -1152,11 +1204,11 @@ void LipRec::drawMouthFeatures(Mat &mouthFeatures, Point keyPoint1, Point keyPoi
         }
         pixMap = imageProcessing.getPixmap(mouthFeatures, monoImg);
 
-        pixMap = pixMap.scaled(ui_.lbl_MHI->maximumWidth(), ui_.lbl_MHI->maximumHeight(), Qt::KeepAspectRatio, Qt::SmoothTransformation);
-        ui_.lbl_MHI->setPixmap(pixMap);
+        pixMap = pixMap.scaled(ui_.lblMouthFeatureRaw->maximumWidth(), ui_.lblMouthFeatureRaw->maximumHeight(), Qt::KeepAspectRatio, Qt::SmoothTransformation);
+        ui_.lblMouthFeatureRaw->setPixmap(pixMap);
     }else{
         QPixmap empty;
-        ui_.lbl_MHI->setPixmap(empty);
+        ui_.lblMouthFeatureRaw->setPixmap(empty);
     }
 }
 

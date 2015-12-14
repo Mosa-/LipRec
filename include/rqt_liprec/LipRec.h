@@ -134,6 +134,8 @@ private:
     QStringList availableTrajectories;
 
     QMap<QString, QList<QList<double> > > clusterTrajectoriesOfCommand;
+    QMap<QString, QList<double> > currentUtteranceTrajectories;
+    bool utter;
 
     KeyPointsDeliverer keyPointsDeliverer;
     ImageProcessing imageProcessing;
@@ -191,8 +193,6 @@ private slots:
     void clickedAbortOrSaveTrajectory();
 
     void clickedCluster();
-
-
 
 };
 } // namespace

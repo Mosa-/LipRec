@@ -18,8 +18,27 @@ Dtw::~Dtw(){
 
 void Dtw::seed(QList<double> trajectory1, QList<double> trajectory2)
 {
+    double min1 = *std::min_element(trajectory1.begin(), trajectory1.end());
+    double min2 = *std::min_element(trajectory2.begin(), trajectory2.end());
+    double max1 = *std::max_element(trajectory1.begin(), trajectory1.end());
+    double max2 = *std::max_element(trajectory2.begin(), trajectory2.end());
+
     this->trajectory1 = trajectory1;
     this->trajectory2 = trajectory2;
+
+    double minFinal = qMin(min1, min2);
+    double maxFinal = qMin(max1, max2);
+
+    double newVal = 0.0;
+    for (int i = 0; i < trajectory1.size(); ++i) {
+        trajectory1[i] = ((trajectory1.at(i) - minFinal)/((maxFinal-minFinal)));
+        newVal = (trajectory1[i] - minFinal) / (maxFinal - minFinal);
+        ROS_INFO("%f", newVal);
+    }
+
+    for (int i = 0; i < trajectory2.size(); ++i) {
+        trajectory2[i] = ((trajectory2.at(i) - minFinal)/((maxFinal-minFinal)));
+    }
 }
 
 Mat Dtw::calculateDistanceMatrix(DistanceFunction distanceFunction){
@@ -155,6 +174,19 @@ void Dtw::printDtwDistanceMatric()
         ROS_INFO("%s", str.toStdString().c_str());
     }
     ROS_INFO("########DtwDistanceMatrix2########");
+}
+
+double Dtw::calcWarpingCost(DistanceFunction df)
+{
+    double warpingCost = 0.0;
+
+    this->calculateDistanceMatrix(df);
+    this->calculateDtwDistanceMatrix();
+    this->calculateGreedyWarpingPath();
+
+    warpingCost = this->getWarpingPathCost();
+
+    return warpingCost;
 }
 
 double Dtw::squareDistance(double val, double val2)

@@ -23,7 +23,7 @@ public:
 
     void calcGradientImages(Mat &mouthImg);
 
-    void extractMouthCornerKeyPoints(Mat &mouthImg, int thresholdDifferenceToAvg, int totalLineCheck);
+    void extractMouthCornerKeyPoints(Mat &mouthImg, int thresholdDifferenceToAvg, int totalLineCheck, int kp1Break, int kp5Break);
     void extractCupidsBowKeyPoints(int thresholdDifferenceToAvg, int totalLineCheck);
     void extractLowerLipKeyPoint(int thresholdDifferenceToAvg, int totalLineCheck);
 

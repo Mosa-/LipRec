@@ -59,7 +59,7 @@ void KeyPointsDeliverer::calcGradientImages(Mat& mouthImg)
     rLowTemp.convertTo(rLowFinal, CV_8UC1, 255.0/(maxVal - minVal), -minVal * 255.0/(maxVal - minVal));
 }
 
-void KeyPointsDeliverer::extractMouthCornerKeyPoints(Mat &mouthImg, int thresholdDifferenceToAvg, int totalLineCheck)
+void KeyPointsDeliverer::extractMouthCornerKeyPoints(Mat &mouthImg, int thresholdDifferenceToAvg, int totalLineCheck, int kp1Break, int kp5Break)
 {
     QList<PossibleKeyPoint> possibleKeyPoints;
     PossibleKeyPoint possibleKeyPoint;
@@ -130,7 +130,7 @@ void KeyPointsDeliverer::extractMouthCornerKeyPoints(Mat &mouthImg, int threshol
     PossibleKeyPoint pKPoint;
 
     for (int i = mouthImg.cols/2-(mouthImg.cols/2*0.4); i > 0; --i) {
-        for (int j = mouthImg.rows; j > 0; --j) {
+        for (int j = mouthImg.rows-(mouthImg.rows/2*0.4); j > 0; --j) {
             pseudoHuePxl = imageProcessing.pseudoHuePxl(mouthImg, j, i);
             luminancePxl = imageProcessing.luminancePxl(mouthImg, j, i);
 
@@ -155,7 +155,7 @@ void KeyPointsDeliverer::extractMouthCornerKeyPoints(Mat &mouthImg, int threshol
             //ROS_INFO("diff: %d", abs(pKPoints.at(i).keyPoint.y - pKPoints.at(i-1).keyPoint.y));
         }
 
-        if(diffY > 3){
+        if(diffY > kp1Break){
             break;
         }
 
@@ -163,14 +163,15 @@ void KeyPointsDeliverer::extractMouthCornerKeyPoints(Mat &mouthImg, int threshol
             keyPoint1.x = pKPoints.at(i).keyPoint.x;
             keyPoint1.y = pKPoints.at(i).keyPoint.y;
         }
-        //circle(rMidFinal, pKPoints.at(i).keyPoint, 2, Scalar(255,255,255));
+        circle(rMidFinal, pKPoints.at(i).keyPoint, 2, Scalar(255,255,255));
     }
+
 
 
     luminanceMean = 0.0;
     pseudoHueMean = 0.0;
     for (int i = mouthImg.cols/2; i < mouthImg.cols; ++i) {
-        for (int j = 0; j < mouthImg.rows; ++j) {
+        for (int j = 0; j < mouthImg.rows-(mouthImg.rows/2*0.4); ++j) {
             pseudoHuePxl = imageProcessing.pseudoHuePxl(mouthImg, j, i);
             luminancePxl = imageProcessing.luminancePxl(mouthImg, j, i);
 
@@ -219,7 +220,7 @@ void KeyPointsDeliverer::extractMouthCornerKeyPoints(Mat &mouthImg, int threshol
             //ROS_INFO("diff: %d", abs(pKPoints.at(i).keyPoint.y - pKPoints.at(i-1).keyPoint.y));
         }
 
-        if(diffY > 4){
+        if(diffY > kp5Break){
             break;
         }
 
@@ -373,14 +374,16 @@ void KeyPointsDeliverer::extractLowerLipKeyPoint(int thresholdDifferenceToAvg, i
     }
 
 
-    keyPoint6.y = 0;
+    Point kpTmp;
+    kpTmp.y = 0;
     int kp2kp3Width = keyPoint4.x - keyPoint2.x;
     kp2kp3Width = kp2kp3Width/2;
 
     for (int i = keyPoint2.x; i < keyPoint4.x; ++i) {
         for (int j = rLowFinal.rows-(rLowFinal.rows*0.2); j > keyPoint1.y; --j) {
             if(contourImg.at<uchar>(j, i) == 255){
-                if(keyPoint6.y <= j && i <= (keyPoint2.x + kp2kp3Width)){
+                if(kpTmp.y <= j && i <= (keyPoint2.x + kp2kp3Width)){
+                    kpTmp.y = j;
                     keyPoint6.y = j;
                     keyPoint6.x = i;
                     break;
