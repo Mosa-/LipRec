@@ -170,6 +170,7 @@ private:
     void setupModel();
 
     void applyCluster(QString clusterMethod, DistanceFunction df, QString command, QString feature);
+    void printTrajectory(QList<double> trajectory);
 public slots:
     void getCamPic(cv::Mat img);
 

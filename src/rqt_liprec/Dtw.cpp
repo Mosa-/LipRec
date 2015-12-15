@@ -18,26 +18,27 @@ Dtw::~Dtw(){
 
 void Dtw::seed(QList<double> trajectory1, QList<double> trajectory2)
 {
-    double min1 = *std::min_element(trajectory1.begin(), trajectory1.end());
-    double min2 = *std::min_element(trajectory2.begin(), trajectory2.end());
-    double max1 = *std::max_element(trajectory1.begin(), trajectory1.end());
-    double max2 = *std::max_element(trajectory2.begin(), trajectory2.end());
-
     this->trajectory1 = trajectory1;
     this->trajectory2 = trajectory2;
 
+    double min1 = *std::min_element(this->trajectory1.begin(), this->trajectory1.end());
+    double min2 = *std::min_element(this->trajectory2.begin(), this->trajectory2.end());
+    double max1 = *std::max_element(this->trajectory1.begin(), this->trajectory1.end());
+    double max2 = *std::max_element(this->trajectory2.begin(), this->trajectory2.end());
+
     double minFinal = qMin(min1, min2);
-    double maxFinal = qMin(max1, max2);
+    double maxFinal = qMax(max1, max2);
 
     double newVal = 0.0;
-    for (int i = 0; i < trajectory1.size(); ++i) {
-        trajectory1[i] = ((trajectory1.at(i) - minFinal)/((maxFinal-minFinal)));
-        newVal = (trajectory1[i] - minFinal) / (maxFinal - minFinal);
-        ROS_INFO("%f", newVal);
+    for (int i = 0; i < this->trajectory1.size(); ++i) {
+        newVal = (this->trajectory1[i] - minFinal) / (maxFinal - minFinal);
+        //ROS_INFO("val: %f, newVal: %f, min: %f, max: %f", this->trajectory1[i], newVal, minFinal, maxFinal);
+        this->trajectory1[i] = newVal;
     }
 
-    for (int i = 0; i < trajectory2.size(); ++i) {
-        trajectory2[i] = ((trajectory2.at(i) - minFinal)/((maxFinal-minFinal)));
+    for (int i = 0; i < this->trajectory2.size(); ++i) {
+        newVal = (this->trajectory2[i] - minFinal) / (maxFinal - minFinal);
+        this->trajectory2[i] = newVal;
     }
 }
 
