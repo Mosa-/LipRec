@@ -211,7 +211,8 @@ void KeyPointsDeliverer::extractMouthCornerKeyPoints(Mat &mouthImg, int threshol
 //    }
 
 
-    keyPoint5.x = 0;
+    Point kpTmp;
+    kpTmp.x = 0;
     for (int i = 0; i < pKPoints.size(); ++i) {
         int diffY = 0;
 
@@ -224,7 +225,8 @@ void KeyPointsDeliverer::extractMouthCornerKeyPoints(Mat &mouthImg, int threshol
             break;
         }
 
-        if(keyPoint5.x < pKPoints.at(i).keyPoint.x){
+        if(kpTmp.x < pKPoints.at(i).keyPoint.x){
+            kpTmp.x = pKPoints.at(i).keyPoint.x;
             keyPoint5.x = pKPoints.at(i).keyPoint.x;
             keyPoint5.y = pKPoints.at(i).keyPoint.y;
         }
