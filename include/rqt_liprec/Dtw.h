@@ -32,6 +32,10 @@ public:
 
     double calcWarpingCost(DistanceFunction df);
 
+    Mat getDtwDistanceMatrix() const;
+    Mat getDistanceMatrix() const;
+    QList<Point> getWarpingPath() const;
+
 private:
     QList<double> trajectory1;
     QList<double> trajectory2;

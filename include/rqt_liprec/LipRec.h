@@ -76,6 +76,7 @@ public:
     virtual void saveSettings(qt_gui_cpp::Settings& plugin_settings, qt_gui_cpp::Settings& instance_settings) const;
     virtual void restoreSettings(const qt_gui_cpp::Settings& plugin_settings, const qt_gui_cpp::Settings& instance_settings);
     void imageCallback(const sensor_msgs::ImageConstPtr& msg);
+    void imageDepthCallback(const sensor_msgs::ImageConstPtr& msg);
     void faceROICallback(const sensor_msgs::RegionOfInterestConstPtr& msg);
     void mouthROICallback(const sensor_msgs::RegionOfInterestConstPtr& msg);
 
@@ -84,6 +85,7 @@ private:
     QWidget* widget_;
 
     ros::Subscriber camImage;
+    ros::Subscriber camImageDepth;
     ros::Subscriber faceROISub;
     ros::Subscriber mouthROISub;
 
@@ -97,6 +99,9 @@ private:
 
     int blackBorder;
     bool useMonoImage;
+
+    QMutex depthCamMtx;
+    Mat depthCam;
 
     int NO_CYCLIC_FRAME;
     QList<Mat> frameBuffer;
@@ -172,12 +177,14 @@ private:
     void applyCluster(QString clusterMethod, DistanceFunction df, QString command, QString feature);
     void printTrajectory(QList<double> trajectory);
 public slots:
-    void getCamPic(cv::Mat img);
+    void getCamPic(Mat img);
+    void getDepthCamPic(Mat img);
 
     void triggedAction(QAction* action);
 
 signals:
-    void updateCam(cv::Mat img);
+    void updateCam(Mat img);
+    void updateDepthCam(Mat img);
 
 private slots:
     void faceROItimeout();

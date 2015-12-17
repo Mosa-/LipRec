@@ -219,11 +219,17 @@ Mat ImageProcessing::createMotionHistoryImage(Mat& img, Mat& mhi, bool binarizat
 }
 
 QPixmap ImageProcessing::getPixmap(Mat& iplImg, bool useMonoImage){
-	QPixmap pixMap;
+    QPixmap pixMap;
     QImage dest;
     Mat temp;
+    Mat mono8_img;
+
     if(!iplImg.empty()){
-        if(useMonoImage || iplImg.type() == CV_16UC1 || iplImg.type() == CV_8U){
+        if(iplImg.type() == CV_32FC1){
+            mono8_img = cv::Mat(iplImg.size(), CV_8UC1);
+            cv::convertScaleAbs(iplImg, mono8_img, 100, 0.0);
+            dest = QImage((const uchar *) mono8_img.data, mono8_img.cols, mono8_img.rows, mono8_img.step, QImage::Format_Indexed8);
+        }else if(useMonoImage || iplImg.type() == CV_16UC1 || iplImg.type() == CV_8U){
             dest = QImage((const uchar *) iplImg.data, iplImg.cols, iplImg.rows, iplImg.step, QImage::Format_Indexed8);
         }else{
             cvtColor(iplImg, temp, CV_BGR2RGB);

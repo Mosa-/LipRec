@@ -189,6 +189,21 @@ double Dtw::calcWarpingCost(DistanceFunction df)
 
     return warpingCost;
 }
+Mat Dtw::getDtwDistanceMatrix() const
+{
+    return dtwDistanceMatrix;
+}
+
+Mat Dtw::getDistanceMatrix() const
+{
+    return distanceMatrix;
+}
+
+QList<Point> Dtw::getWarpingPath() const
+{
+    return warpingPath;
+}
+
 
 double Dtw::squareDistance(double val, double val2)
 {

@@ -26,7 +26,7 @@ void LipRec::initPlugin(qt_gui_cpp::PluginContext& context)
     // add widget to the user interface
     context.addWidget(widget_);
 
-    qRegisterMetaType<cv::Mat>("cv::Mat");
+    qRegisterMetaType<Mat>("Mat");
 
     if(argv.size() != 4){
         ROS_INFO("Four arguments necessary!");
@@ -59,6 +59,7 @@ void LipRec::initPlugin(qt_gui_cpp::PluginContext& context)
     this->imageProcessing.setUseMonoImage(useMonoImage);
 
     camImage = getNodeHandle().subscribe(kinectTopic, 100, &LipRec::imageCallback, this);
+    camImageDepth = getNodeHandle().subscribe("/kinect2/qhd/image_depth_rect", 100, &LipRec::imageDepthCallback, this);
 
     faceROISub = getNodeHandle().subscribe("/face_detection/faceROI", 10, &LipRec::faceROICallback, this);
     mouthROISub = getNodeHandle().subscribe("/face_detection/mouthROI", 10, &LipRec::mouthROICallback, this);
@@ -164,6 +165,7 @@ void LipRec::initPlugin(qt_gui_cpp::PluginContext& context)
 
     ui_.lcdArea->setDigitCount(10);
     ui_.lcdAspectRatio->setDigitCount(10);
+    ui_.lcdDistance->setDigitCount(10);
 
     lcdUpdateTimeStamp = QDateTime::currentMSecsSinceEpoch();
 
@@ -200,7 +202,8 @@ void LipRec::initPlugin(qt_gui_cpp::PluginContext& context)
     }
 
 
-    QObject::connect(this, SIGNAL(updateCam(cv::Mat)), this, SLOT(getCamPic(cv::Mat)));
+    QObject::connect(this, SIGNAL(updateCam(Mat)), this, SLOT(getCamPic(Mat)));
+    QObject::connect(this, SIGNAL(updateDepthCam(Mat)), this, SLOT(getDepthCamPic(Mat)));
 }
 
 void LipRec::shutdownPlugin()
@@ -254,6 +257,27 @@ void LipRec::imageCallback(const sensor_msgs::ImageConstPtr& msg){
     emit updateCam(img);
 }
 
+void LipRec::imageDepthCallback(const sensor_msgs::ImageConstPtr &msg)
+{
+    cv::Mat img;
+
+    cv_bridge::CvImagePtr cv_ptr;
+    try
+    {
+        cv_ptr = cv_bridge::toCvCopy(msg, sensor_msgs::image_encodings::TYPE_32FC1);
+
+    }
+    catch (cv_bridge::Exception& e)
+    {
+        ROS_ERROR("cv_bridge exception: %s", e.what());
+        return;
+    }
+
+    img = cv_ptr->image;
+
+    emit updateDepthCam(img);
+}
+
 void LipRec::faceROICallback(const sensor_msgs::RegionOfInterestConstPtr& msg){
     faceROITimer.start(timeoutROIdetection);
     faceROI = *msg;
@@ -265,9 +289,20 @@ void LipRec::mouthROICallback(const sensor_msgs::RegionOfInterestConstPtr& msg){
     mouthROI_detected = true;
 }
 
-void LipRec::getCamPic(cv::Mat img){
+void LipRec::getCamPic(Mat img){
     if(!this->loadUtterance && useCam && !img.empty()){
         this->processImage(img);
+    }
+}
+
+void LipRec::getDepthCamPic(Mat img)
+{
+    if(!this->loadUtterance && useCam && !img.empty()){
+        depthCamMtx.lock();
+        depthCam = img;
+        depthCamMtx.unlock();
+//        QPixmap pixMap = imageProcessing.getPixmap(img, true);
+//        ui_.lbl_cam->setPixmap(pixMap);
     }
 }
 
@@ -505,6 +540,18 @@ void LipRec::processImage(Mat img)
         df = SQUARE2;
     }
 
+    Mat depthCamTmp;
+    depthCamMtx.lock();
+    depthCam.copyTo(depthCamTmp);
+    depthCamMtx.unlock();
+
+    int xDepth = faceROI.x_offset+(faceROI.width/2);
+    int yDepth = faceROI.y_offset+(faceROI.height*0.2);
+
+    if(!depthCamTmp.empty()){
+        //ROS_INFO("%d %d -> %f", xDepth, yDepth, depthCamTmp.at<float>(yDepth, xDepth));
+    }
+
     if(!useMonoImage){
         if(ui_.cbLipSeg->isChecked()){
             if(ui_.rbSaturation->isChecked()){
@@ -573,6 +620,8 @@ void LipRec::processImage(Mat img)
                     QString currentCommandArea = "";
                     QString currentCommandAspectRatio = "";
                     QString currentCommandFusion = "";
+                    int indexOfLowAreaCluster = 0;
+                    int indexOfLowAspectRatioCluster = 0;
 
                     if(currentUtteranceTrajectories.size() > 0){
 
@@ -582,16 +631,16 @@ void LipRec::processImage(Mat img)
                                 clusterT = this->getClusterTrajectories(command, ui_.cbArea->text(), ui_.rbKmedoids->text());
 
                                 double warpingCostTmpArea = 0.0;
-                                for (int i = 0; i < clusterT.size(); ++i) {
-
+                                for (int i = 0; i < clusterT.size(); i++) {
                                     dtw.seed(clusterT.at(i), currentUtteranceTrajectories[ui_.cbArea->text()]);
 
-                                    warpingCostTmpArea =  dtw.calcWarpingCost(df);
+                                    warpingCostTmpArea = dtw.calcWarpingCost(df);
 
                                     ROS_INFO("Area Command: %s(%d) ; Utterrance: %d -> %f",
                                              command.toStdString().c_str(), clusterT.at(i).size(), currentUtteranceTrajectories[ui_.cbArea->text()].size(), warpingCostTmpArea);
 
                                     if(warpingCostTmpArea < bestWarpingCostArea){
+                                        indexOfLowAreaCluster = i;
                                         bestWarpingCostArea = warpingCostTmpArea;
                                         currentCommandArea = command;
                                     }
@@ -600,8 +649,7 @@ void LipRec::processImage(Mat img)
                                 clusterT = this->getClusterTrajectories(command, ui_.cbAspectRatio->text(), ui_.rbKmedoids->text());
 
                                 double warpingCostTmpAspectRatio = 0.0;
-                                for (int i = 0; i < clusterT.size(); ++i) {
-
+                                for (int i = 0; i < clusterT.size(); i++) {
                                     dtw.seed(clusterT.at(i), currentUtteranceTrajectories[ui_.cbAspectRatio->text()]);
 
                                     warpingCostTmpAspectRatio =  dtw.calcWarpingCost(df);
@@ -610,9 +658,55 @@ void LipRec::processImage(Mat img)
                                              command.toStdString().c_str(), clusterT.at(i).size(), currentUtteranceTrajectories[ui_.cbAspectRatio->text()].size(), warpingCostTmpAspectRatio);
 
                                     if(warpingCostTmpAspectRatio < bestWarpingCostAspectRatio){
+                                        indexOfLowAspectRatioCluster = i;
                                         bestWarpingCostAspectRatio = warpingCostTmpAspectRatio;
                                         currentCommandAspectRatio = command;
                                     }
+                                }
+
+                                clusterT = this->getClusterTrajectories(currentCommandAspectRatio, ui_.cbAspectRatio->text(), ui_.rbKmedoids->text());
+                                if(!clusterT.isEmpty()){
+                                    dtw.seed(clusterT.at(indexOfLowAspectRatioCluster), currentUtteranceTrajectories[ui_.cbAspectRatio->text()]);
+                                    dtw.calcWarpingCost(df);
+                                    Mat dtwMat;
+                                    Mat dtwMat2(dtw.getDtwDistanceMatrix().rows-1, dtw.getDtwDistanceMatrix().cols-1, CV_64F);
+
+                                    //dtwMat.convertTo(dtwMat, CV_8U);
+                                    for (int i = 1; i < dtw.getDtwDistanceMatrix().cols; ++i) {
+                                        for (int j = 1; j < dtw.getDtwDistanceMatrix().rows; ++j) {
+                                            dtwMat2.at<double>(j-1,i-1) = dtw.getDtwDistanceMatrix().at<double>(j,i);
+                                            //ROS_INFO("%f", dtwMat2.at<double>(j-1,i-1));
+                                        }
+                                    }
+
+                                    double min = 0.0;
+                                    double max = 0.0;
+                                    minMaxIdx(dtwMat2, &min, &max);
+                                    dtwMat = Mat(dtwMat2.rows, dtwMat2.cols, CV_8U);
+
+                                    double oldRange = max - min;
+                                    double newRange = 255.0 - 0;
+                                    double newValue = 0.0;
+                                    for (int i = 0; i < dtwMat.cols; ++i) {
+                                        for (int j = 0; j < dtwMat.rows; ++j) {
+                                            newValue = (((dtwMat2.at<double>(j,i)-min) *newRange)/oldRange) + 0;
+                                            dtwMat.at<uchar>(j,i) = (int) newValue;
+                                        }
+                                    }
+
+                                    double sum = 0.0;
+                                    for (int i = 0; i < dtw.getWarpingPath().size(); ++i) {
+                                       circle(dtwMat, dtw.getWarpingPath().at(i), 1, Scalar(255,255,255));
+                                       sum += dtw.getDtwDistanceMatrix().at<double>(dtw.getWarpingPath().at(i).y, dtw.getWarpingPath().at(i).x);
+                                    }
+                                    //ROS_INFO("SUM %f", sum);
+
+                                    dtwMat = 255 - dtwMat;
+
+                                    QPixmap dtwPixMap = imageProcessing.getPixmap(dtwMat, true);
+                                    dtwPixMap = dtwPixMap.scaled(ui_.lblDTW->maximumWidth(), ui_.lblDTW->maximumHeight(), Qt::KeepAspectRatio, Qt::SmoothTransformation);
+
+                                    ui_.lblDTW->setPixmap(dtwPixMap);
                                 }
                             }
 
@@ -626,28 +720,90 @@ void LipRec::processImage(Mat img)
                                 clusterT = this->getClusterTrajectories(command, ui_.cbArea->text(), ui_.rbKmedoids->text());
                                 clusterT2 = this->getClusterTrajectories(command, ui_.cbAspectRatio->text(), ui_.rbKmedoids->text());
 
-                                double warpingCostTmpArea = 0.0;
-                                double warpingCostTmpAspectRatio = 0.0;
+                                double warpingCostTmpArea = INT_MAX;
+                                double warpingCostTmpAspectRatio = INT_MAX;
                                 double warpingCostFusionTmp = 0.0;
 
                                 for (int i = 0; i < clusterT.size(); ++i) {
-
                                     dtw.seed(clusterT.at(i), currentUtteranceTrajectories[ui_.cbArea->text()]);
-                                    warpingCostTmpArea =  dtw.calcWarpingCost(df);
+                                    double wpArea = dtw.calcWarpingCost(df);
 
-                                    dtw.seed(clusterT2.at(i), currentUtteranceTrajectories[ui_.cbAspectRatio->text()]);
-                                    warpingCostTmpAspectRatio =  dtw.calcWarpingCost(df);
+                                    ROS_INFO("Area Command: %s(%d) ; Utterrance: %d -> %f",
+                                             command.toStdString().c_str(), clusterT.at(i).size(),
+                                             currentUtteranceTrajectories[ui_.cbArea->text()].size(), wpArea);
 
-                                    warpingCostFusionTmp = warpingCostTmpAspectRatio + warpingCostTmpArea;
-
-                                    ROS_INFO("Fusion Command: %s(%d&%d) ; Utterrance: %d -> %f",
-                                             command.toStdString().c_str(), clusterT.at(i).size(), clusterT2.at(i).size(),
-                                             currentUtteranceTrajectories[ui_.cbArea->text()].size(), warpingCostFusionTmp);
-
-                                    if(warpingCostFusionTmp < bestWarpingCostFusion){
-                                        bestWarpingCostFusion = warpingCostFusionTmp;
-                                        currentCommandFusion = command;
+                                    if(wpArea < warpingCostTmpArea){
+                                        indexOfLowAreaCluster = i;
+                                        warpingCostTmpArea = wpArea;
                                     }
+                                }
+
+                                for (int i = 0; i < clusterT2.size(); ++i) {
+                                    dtw.seed(clusterT2.at(i), currentUtteranceTrajectories[ui_.cbAspectRatio->text()]);
+                                    double wpAspectRatio =  dtw.calcWarpingCost(df);
+
+                                    ROS_INFO("Aspect Ratio Command: %s(%d) ; Utterrance: %d -> %f",
+                                             command.toStdString().c_str(), clusterT2.at(i).size(),
+                                             currentUtteranceTrajectories[ui_.cbAspectRatio->text()].size(), wpAspectRatio);
+
+                                    if(wpAspectRatio < warpingCostTmpAspectRatio){
+                                        indexOfLowAspectRatioCluster = i;
+                                        warpingCostTmpAspectRatio = wpAspectRatio;
+                                    }
+                                }
+
+                                warpingCostFusionTmp = warpingCostTmpArea + warpingCostTmpAspectRatio;
+
+                                if(warpingCostFusionTmp < bestWarpingCostArea){
+                                    bestWarpingCostFusion = warpingCostFusionTmp;
+                                    currentCommandFusion = command;
+                                }
+
+
+                                clusterT2 = this->getClusterTrajectories(currentCommandFusion, ui_.cbAspectRatio->text(), ui_.rbKmedoids->text());
+
+                                if(!clusterT2.isEmpty()){
+                                    dtw.seed(clusterT2.at(indexOfLowAspectRatioCluster), currentUtteranceTrajectories[ui_.cbAspectRatio->text()]);
+                                    dtw.calcWarpingCost(df);
+                                    Mat dtwMat;
+                                    Mat dtwMat2(dtw.getDtwDistanceMatrix().rows-1, dtw.getDtwDistanceMatrix().cols-1, CV_64F);
+
+                                    //dtwMat.convertTo(dtwMat, CV_8U);
+                                    for (int i = 1; i < dtw.getDtwDistanceMatrix().cols; ++i) {
+                                        for (int j = 1; j < dtw.getDtwDistanceMatrix().rows; ++j) {
+                                            dtwMat2.at<double>(j-1,i-1) = dtw.getDtwDistanceMatrix().at<double>(j,i);
+                                            //ROS_INFO("%f", dtwMat2.at<double>(j-1,i-1));
+                                        }
+                                    }
+
+                                    double min = 0.0;
+                                    double max = 0.0;
+                                    minMaxIdx(dtwMat2, &min, &max);
+                                    dtwMat = Mat(dtwMat2.rows, dtwMat2.cols, CV_8U);
+
+                                    double oldRange = max - min;
+                                    double newRange = 255.0 - 0;
+                                    double newValue = 0.0;
+                                    for (int i = 0; i < dtwMat.cols; ++i) {
+                                        for (int j = 0; j < dtwMat.rows; ++j) {
+                                            newValue = (((dtwMat2.at<double>(j,i)-min) *newRange)/oldRange) + 0;
+                                            dtwMat.at<uchar>(j,i) = (int) newValue;
+                                        }
+                                    }
+
+                                    double sum = 0.0;
+                                    for (int i = 0; i < dtw.getWarpingPath().size(); ++i) {
+                                       circle(dtwMat, dtw.getWarpingPath().at(i), 1, Scalar(255,255,255));
+                                       sum += dtw.getDtwDistanceMatrix().at<double>(dtw.getWarpingPath().at(i).y, dtw.getWarpingPath().at(i).x);
+                                    }
+                                    //ROS_INFO("SUM %f", sum);
+
+                                    dtwMat = 255 - dtwMat;
+
+                                    QPixmap dtwPixMap = imageProcessing.getPixmap(dtwMat, true);
+                                    dtwPixMap = dtwPixMap.scaled(ui_.lblDTW->maximumWidth(), ui_.lblDTW->maximumHeight(), Qt::KeepAspectRatio, Qt::SmoothTransformation);
+
+                                    ui_.lblDTW->setPixmap(dtwPixMap);
                                 }
                             }
 
@@ -662,7 +818,6 @@ void LipRec::processImage(Mat img)
                     currentUtteranceTrajectories[ui_.cbArea->text()].append(area);
                     currentUtteranceTrajectories[ui_.cbAspectRatio->text()].append(hw);
                 }
-
 
 
                 this->drawMouthFeatures(mouthFeatures, keyPoint1, keyPoint2, keyPoint3, keyPoint4, keyPoint5, keyPoint6);
@@ -729,6 +884,7 @@ void LipRec::processImage(Mat img)
                 if(QDateTime::currentMSecsSinceEpoch() > lcdUpdateTimeStamp + 500){
                     ui_.lcdArea->display(QString::number(area, 'f', 3));
                     ui_.lcdAspectRatio->display(QString::number(hw,'f', 3));
+                    ui_.lcdDistance->display(QString::number(depthCamTmp.at<float>(yDepth, xDepth), 'f', 3));
                     lcdUpdateTimeStamp = QDateTime::currentMSecsSinceEpoch();
                 }
 
