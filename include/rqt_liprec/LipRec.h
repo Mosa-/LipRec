@@ -163,6 +163,8 @@ private:
     QList<QList<double> > getClusterTrajectories(QString command, QString feature, QString clusterMethod);
     void setClusterTrajectories(QList<QList<double> > clusterT, QString command, QString feature, QString clusterMethod);
 
+    double calculateEuclideanDistance(QList<double>& trj1, QList<double>& trj2);
+
     void changeUseCam();
 
     void applySignalSmoothing(int graphicView, SignalSmoothingType type);
@@ -176,6 +178,12 @@ private:
 
     void applyCluster(QString clusterMethod, DistanceFunction df, QString command, QString feature);
     void printTrajectory(QList<double> trajectory);
+
+    void updateTrajectoriesInfoGUI();
+    void lipsActivation(int currentFrame);
+    Mat drawMouthFeaturesOnGUI(Mat& mouthImg, Mat& rLowFinal, Mat& rMidFinal, Mat& rTopFinal,
+                          Point upLinePoint, Point bottomLinePoint, Point rightLinePoint,
+                          Point keyPoint1, Point keyPoint2, Point keyPoint3, Point keyPoint4, Point keyPoint5, Point keyPoint6);
 public slots:
     void getCamPic(Mat img);
     void getDepthCamPic(Mat img);
