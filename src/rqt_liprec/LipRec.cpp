@@ -584,6 +584,8 @@ void LipRec::processImage(Mat img)
 
                 ROS_INFO("Recognize Area: %s", currentCommandArea.toStdString().c_str());
                 ROS_INFO("Recognize AspectRatio: %s", currentCommandAspectRatio.toStdString().c_str());
+                ui_.label_rec->setText(QString("Area: %1").arg(currentCommandArea));
+                ui_.label_rec2->setText(QString("AspectRatio: %1").arg(currentCommandAspectRatio));
 
               }else if(ui_.rbFusionFF->isChecked()){
 
@@ -680,6 +682,8 @@ void LipRec::processImage(Mat img)
                 }
 
                 ROS_INFO("Recognize Fusion: %s", currentCommandFusion.toStdString().c_str());
+                ui_.label_rec->setText(QString("Fusion: %1").arg(currentCommandFusion));
+                ui_.label_rec2->setText(QString(""));
               }
 
             }else if(ui_.rbEuclideanDistSA->isChecked()){
@@ -749,7 +753,9 @@ void LipRec::processImage(Mat img)
               }
 
               ROS_INFO("Recognize Area: %s", currentCommandArea.toStdString().c_str());
-              ROS_INFO("Recognize Aspect Ratio: %s", currentCommandAspectRatio.toStdString().c_str());
+              ROS_INFO("Recognize AspectRatio: %s", currentCommandAspectRatio.toStdString().c_str());
+              ui_.label_rec->setText(QString("Area: %1").arg(currentCommandArea));
+              ui_.label_rec2->setText(QString("AspectRatio %1").arg(currentCommandAspectRatio));
             }
           }
 
@@ -823,7 +829,7 @@ void LipRec::processImage(Mat img)
 
         if(QDateTime::currentMSecsSinceEpoch() > lcdUpdateTimeStamp + 500){
           //ROS_INFO("Distance to cam %f * Area: %f -> %f", distanceNormalized, area, distanceNormalized*area/100);
-          ui_.lcdArea->display(QString::number(area/distanceNormalized, 'f', 3));
+          ui_.lcdArea->display(QString::number(area, 'f', 3));
           ui_.lcdAspectRatio->display(QString::number(hw,'f', 3));
           ui_.lcdDistance->display(QString::number(distanceNormalized, 'f', 3));
           lcdUpdateTimeStamp = QDateTime::currentMSecsSinceEpoch();
