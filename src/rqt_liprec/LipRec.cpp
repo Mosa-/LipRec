@@ -477,6 +477,8 @@ void LipRec::processImage(Mat img)
         }else if(distanceNormalized < 520){
           distanceNormalized = 520;
         }
+
+        uint relativeArea = 8 * area * distanceNormalized;
         //distanceNormalized /= 10; // mm to cm
         //distanceNormalized = (distanceNormalized - 520)/(655-520);
 
@@ -763,7 +765,7 @@ void LipRec::processImage(Mat img)
           utter = false;
 
         }else if(utter){
-          currentUtteranceTrajectories[ui_.cbArea->text()].append(distanceNormalized*area/100);
+          currentUtteranceTrajectories[ui_.cbArea->text()].append(relativeArea);
           currentUtteranceTrajectories[ui_.cbAspectRatio->text()].append(hw);
         }
 
@@ -829,7 +831,7 @@ void LipRec::processImage(Mat img)
 
         if(QDateTime::currentMSecsSinceEpoch() > lcdUpdateTimeStamp + 500){
           //ROS_INFO("Distance to cam %f * Area: %f -> %f", distanceNormalized, area, distanceNormalized*area/100);
-          ui_.lcdArea->display(QString::number(area, 'f', 3));
+          ui_.lcdArea->display(QString::number(relativeArea, 'f', 3));
           ui_.lcdAspectRatio->display(QString::number(hw,'f', 3));
           ui_.lcdDistance->display(QString::number(distanceNormalized, 'f', 3));
           lcdUpdateTimeStamp = QDateTime::currentMSecsSinceEpoch();
