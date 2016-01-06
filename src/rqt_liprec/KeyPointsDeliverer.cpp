@@ -318,7 +318,7 @@ void KeyPointsDeliverer::extractCupidsBowKeyPoints(int thresholdDifferenceToAvg,
     for (int i = keyPoint2.x; i < keyPoint4.x; ++i) {
         for (int j = 0; j < keyPoint1.y-10; ++j) {
             if(contourImg.at<uchar>(j,i) == 255){
-                if(keyPoint3.y <= j &&  i <= (keyPoint2.x + kp2kp3Width) ){
+                if(keyPoint3.y <= j &&  i <= (keyPoint2.x + kp2kp3Width + (kp2kp3Width*0.2)) ){
                     keyPoint3.y = j;
                     keyPoint3.x = i;
                 }

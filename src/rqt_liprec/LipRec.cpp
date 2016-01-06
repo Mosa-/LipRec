@@ -59,7 +59,7 @@ void LipRec::initPlugin(qt_gui_cpp::PluginContext& context)
   this->imageProcessing.setUseMonoImage(useMonoImage);
 
   camImage = getNodeHandle().subscribe(kinectTopic, 100, &LipRec::imageCallback, this);
-  camImageDepth = getNodeHandle().subscribe("/kinect2/qhd/image_depth_rect", 100, &LipRec::imageDepthCallback, this);
+  //camImageDepth = getNodeHandle().subscribe("/kinect2/qhd/image_depth_rect", 100, &LipRec::imageDepthCallback, this);
 
   faceROISub = getNodeHandle().subscribe("/face_detection/faceROI", 10, &LipRec::faceROICallback, this);
   mouthROISub = getNodeHandle().subscribe("/face_detection/mouthROI", 10, &LipRec::mouthROICallback, this);
@@ -163,7 +163,7 @@ void LipRec::initPlugin(qt_gui_cpp::PluginContext& context)
   font.setUnderline(true);
   ui_.lblDbName->setFont(font);
 
-  ui_.lcdArea->setDigitCount(10);
+  ui_.lcdArea->setDigitCount(15);
   ui_.lcdAspectRatio->setDigitCount(10);
   ui_.lcdDistance->setDigitCount(10);
 
@@ -403,12 +403,13 @@ void LipRec::processImage(Mat img)
 
   Mat depthCamTmp;
   depthCamMtx.lock();
-  depthCam.copyTo(depthCamTmp);
+  if(!depthCam.empty())
+    depthCam.copyTo(depthCamTmp);
   depthCamTmp.convertTo(depthCamTmp, CV_16U);
   depthCamMtx.unlock();
 
   int xDepth = faceROI.x_offset+(faceROI.width/2);
-  int yDepth = faceROI.y_offset+(faceROI.height*0.4);
+  int yDepth = faceROI.y_offset+(faceROI.height*0.25);
 
   if(!depthCamTmp.empty()){
     //ROS_INFO("%d %d -> %f", xDepth, yDepth, depthCamTmp.at<float>(yDepth, xDepth));
@@ -471,11 +472,14 @@ void LipRec::processImage(Mat img)
 
         double area = areaOfTriangleA + areaOfTriangleB + areaOfTriangleC + areaOfTriangleD;
 
-        uint16_t distanceNormalized = depthCamTmp.at<uint16_t>(yDepth, xDepth);
+        uint16_t distanceNormalized = 0;
+        if(!depthCamTmp.empty())
+          distanceNormalized = depthCamTmp.at<uint16_t>(yDepth, xDepth);
+
         if(distanceNormalized > 645){
           distanceNormalized = 645;
-        }else if(distanceNormalized < 520){
-          distanceNormalized = 520;
+        }else if(distanceNormalized < 500){
+          distanceNormalized = 500;
         }
 
         uint relativeArea = 8 * area * distanceNormalized;
@@ -830,7 +834,7 @@ void LipRec::processImage(Mat img)
 
 
         if(QDateTime::currentMSecsSinceEpoch() > lcdUpdateTimeStamp + 500){
-          //ROS_INFO("Distance to cam %f * Area: %f -> %f", distanceNormalized, area, distanceNormalized*area/100);
+          //ROS_INFO("Distance to cam %f * Area: %f -> %f", distanceNormalized, area, relativeArea);
           ui_.lcdArea->display(QString::number(relativeArea, 'f', 3));
           ui_.lcdAspectRatio->display(QString::number(hw,'f', 3));
           ui_.lcdDistance->display(QString::number(distanceNormalized, 'f', 3));
@@ -1394,6 +1398,12 @@ void LipRec::clickedRecordStopTrajectory()
     ui_.pbRecordStopTrajectory->setEnabled(false);
     ui_.pbSaveTrajectory->setEnabled(true);
     ui_.pbAbortTrajectory->setEnabled(true);
+
+
+    QString fontColor = tr("<font color='%1'>%2</font>");
+    ui_.lblMsg->setText( fontColor.arg( "red", QString::number(recordTrajectory[ui_.cbArea->text()].size())));
+    ui_.lblMsg->setFont(QFont("Times New Roman", 10, QFont::Bold));
+
     recordTrajectoryState = None;
   }
 
