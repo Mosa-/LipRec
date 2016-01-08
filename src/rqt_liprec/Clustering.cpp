@@ -13,7 +13,7 @@ Clustering::~Clustering(){
 
 }
 
-QList<QList<double> > Clustering::kMedoidsClustering(DistanceFunction df)
+QList<QList<double> > Clustering::kMedoidsClustering(DistanceFunction df, DtwStepPattern stepPattern)
 {
     //ROS_INFO("size in clustering %d k: %d", this->trajectories.size(), this->k);
     QList<int> kIndices;
@@ -58,7 +58,7 @@ QList<QList<double> > Clustering::kMedoidsClustering(DistanceFunction df)
             if(!kIndices.contains(i)){
                 for (int j = 0; j < kIndices.size(); ++j) {
                     kIndex = kIndices.at(j);
-                    dtw.seed(trajectories.at(kIndex), trajectories.at(i));
+                    dtw.seed(trajectories.at(kIndex), trajectories.at(i), stepPattern);
 
                     tmpWarpingCost = calcWarpingCost(df);
                     if(tmpWarpingCost < previousWarpingCost){
@@ -92,7 +92,7 @@ QList<QList<double> > Clustering::kMedoidsClustering(DistanceFunction df)
                 average = 0.0;
                 for (int j = 0; j < cluster.size(); ++j) {
                     if(i != j){
-                        dtw.seed(trajectories.at(cluster.at(i)), trajectories.at(cluster.at(j)));
+                        dtw.seed(trajectories.at(cluster.at(i)), trajectories.at(cluster.at(j)), stepPattern);
                         //this->printTrajectory(trajectories.at(cluster.at(j)));
                         average += calcWarpingCost(df);
                         //ROS_INFO("currentAvg: %f", average);
@@ -140,78 +140,78 @@ QList<QList<double> > Clustering::kMedoidsClustering(DistanceFunction df)
     return kMedoids;
 }
 
-QList<QList<double> > Clustering::mosaClustering(DistanceFunction df, int noExceptTrajectories)
+QList<QList<double> > Clustering::simpleClustering(DistanceFunction df, int noExceptTrajectories)
 {
     QList<QList<double> > kClusterTrajectories;
 
-    QMap<int, double> trajectoryDistances;
-    double average = 0.0;
-    double warpingCost = 0.0;
+//    QMap<int, double> trajectoryDistances;
+//    double average = 0.0;
+//    double warpingCost = 0.0;
 
-    QList<QList<double> > currentTrajectories = trajectories;
-    QList<QList<double> > remainTrajectories;
-    int lowTrajectoriesCostCounter = 0;
-    QMap<int, int> trajectoryLowCost;
+//    QList<QList<double> > currentTrajectories = trajectories;
+//    QList<QList<double> > remainTrajectories;
+//    int lowTrajectoriesCostCounter = 0;
+//    QMap<int, int> trajectoryLowCost;
 
-    while(currentTrajectories.size() > noExceptTrajectories) {
-        for (int i = 0; i < currentTrajectories.size(); ++i) {
-            lowTrajectoriesCostCounter = 0;
-            average = 0.0;
-            trajectoryDistances.clear();
-            remainTrajectories.clear();
+//    while(currentTrajectories.size() > noExceptTrajectories) {
+//        for (int i = 0; i < currentTrajectories.size(); ++i) {
+//            lowTrajectoriesCostCounter = 0;
+//            average = 0.0;
+//            trajectoryDistances.clear();
+//            remainTrajectories.clear();
 
-            for (int j = 0; j < currentTrajectories.size(); ++j) {
-                if(i != j){
-                    dtw.seed(currentTrajectories.at(i), currentTrajectories.at(j));
-                    warpingCost = this->calcWarpingCost(df);
-                    average += warpingCost;
+//            for (int j = 0; j < currentTrajectories.size(); ++j) {
+//                if(i != j){
+//                    dtw.seed(currentTrajectories.at(i), currentTrajectories.at(j), stepPattern);
+//                    warpingCost = this->calcWarpingCost(df);
+//                    average += warpingCost;
 
-                    trajectoryDistances[j] = warpingCost;
-                }
-            }
-            average = average/(currentTrajectories.size());
+//                    trajectoryDistances[j] = warpingCost;
+//                }
+//            }
+//            average = average/(currentTrajectories.size());
 
-            foreach (int k, trajectoryDistances.keys()) {
-                if(trajectoryDistances[k] <= average){
-                    lowTrajectoriesCostCounter++;
-                }
-            }
+//            foreach (int k, trajectoryDistances.keys()) {
+//                if(trajectoryDistances[k] <= average){
+//                    lowTrajectoriesCostCounter++;
+//                }
+//            }
 
-            trajectoryLowCost[i] = lowTrajectoriesCostCounter;
-        }
+//            trajectoryLowCost[i] = lowTrajectoriesCostCounter;
+//        }
 
-        int highCounterIndex = 0;
-        int tempCnt = 0;
-        foreach (int trajectoryIndex, trajectoryLowCost.keys()) {
-            if(trajectoryLowCost[trajectoryIndex] > tempCnt){
-                tempCnt = trajectoryLowCost[trajectoryIndex];
-                highCounterIndex = trajectoryIndex;
-            }
-        }
+//        int highCounterIndex = 0;
+//        int tempCnt = 0;
+//        foreach (int trajectoryIndex, trajectoryLowCost.keys()) {
+//            if(trajectoryLowCost[trajectoryIndex] > tempCnt){
+//                tempCnt = trajectoryLowCost[trajectoryIndex];
+//                highCounterIndex = trajectoryIndex;
+//            }
+//        }
 
-        kClusterTrajectories.append(trajectories.at(highCounterIndex));
+//        kClusterTrajectories.append(trajectories.at(highCounterIndex));
 
-        // get remain trajectories
-        average = 0.0;
-        trajectoryDistances.clear();
+//        // get remain trajectories
+//        average = 0.0;
+//        trajectoryDistances.clear();
 
-        for (int i = 0; i < currentTrajectories.size(); ++i) {
-            if(i != highCounterIndex){
-                dtw.seed(currentTrajectories.at(highCounterIndex), currentTrajectories.at(i));
-                warpingCost = this->calcWarpingCost(df);
-                average += warpingCost;
-                trajectoryDistances[i] = warpingCost;
-            }
-        }
-        average = average/(currentTrajectories.size());
-        foreach (int k, trajectoryDistances.keys()) {
-            if(trajectoryDistances[k] > average){
-                remainTrajectories.append(currentTrajectories.at(k));
-            }
-        }
+//        for (int i = 0; i < currentTrajectories.size(); ++i) {
+//            if(i != highCounterIndex){
+//                dtw.seed(currentTrajectories.at(highCounterIndex), currentTrajectories.at(i), stepPattern);
+//                warpingCost = this->calcWarpingCost(df);
+//                average += warpingCost;
+//                trajectoryDistances[i] = warpingCost;
+//            }
+//        }
+//        average = average/(currentTrajectories.size());
+//        foreach (int k, trajectoryDistances.keys()) {
+//            if(trajectoryDistances[k] > average){
+//                remainTrajectories.append(currentTrajectories.at(k));
+//            }
+//        }
 
-        currentTrajectories = remainTrajectories;
-    }
+//        currentTrajectories = remainTrajectories;
+//    }
 
     return kClusterTrajectories;
 }

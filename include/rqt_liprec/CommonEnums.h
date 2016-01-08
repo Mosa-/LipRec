@@ -2,7 +2,7 @@
 #define COMMONENUMS_H_
 
 enum HistogramType{
-    H_NONE,
+  H_NONE,
 	GHE,
 	AHE
 };
@@ -29,6 +29,12 @@ enum DistanceFunction{
     SQUARE,
     SQUARE2,
     ABS
+};
+
+enum DtwStepPattern{
+  SQUARESTEP,
+  DIAGONALSTEP,
+  FIVERSTEP
 };
 
 

@@ -59,7 +59,7 @@ void LipRec::initPlugin(qt_gui_cpp::PluginContext& context)
   this->imageProcessing.setUseMonoImage(useMonoImage);
 
   camImage = getNodeHandle().subscribe(kinectTopic, 100, &LipRec::imageCallback, this);
-  //camImageDepth = getNodeHandle().subscribe("/kinect2/qhd/image_depth_rect", 100, &LipRec::imageDepthCallback, this);
+  camImageDepth = getNodeHandle().subscribe("/kinect2/qhd/image_depth_rect", 100, &LipRec::imageDepthCallback, this);
 
   faceROISub = getNodeHandle().subscribe("/face_detection/faceROI", 10, &LipRec::faceROICallback, this);
   mouthROISub = getNodeHandle().subscribe("/face_detection/mouthROI", 10, &LipRec::mouthROICallback, this);
@@ -409,7 +409,12 @@ void LipRec::processImage(Mat img)
   depthCamMtx.unlock();
 
   int xDepth = faceROI.x_offset+(faceROI.width/2);
-  int yDepth = faceROI.y_offset+(faceROI.height*0.25);
+  int yDepth = faceROI.y_offset+(faceROI.height*0.16);
+
+
+  circle(img, Point(xDepth, yDepth), 2, Scalar(255,255,255));
+  pixMap = imageProcessing.getPixmap(img, useMonoImage);
+  ui_.lbl_cam->setPixmap(pixMap);
 
   if(!depthCamTmp.empty()){
     //ROS_INFO("%d %d -> %f", xDepth, yDepth, depthCamTmp.at<float>(yDepth, xDepth));
@@ -487,7 +492,7 @@ void LipRec::processImage(Mat img)
         //distanceNormalized = (distanceNormalized - 520)/(655-520);
 
 
-        if(utter == true && stateDetectionStartEndFrame == Idle){
+        if(utter == true && stateDetectionStartEndFrame == Idle && recordTrajectoryState != Recording){
 
           QList<QList<double> > clusterT;
           QList<QList<double> > clusterT2;
@@ -500,6 +505,15 @@ void LipRec::processImage(Mat img)
           int indexOfLowAreaCluster = 0;
           int indexOfLowAspectRatioCluster = 0;
 
+          DtwStepPattern stepPattern = SQUARESTEP;
+          if(ui_.rbSQUARESP->isChecked()){
+            stepPattern = SQUARESTEP;
+          }else if(ui_.rbDIAGONALSP->isChecked()){
+            stepPattern = DIAGONALSTEP;
+          }else{
+            stepPattern = FIVERSTEP;
+          }
+
           if(currentUtteranceTrajectories.size() > 0){
 
             if(ui_.rbDTWSA->isChecked()){
@@ -510,7 +524,8 @@ void LipRec::processImage(Mat img)
 
                   double warpingCostTmpArea = 0.0;
                   for (int i = 0; i < clusterT.size(); i++) {
-                    dtw.seed(clusterT.at(i), currentUtteranceTrajectories[ui_.cbArea->text()]);
+
+                    dtw.seed(clusterT.at(i), currentUtteranceTrajectories[ui_.cbArea->text()], stepPattern);
 
                     warpingCostTmpArea = dtw.calcWarpingCost(df);
 
@@ -528,7 +543,7 @@ void LipRec::processImage(Mat img)
 
                   double warpingCostTmpAspectRatio = 0.0;
                   for (int i = 0; i < clusterT.size(); i++) {
-                    dtw.seed(clusterT.at(i), currentUtteranceTrajectories[ui_.cbAspectRatio->text()]);
+                    dtw.seed(clusterT.at(i), currentUtteranceTrajectories[ui_.cbAspectRatio->text()], stepPattern);
 
                     warpingCostTmpAspectRatio =  dtw.calcWarpingCost(df);
 
@@ -544,7 +559,7 @@ void LipRec::processImage(Mat img)
 
                   clusterT = this->getClusterTrajectories(currentCommandAspectRatio, ui_.cbAspectRatio->text(), ui_.rbKmedoids->text());
                   if(!clusterT.isEmpty()){
-                    dtw.seed(clusterT.at(indexOfLowAspectRatioCluster), currentUtteranceTrajectories[ui_.cbAspectRatio->text()]);
+                    dtw.seed(clusterT.at(indexOfLowAspectRatioCluster), currentUtteranceTrajectories[ui_.cbAspectRatio->text()], stepPattern);
                     dtw.calcWarpingCost(df);
                     Mat dtwMat;
                     Mat dtwMat2(dtw.getDtwDistanceMatrix().rows-1, dtw.getDtwDistanceMatrix().cols-1, CV_64F);
@@ -605,7 +620,7 @@ void LipRec::processImage(Mat img)
                   double warpingCostFusionTmp = 0.0;
 
                   for (int i = 0; i < clusterT.size(); ++i) {
-                    dtw.seed(clusterT.at(i), currentUtteranceTrajectories[ui_.cbArea->text()]);
+                    dtw.seed(clusterT.at(i), currentUtteranceTrajectories[ui_.cbArea->text()], stepPattern);
                     double wpArea = dtw.calcWarpingCost(df);
 
                     ROS_INFO("Area Command: %s(%d) ; Utterrance: %d -> %f",
@@ -619,7 +634,7 @@ void LipRec::processImage(Mat img)
                   }
 
                   for (int i = 0; i < clusterT2.size(); ++i) {
-                    dtw.seed(clusterT2.at(i), currentUtteranceTrajectories[ui_.cbAspectRatio->text()]);
+                    dtw.seed(clusterT2.at(i), currentUtteranceTrajectories[ui_.cbAspectRatio->text()], stepPattern);
                     double wpAspectRatio =  dtw.calcWarpingCost(df);
 
                     ROS_INFO("Aspect Ratio Command: %s(%d) ; Utterrance: %d -> %f",
@@ -643,7 +658,7 @@ void LipRec::processImage(Mat img)
                   clusterT2 = this->getClusterTrajectories(currentCommandFusion, ui_.cbAspectRatio->text(), ui_.rbKmedoids->text());
 
                   if(!clusterT2.isEmpty()){
-                    dtw.seed(clusterT2.at(indexOfLowAspectRatioCluster), currentUtteranceTrajectories[ui_.cbAspectRatio->text()]);
+                    dtw.seed(clusterT2.at(indexOfLowAspectRatioCluster), currentUtteranceTrajectories[ui_.cbAspectRatio->text()], stepPattern);
                     dtw.calcWarpingCost(df);
                     Mat dtwMat;
                     Mat dtwMat2(dtw.getDtwDistanceMatrix().rows-1, dtw.getDtwDistanceMatrix().cols-1, CV_64F);
@@ -768,7 +783,7 @@ void LipRec::processImage(Mat img)
           currentUtteranceTrajectories.clear();
           utter = false;
 
-        }else if(utter){
+        }else if(utter && recordTrajectoryState != Recording){
           currentUtteranceTrajectories[ui_.cbArea->text()].append(relativeArea);
           currentUtteranceTrajectories[ui_.cbAspectRatio->text()].append(hw);
         }
@@ -1499,14 +1514,23 @@ void LipRec::applyCluster(QString clusterMethod, DistanceFunction df, QString co
   QList<QList<double> > clusterT = tdm.getClusterTrajectories(command, feature, clusterMethod);
   QList<QList<double> > traj = tdm.getTrajectory(command, feature);
 
+  DtwStepPattern stepPattern = SQUARESTEP;
+  if(ui_.rbSQUARESP->isChecked()){
+    stepPattern = SQUARESTEP;
+  }else if(ui_.rbDIAGONALSP->isChecked()){
+    stepPattern = DIAGONALSTEP;
+  }else{
+    stepPattern = FIVERSTEP;
+  }
+
   if(traj.size() > 0){
     clustering.addTrajectories(traj);
 
     if(ui_.rbKmedoids->isChecked()){
       clustering.setK(ui_.sbKMethod->value());
-      traj = clustering.kMedoidsClustering(df);
+      traj = clustering.kMedoidsClustering(df, stepPattern);
     }else{
-      traj = clustering.mosaClustering(df, ui_.sbKMethod->value());
+      traj = clustering.simpleClustering(df, ui_.sbKMethod->value());
     }
 
     this->setClusterTrajectories(traj, command, feature, clusterMethod);

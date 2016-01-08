@@ -16,10 +16,10 @@ class Dtw {
 public:
 
     Dtw();
-    Dtw(QList<double> trajectory1, QList<double> trajectory2);
+    Dtw(QList<double> trajectory1, QList<double> trajectory2, DtwStepPattern stepPattern);
     virtual ~Dtw();
 
-    void seed(QList<double> trajectory1, QList<double> trajectory2);
+    void seed(QList<double> trajectory1, QList<double> trajectory2, DtwStepPattern stepPattern);
 
     Mat calculateDistanceMatrix(DistanceFunction distanceFunction);
     Mat calculateDtwDistanceMatrix();
@@ -42,6 +42,7 @@ private:
     Mat distanceMatrix;
     Mat dtwDistanceMatrix;
     QList<Point> warpingPath;
+    DtwStepPattern stepPattern;
 
     double squareDistance(double val, double val2);
     double square2Distance(double val, double val2);

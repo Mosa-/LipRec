@@ -20,8 +20,8 @@ public:
     Clustering(int k);
     virtual ~Clustering();
 
-    QList<QList<double> > kMedoidsClustering(DistanceFunction df);
-    QList<QList<double> > mosaClustering(DistanceFunction df, int noExceptTrajectories);
+    QList<QList<double> > kMedoidsClustering(DistanceFunction df, DtwStepPattern stepPattern);
+    QList<QList<double> > simpleClustering(DistanceFunction df, int noExceptTrajectories);
 
     void addTrajectories(QList<QList<double> > trajectories);
     void addTrajectory(QList<double> trajectory);
