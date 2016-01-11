@@ -180,6 +180,7 @@ private:
     void printTrajectory(QList<double> trajectory);
 
     void updateTrajectoriesInfoGUI();
+    QPixmap drawDTWPixmap(QString currentCommand, QString feature, int indexOfLowCluster, QString clusterMethod, DistanceFunction df, DtwStepPattern stepPattern);
     void lipsActivation(int currentFrame);
     Mat drawMouthFeaturesOnGUI(Mat& mouthImg, Mat& rLowFinal, Mat& rMidFinal, Mat& rTopFinal,
                           Point upLinePoint, Point bottomLinePoint, Point rightLinePoint,

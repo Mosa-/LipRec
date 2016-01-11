@@ -59,7 +59,7 @@ void LipRec::initPlugin(qt_gui_cpp::PluginContext& context)
   this->imageProcessing.setUseMonoImage(useMonoImage);
 
   camImage = getNodeHandle().subscribe(kinectTopic, 100, &LipRec::imageCallback, this);
-  camImageDepth = getNodeHandle().subscribe("/kinect2/qhd/image_depth_rect", 100, &LipRec::imageDepthCallback, this);
+  //camImageDepth = getNodeHandle().subscribe("/kinect2/qhd/image_depth_rect", 100, &LipRec::imageDepthCallback, this);
 
   faceROISub = getNodeHandle().subscribe("/face_detection/faceROI", 10, &LipRec::faceROICallback, this);
   mouthROISub = getNodeHandle().subscribe("/face_detection/mouthROI", 10, &LipRec::mouthROICallback, this);
@@ -487,10 +487,9 @@ void LipRec::processImage(Mat img)
           distanceNormalized = 500;
         }
 
-        uint relativeArea = 8 * area * distanceNormalized;
+        uint relativeArea = area;
         //distanceNormalized /= 10; // mm to cm
         //distanceNormalized = (distanceNormalized - 520)/(655-520);
-
 
         if(utter == true && stateDetectionStartEndFrame == Idle && recordTrajectoryState != Recording){
 
@@ -557,50 +556,15 @@ void LipRec::processImage(Mat img)
                     }
                   }
 
-                  clusterT = this->getClusterTrajectories(currentCommandAspectRatio, ui_.cbAspectRatio->text(), ui_.rbKmedoids->text());
-                  if(!clusterT.isEmpty()){
-                    dtw.seed(clusterT.at(indexOfLowAspectRatioCluster), currentUtteranceTrajectories[ui_.cbAspectRatio->text()], stepPattern);
-                    dtw.calcWarpingCost(df);
-                    Mat dtwMat;
-                    Mat dtwMat2(dtw.getDtwDistanceMatrix().rows-1, dtw.getDtwDistanceMatrix().cols-1, CV_64F);
+                  QPixmap dtwPixMap = this->drawDTWPixmap(currentCommandArea, ui_.cbArea->text(), indexOfLowAreaCluster, ui_.rbKmedoids->text(), df, stepPattern);
+                  dtwPixMap = dtwPixMap.scaled(ui_.lblDTW->maximumWidth(), ui_.lblDTW->maximumHeight(), Qt::KeepAspectRatio, Qt::SmoothTransformation);
 
-                    //dtwMat.convertTo(dtwMat, CV_8U);
-                    for (int i = 1; i < dtw.getDtwDistanceMatrix().cols; ++i) {
-                      for (int j = 1; j < dtw.getDtwDistanceMatrix().rows; ++j) {
-                        dtwMat2.at<double>(j-1,i-1) = dtw.getDtwDistanceMatrix().at<double>(j,i);
-                        //ROS_INFO("%f", dtwMat2.at<double>(j-1,i-1));
-                      }
-                    }
+                  ui_.lblDTW->setPixmap(dtwPixMap);
 
-                    double min = 0.0;
-                    double max = 0.0;
-                    minMaxIdx(dtwMat2, &min, &max);
-                    dtwMat = Mat(dtwMat2.rows, dtwMat2.cols, CV_8U);
+                  dtwPixMap = this->drawDTWPixmap(currentCommandAspectRatio, ui_.cbAspectRatio->text(), indexOfLowAspectRatioCluster, ui_.rbKmedoids->text(), df, stepPattern);
+                  dtwPixMap = dtwPixMap.scaled(ui_.lblMouthDiff->maximumWidth(), ui_.lblMouthDiff->maximumHeight(), Qt::KeepAspectRatio, Qt::SmoothTransformation);
 
-                    double oldRange = max - min;
-                    double newRange = 255.0 - 0;
-                    double newValue = 0.0;
-                    for (int i = 0; i < dtwMat.cols; ++i) {
-                      for (int j = 0; j < dtwMat.rows; ++j) {
-                        newValue = (((dtwMat2.at<double>(j,i)-min) *newRange)/oldRange) + 0;
-                        dtwMat.at<uchar>(j,i) = (int) newValue;
-                      }
-                    }
-
-                    double sum = 0.0;
-                    for (int i = 0; i < dtw.getWarpingPath().size(); ++i) {
-                      circle(dtwMat, dtw.getWarpingPath().at(i), 1, Scalar(255,255,255));
-                      sum += dtw.getDtwDistanceMatrix().at<double>(dtw.getWarpingPath().at(i).y, dtw.getWarpingPath().at(i).x);
-                    }
-                    //ROS_INFO("SUM %f", sum);
-
-                    dtwMat = 255 - dtwMat;
-
-                    QPixmap dtwPixMap = imageProcessing.getPixmap(dtwMat, true);
-                    dtwPixMap = dtwPixMap.scaled(ui_.lblDTW->maximumWidth(), ui_.lblDTW->maximumHeight(), Qt::KeepAspectRatio, Qt::SmoothTransformation);
-
-                    ui_.lblDTW->setPixmap(dtwPixMap);
-                  }
+                  ui_.lblMouthDiff->setPixmap(dtwPixMap);
                 }
 
                 ROS_INFO("Recognize Area: %s", currentCommandArea.toStdString().c_str());
@@ -654,52 +618,15 @@ void LipRec::processImage(Mat img)
                     currentCommandFusion = command;
                   }
 
+                  QPixmap dtwPixMap = this->drawDTWPixmap(currentCommandArea, ui_.cbArea->text(), indexOfLowAreaCluster, ui_.rbKmedoids->text(), df, stepPattern);
+                  dtwPixMap = dtwPixMap.scaled(ui_.lblDTW->maximumWidth(), ui_.lblDTW->maximumHeight(), Qt::KeepAspectRatio, Qt::SmoothTransformation);
 
-                  clusterT2 = this->getClusterTrajectories(currentCommandFusion, ui_.cbAspectRatio->text(), ui_.rbKmedoids->text());
+                  ui_.lblDTW->setPixmap(dtwPixMap);
 
-                  if(!clusterT2.isEmpty()){
-                    dtw.seed(clusterT2.at(indexOfLowAspectRatioCluster), currentUtteranceTrajectories[ui_.cbAspectRatio->text()], stepPattern);
-                    dtw.calcWarpingCost(df);
-                    Mat dtwMat;
-                    Mat dtwMat2(dtw.getDtwDistanceMatrix().rows-1, dtw.getDtwDistanceMatrix().cols-1, CV_64F);
+                  dtwPixMap = this->drawDTWPixmap(currentCommandAspectRatio, ui_.cbAspectRatio->text(), indexOfLowAspectRatioCluster, ui_.rbKmedoids->text(), df, stepPattern);
+                  dtwPixMap = dtwPixMap.scaled(ui_.lblMouthDiff->maximumWidth(), ui_.lblMouthDiff->maximumHeight(), Qt::KeepAspectRatio, Qt::SmoothTransformation);
 
-                    //dtwMat.convertTo(dtwMat, CV_8U);
-                    for (int i = 1; i < dtw.getDtwDistanceMatrix().cols; ++i) {
-                      for (int j = 1; j < dtw.getDtwDistanceMatrix().rows; ++j) {
-                        dtwMat2.at<double>(j-1,i-1) = dtw.getDtwDistanceMatrix().at<double>(j,i);
-                        //ROS_INFO("%f", dtwMat2.at<double>(j-1,i-1));
-                      }
-                    }
-
-                    double min = 0.0;
-                    double max = 0.0;
-                    minMaxIdx(dtwMat2, &min, &max);
-                    dtwMat = Mat(dtwMat2.rows, dtwMat2.cols, CV_8U);
-
-                    double oldRange = max - min;
-                    double newRange = 255.0 - 0;
-                    double newValue = 0.0;
-                    for (int i = 0; i < dtwMat.cols; ++i) {
-                      for (int j = 0; j < dtwMat.rows; ++j) {
-                        newValue = (((dtwMat2.at<double>(j,i)-min) *newRange)/oldRange) + 0;
-                        dtwMat.at<uchar>(j,i) = (int) newValue;
-                      }
-                    }
-
-                    double sum = 0.0;
-                    for (int i = 0; i < dtw.getWarpingPath().size(); ++i) {
-                      circle(dtwMat, dtw.getWarpingPath().at(i), 1, Scalar(255,255,255));
-                      sum += dtw.getDtwDistanceMatrix().at<double>(dtw.getWarpingPath().at(i).y, dtw.getWarpingPath().at(i).x);
-                    }
-                    //ROS_INFO("SUM %f", sum);
-
-                    dtwMat = 255 - dtwMat;
-
-                    QPixmap dtwPixMap = imageProcessing.getPixmap(dtwMat, true);
-                    dtwPixMap = dtwPixMap.scaled(ui_.lblDTW->maximumWidth(), ui_.lblDTW->maximumHeight(), Qt::KeepAspectRatio, Qt::SmoothTransformation);
-
-                    ui_.lblDTW->setPixmap(dtwPixMap);
-                  }
+                  ui_.lblMouthDiff->setPixmap(dtwPixMap);
                 }
 
                 ROS_INFO("Recognize Fusion: %s", currentCommandFusion.toStdString().c_str());
@@ -873,6 +800,53 @@ void LipRec::processImage(Mat img)
   this->showLips(showMouthImg);
 
   last = currentFrame;
+}
+
+QPixmap LipRec::drawDTWPixmap(QString currentCommand, QString feature, int indexOfLowCluster, QString clusterMethod, DistanceFunction df, DtwStepPattern stepPattern){
+  QPixmap dtwPixMap;
+  QList<QList<double> > clusterT = this->getClusterTrajectories(currentCommand, feature, clusterMethod);
+  if(!clusterT.isEmpty()){
+    dtw.seed(clusterT.at(indexOfLowCluster), currentUtteranceTrajectories[feature], stepPattern);
+    dtw.calcWarpingCost(df);
+    Mat dtwMat;
+    Mat dtwMat2(dtw.getDtwDistanceMatrix().rows-1, dtw.getDtwDistanceMatrix().cols-1, CV_64F);
+
+    //dtwMat.convertTo(dtwMat, CV_8U);
+    for (int i = 1; i < dtw.getDtwDistanceMatrix().cols; ++i) {
+      for (int j = 1; j < dtw.getDtwDistanceMatrix().rows; ++j) {
+        dtwMat2.at<double>(j-1,i-1) = dtw.getDtwDistanceMatrix().at<double>(j,i);
+        //ROS_INFO("%f", dtwMat2.at<double>(j-1,i-1));
+      }
+    }
+
+    double min = 0.0;
+    double max = 0.0;
+    minMaxIdx(dtwMat2, &min, &max);
+    dtwMat = Mat(dtwMat2.rows, dtwMat2.cols, CV_8U);
+
+    double oldRange = max - min;
+    double newRange = 255.0 - 0;
+    double newValue = 0.0;
+    for (int i = 0; i < dtwMat.cols; ++i) {
+      for (int j = 0; j < dtwMat.rows; ++j) {
+        newValue = (((dtwMat2.at<double>(j,i)-min) *newRange)/oldRange) + 0;
+        dtwMat.at<uchar>(j,i) = (int) newValue;
+      }
+    }
+
+    double sum = 0.0;
+    for (int i = 0; i < dtw.getWarpingPath().size(); ++i) {
+      circle(dtwMat, dtw.getWarpingPath().at(i), 1, Scalar(255,255,255));
+      sum += dtw.getDtwDistanceMatrix().at<double>(dtw.getWarpingPath().at(i).y, dtw.getWarpingPath().at(i).x);
+    }
+    //ROS_INFO("SUM %f", sum);
+
+    dtwMat = 255 - dtwMat;
+
+    dtwPixMap = imageProcessing.getPixmap(dtwMat, true);
+  }
+
+  return dtwPixMap;
 }
 
 
@@ -1210,7 +1184,6 @@ void LipRec::drawMouthFeatures(Mat &mouthFeatures, Point keyPoint1, Point keyPoi
 {
 
   circle(mouthFeatures, keyPoint6, 1, Scalar(255,255,255));
-
   circle(mouthFeatures, keyPoint1, 1, Scalar(255,255,255));
   circle(mouthFeatures, keyPoint5, 1, Scalar(255,255,255));
 
@@ -1604,9 +1577,9 @@ void LipRec::lipsActivation(int currentFrame)
   this->changeLipActivationState(activation, imageAbsDiff, currentFrame);
 
   if(!imageAbsDiff.empty()){
-    pixMap = imageProcessing.getPixmap(imageAbsDiff, true);
-    pixMap = pixMap.scaled(ui_.lblMouthDiff->maximumWidth(), ui_.lblMouthDiff->maximumHeight(), Qt::KeepAspectRatio, Qt::SmoothTransformation);
-    ui_.lblMouthDiff->setPixmap(pixMap);
+//    pixMap = imageProcessing.getPixmap(imageAbsDiff, true);
+//    pixMap = pixMap.scaled(ui_.lblMouthDiff->maximumWidth(), ui_.lblMouthDiff->maximumHeight(), Qt::KeepAspectRatio, Qt::SmoothTransformation);
+//    ui_.lblMouthDiff->setPixmap(pixMap);
   }
 }
 
