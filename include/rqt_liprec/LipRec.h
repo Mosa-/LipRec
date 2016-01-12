@@ -190,6 +190,7 @@ public slots:
     void getDepthCamPic(Mat img);
 
     void triggedAction(QAction* action);
+    void lineEditChanged(const QString& str);
 
 signals:
     void updateCam(Mat img);

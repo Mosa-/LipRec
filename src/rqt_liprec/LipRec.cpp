@@ -181,8 +181,14 @@ void LipRec::initPlugin(qt_gui_cpp::PluginContext& context)
 
   availableTrajectories << "all";
 
-  tdm.connectToDatabase("localhost", "liprec", "liprec");
+  tdm.connectToDatabase("localhost", "liprec", ui_.leCollection->text());
   tdm.setCollectionCluster("clustering");
+  tdm.setCollection(ui_.leCollection->text());
+
+  connect(ui_.leCollection, SIGNAL(textEdited(const QString&)), this, SLOT(lineEditChanged(const QString&)));
+
+  this->updateTrajectoriesInfoGUI();
+
 
   QMap<QString, int> commandsWithCount = tdm.getAllCommandsWithCount();
   foreach (QString command, commandsWithCount.keys()) {
@@ -327,8 +333,6 @@ void LipRec::processImage(Mat img)
   }
 
   tdm.setCollection(ui_.leCollection->text());
-
-  this->updateTrajectoriesInfoGUI();
 
   NO_CYCLIC_FRAME = ui_.sbNOCF->value();
 
@@ -758,7 +762,7 @@ void LipRec::processImage(Mat img)
           areaMean /= recordTrajectory[ui_.cbAspectRatio->text()].size();
           aspectRatioMean /= recordTrajectory[ui_.cbAspectRatio->text()].size();
 
-          ui_.lblNTMean->setText(QString("area: %1 ; aspect ratio: %2").arg(areaMean, aspectRatioMean));
+          ui_.lblNTMean->setText(QString("area: %1;\naspectRatio: %2").arg(areaMean).arg(aspectRatioMean));
 
           recordTrajectory[ui_.cbAspectRatio->text()].clear();
           recordTrajectory[ui_.cbArea->text()].clear();
@@ -881,6 +885,12 @@ void LipRec::triggedAction(QAction *action)
   }else{
     ROS_INFO("Action '%s' not found.", action->text().toStdString().c_str());
   }
+}
+
+void LipRec::lineEditChanged(const QString &str)
+{
+  tdm.setCollection(ui_.leCollection->text());
+  this->updateTrajectoriesInfoGUI();
 }
 
 void LipRec::drawFaceMouthROI(Mat& img){
@@ -1534,6 +1544,8 @@ void LipRec::updateTrajectoriesInfoGUI()
   QString commands = "";
   QString featuresForCmd = "";
 
+  ui_.lwTrajectoriesInfo->clear();
+
   int i = 1;
   foreach (QString command, commandsWithCount.keys()) {
     featuresForCmd.clear();
@@ -1541,7 +1553,8 @@ void LipRec::updateTrajectoriesInfoGUI()
     foreach (QString feature, strL) {
       featuresForCmd = featuresForCmd + feature + ", ";
     }
-    commands = commands + QString::number(i++)+ ") " + command + " (" + QString::number(commandsWithCount[command]) +")" + " :\n" +featuresForCmd + "\n";
+    //commands = commands + QString::number(i++)+ ") " + command + " (" + QString::number(commandsWithCount[command]) +")" + " :\n" +featuresForCmd + "\n";
+    ui_.lwTrajectoriesInfo->addItem(QString::number(i++)+ ") " + command + " (" + QString::number(commandsWithCount[command]) +")" + " :\n" +featuresForCmd);
 
     if(!availableTrajectories.contains(command)){
       availableTrajectories << command;
@@ -1550,8 +1563,8 @@ void LipRec::updateTrajectoriesInfoGUI()
     }
   }
 
-  ui_.lblTrajectoriesInfo->setText(commands);
-  ui_.lblTrajectoriesInfo->setFont(QFont("Times New Roman", 11, QFont::Normal));
+  //ui_.lblTrajectoriesInfo->setText(commands);
+  //ui_.lblTrajectoriesInfo->setFont(QFont("Times New Roman", 11, QFont::Normal));
 }
 
 void LipRec::lipsActivation(int currentFrame)
