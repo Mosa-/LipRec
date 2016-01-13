@@ -13,7 +13,7 @@ Clustering::~Clustering(){
 
 }
 
-QList<QList<double> > Clustering::kMedoidsClustering(DistanceFunction df, DtwStepPattern stepPattern)
+QList<QList<double> > Clustering::kMedoidsClustering(DistanceFunction df, DtwStepPattern stepPattern, bool windowSizeActive, int windowSize, bool windowAdapted)
 {
     //ROS_INFO("size in clustering %d k: %d", this->trajectories.size(), this->k);
     QList<int> kIndices;
@@ -60,7 +60,8 @@ QList<QList<double> > Clustering::kMedoidsClustering(DistanceFunction df, DtwSte
                     kIndex = kIndices.at(j);
                     dtw.seed(trajectories.at(kIndex), trajectories.at(i), stepPattern);
 
-                    tmpWarpingCost = calcWarpingCost(df);
+
+                    tmpWarpingCost = calcWarpingCost(df, windowSizeActive, windowSize, windowAdapted);
                     if(tmpWarpingCost < previousWarpingCost){
                         previousWarpingCost = tmpWarpingCost;
                         lowCostTrajectoryIndex = kIndex;
@@ -94,7 +95,7 @@ QList<QList<double> > Clustering::kMedoidsClustering(DistanceFunction df, DtwSte
                     if(i != j){
                         dtw.seed(trajectories.at(cluster.at(i)), trajectories.at(cluster.at(j)), stepPattern);
                         //this->printTrajectory(trajectories.at(cluster.at(j)));
-                        average += calcWarpingCost(df);
+                        average += calcWarpingCost(df, windowSizeActive, windowSize, windowAdapted);
                         //ROS_INFO("currentAvg: %f", average);
                     }
                 }
@@ -229,12 +230,17 @@ void Clustering::addTrajectory(QList<double> trajectory)
 }
 
 
-double Clustering::calcWarpingCost(DistanceFunction df)
+double Clustering::calcWarpingCost(DistanceFunction df, bool windowSizeActive, int windowSize, bool windowAdapted)
 {
     double warpingCost = 0.0;
 
     dtw.calculateDistanceMatrix(df);
-    dtw.calculateDtwDistanceMatrix();
+    if(windowSizeActive){
+       dtw.calculateDtwDistanceMatrix(windowSize, windowAdapted);
+    }else{
+      dtw.calculateDtwDistanceMatrix();
+    }
+
     dtw.calculateGreedyWarpingPath();
 
     warpingCost = dtw.getWarpingPathCost();
@@ -259,7 +265,7 @@ void Clustering::setK(int k)
 void Clustering::clearTrajectoriesSet()
 {
     this->trajectories.clear();
-    this->assignCluster.clear();
+  this->assignCluster.clear();
 }
 
 int Clustering::randInt(int low, int high)

@@ -20,7 +20,7 @@ public:
     Clustering(int k);
     virtual ~Clustering();
 
-    QList<QList<double> > kMedoidsClustering(DistanceFunction df, DtwStepPattern stepPattern);
+    QList<QList<double> > kMedoidsClustering(DistanceFunction df, DtwStepPattern stepPattern, bool windowSizeActive, int windowSize, bool windowAdapted);
     QList<QList<double> > simpleClustering(DistanceFunction df, int noExceptTrajectories);
 
     void addTrajectories(QList<QList<double> > trajectories);
@@ -38,7 +38,8 @@ private:
     QMap<int, QList<int> > assignCluster;
 
     int randInt(int low, int high);
-    double calcWarpingCost(DistanceFunction df);
+    double calcWarpingCost(DistanceFunction df, bool windowSizeActive, int windowSize, bool windowAdapted);
+
 
     void printTrajectory(QList<double> trajectory);
 

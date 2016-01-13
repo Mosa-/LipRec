@@ -104,7 +104,7 @@ void KeyPointsDeliverer::extractMouthCornerKeyPoints(Mat &mouthImg, int threshol
     vector<vector<Point> > contours;
     vector<Vec4i> hierarchy;
     findContours( contourImg, contours, hierarchy, CV_RETR_TREE, CV_CHAIN_APPROX_SIMPLE, Point(0, 0) );
-    for( int i = 0; i< contours.size(); i++ )
+    for( uint i = 0; i< contours.size(); i++ )
     {
         drawContours( contourImg, contours, i, Scalar(255,255,255), 1, 8, hierarchy, 1, Point() );
     }
@@ -280,7 +280,7 @@ void KeyPointsDeliverer::extractCupidsBowKeyPoints(int thresholdDifferenceToAvg,
     vector<vector<Point> > contours;
     vector<Vec4i> hierarchy;
     findContours( contourImg, contours, hierarchy, CV_RETR_TREE, CV_CHAIN_APPROX_SIMPLE, Point(0, 0) );
-    for( int i = 0; i< contours.size(); i++ ){
+    for( uint i = 0; i< contours.size(); i++ ){
         drawContours( contourImg, contours, i, Scalar(255,255,255), 1, 8, hierarchy, 1, Point() );
     }
 
@@ -371,7 +371,7 @@ void KeyPointsDeliverer::extractLowerLipKeyPoint(int thresholdDifferenceToAvg, i
     vector<vector<Point> > contours;
     vector<Vec4i> hierarchy;
     findContours( contourImg, contours, hierarchy, CV_RETR_TREE, CV_CHAIN_APPROX_SIMPLE, Point(0, 0) );
-    for( int i = 0; i< contours.size(); i++ ){
+    for( uint i = 0; i< contours.size(); i++ ){
         drawContours( contourImg, contours, i, Scalar(255,255,255), 1, 8, hierarchy, 1, Point() );
     }
 

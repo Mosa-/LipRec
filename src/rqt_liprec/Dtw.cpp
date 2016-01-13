@@ -64,6 +64,85 @@ Mat Dtw::calculateDistanceMatrix(DistanceFunction distanceFunction){
   return distanceMatrix;
 }
 
+Mat Dtw::calculateDtwDistanceMatrix(int windowSize, bool windowAdapted){
+  dtwDistanceMatrix = distanceMatrix;
+
+  vector<Mat> matrices;
+
+  Mat infRow(dtwDistanceMatrix.rows, 1, CV_64F, Scalar(INT_MAX));
+  Mat infCol(1, dtwDistanceMatrix.cols+1, CV_64F, Scalar(INT_MAX));
+
+  matrices.push_back(infRow);
+  matrices.push_back(dtwDistanceMatrix);
+
+  hconcat(matrices, dtwDistanceMatrix);
+
+  matrices.clear();
+  matrices.push_back(infCol);
+  matrices.push_back(dtwDistanceMatrix);
+
+  vconcat(matrices, dtwDistanceMatrix);
+
+  for (int i = 0; i < dtwDistanceMatrix.cols; ++i) {
+    for (int j = 0; j < dtwDistanceMatrix.rows; ++j) {
+      dtwDistanceMatrix.at<double>(j,i) = INT_MAX;
+    }
+  }
+
+  dtwDistanceMatrix.at<double>(0,0) = 0.0;
+
+  double insertion = 0.0;
+  double deletion = 0.0;
+  double match = 0.0;
+  double insertion2 = 0.0;
+  double deletion2 = 0.0;
+
+  if(windowAdapted){
+    windowSize = max(windowSize, abs(dtwDistanceMatrix.cols - dtwDistanceMatrix.rows));
+  }
+  ROS_INFO("WINDOWSIZE = %d", windowSize);
+
+  if(stepPattern == BELLMANSTEP){
+    for (int i = 1; i < dtwDistanceMatrix.cols; ++i) {
+      for (int j = max(1, i-windowSize); j < min(dtwDistanceMatrix.rows,i+windowSize); ++j) {
+        insertion = dtwDistanceMatrix.at<double>(j, i-1);
+        deletion = dtwDistanceMatrix.at<double>(j-1, i);
+        match = dtwDistanceMatrix.at<double>(j-1, i-1);
+
+        dtwDistanceMatrix.at<double>(j,i) = distanceMatrix.at<double>(j-1,i-1) +
+            minimum(insertion, deletion, match);
+      }
+    }
+  }else if(stepPattern == DIAGONALSTEP){
+    for (int i = 1; i < dtwDistanceMatrix.cols; ++i) {
+      for (int j = 1; j < dtwDistanceMatrix.rows; ++j) {
+        insertion = dtwDistanceMatrix.at<double>(j-1, i-1);
+        deletion = dtwDistanceMatrix.at<double>(j-2, i-1);
+        match = dtwDistanceMatrix.at<double>(j-1, i-2);
+
+        dtwDistanceMatrix.at<double>(j,i) = distanceMatrix.at<double>(j-1,i-1) +
+            minimum(insertion, deletion, match);
+      }
+    }
+  }else{
+    for (int i = 1; i < dtwDistanceMatrix.cols; ++i) {
+      for (int j = 1; j < dtwDistanceMatrix.rows; ++j) {
+        insertion = dtwDistanceMatrix.at<double>(j-1, i-1) + distanceMatrix.at<double>(j-1,i-1);
+        deletion = dtwDistanceMatrix.at<double>(j-2, i-1) + distanceMatrix.at<double>(j-2,i-1) + distanceMatrix.at<double>(j-1,i-1);
+        match = dtwDistanceMatrix.at<double>(j-1, i-2) + distanceMatrix.at<double>(j-1,i-2) + distanceMatrix.at<double>(j-1,i-1);
+        insertion2 = dtwDistanceMatrix.at<double>(j-3, i-1) + distanceMatrix.at<double>(j-3,i-1) + distanceMatrix.at<double>(j-2,i-1) + distanceMatrix.at<double>(j-1,i-1);
+        deletion2 = dtwDistanceMatrix.at<double>(j-1, i-3) + distanceMatrix.at<double>(j-1,i-3) + distanceMatrix.at<double>(j-1,i-2) + distanceMatrix.at<double>(j-1,i-1);
+
+        double tmpMin = minimum(insertion, deletion, match);
+
+        dtwDistanceMatrix.at<double>(j,i) = minimum(tmpMin, insertion2, deletion2);
+      }
+    }
+  }
+
+  return dtwDistanceMatrix;
+}
+
 Mat Dtw::calculateDtwDistanceMatrix(){
   dtwDistanceMatrix = distanceMatrix;
 
@@ -91,7 +170,7 @@ Mat Dtw::calculateDtwDistanceMatrix(){
   double insertion2 = 0.0;
   double deletion2 = 0.0;
 
-  if(stepPattern == SQUARESTEP){
+  if(stepPattern == BELLMANSTEP){
     for (int i = 1; i < dtwDistanceMatrix.cols; ++i) {
       for (int j = 1; j < dtwDistanceMatrix.rows; ++j) {
         insertion = dtwDistanceMatrix.at<double>(j, i-1);
@@ -184,9 +263,10 @@ double Dtw::getWarpingPathCost()
 {
   double cost = 0.0;
 
-  for (int i = 0; i < this->warpingPath.size(); ++i) {
-    cost += dtwDistanceMatrix.at<double>(warpingPath.at(i).y,warpingPath.at(i).x);
-  }
+//  for (int i = 0; i < this->warpingPath.size(); ++i) {
+//    cost += dtwDistanceMatrix.at<double>(warpingPath.at(i).y,warpingPath.at(i).x);
+//  }
+  cost = dtwDistanceMatrix.at<double>(dtwDistanceMatrix.rows-1, dtwDistanceMatrix.cols-1);
 
   return cost;
 }
@@ -219,6 +299,19 @@ void Dtw::printDtwDistanceMatric()
   ROS_INFO("########DtwDistanceMatrix2########");
 }
 
+double Dtw::calcWarpingCost(DistanceFunction df, int windowSize, bool windowAdapted)
+{
+  double warpingCost = 0.0;
+
+  this->calculateDistanceMatrix(df);
+  this->calculateDtwDistanceMatrix(windowSize, windowAdapted);
+  this->calculateGreedyWarpingPath();
+
+  warpingCost = this->getWarpingPathCost();
+
+  return warpingCost;
+}
+
 double Dtw::calcWarpingCost(DistanceFunction df)
 {
   double warpingCost = 0.0;
@@ -231,6 +324,7 @@ double Dtw::calcWarpingCost(DistanceFunction df)
 
   return warpingCost;
 }
+
 Mat Dtw::getDtwDistanceMatrix() const
 {
   return dtwDistanceMatrix;

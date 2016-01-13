@@ -32,7 +32,7 @@ enum DistanceFunction{
 };
 
 enum DtwStepPattern{
-  SQUARESTEP,
+  BELLMANSTEP,
   DIAGONALSTEP,
   FIVERSTEP
 };

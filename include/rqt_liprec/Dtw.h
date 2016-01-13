@@ -23,6 +23,8 @@ public:
 
     Mat calculateDistanceMatrix(DistanceFunction distanceFunction);
     Mat calculateDtwDistanceMatrix();
+    Mat calculateDtwDistanceMatrix(int windowSize, bool windowAdapted);
+
 
     QList<Point> calculateGreedyWarpingPath();
     double getWarpingPathCost();
@@ -31,6 +33,8 @@ public:
     void printDtwDistanceMatric();
 
     double calcWarpingCost(DistanceFunction df);
+    double calcWarpingCost(DistanceFunction df, int windowSize, bool windowAdapted);
+
 
     Mat getDtwDistanceMatrix() const;
     Mat getDistanceMatrix() const;

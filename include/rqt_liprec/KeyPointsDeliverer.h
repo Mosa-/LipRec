@@ -42,15 +42,17 @@ public:
 
 private:
     Point keyPoint1, keyPoint2, keyPoint3, keyPoint4, keyPoint5, keyPoint6;
-    ///        P2         P4
-    ///       --X-- P3  --X--
-    ///      /     \_X_/     \
-    ///     /                 \
-    /// P1 X-------------------X P5
-    ///     \                 /
-    ///      \               /
-    ///       \______X______/
-    ///              P6
+    /*         P2         P4
+              --X-- P3  --X--
+             /     \_X_/     \
+            /                 \
+        P1 X-------------------X P5
+            \                 /
+             \               /
+              \______X______/
+                    P6
+
+    */
 
     Mat rTopFinal;
     Mat rMidFinal;

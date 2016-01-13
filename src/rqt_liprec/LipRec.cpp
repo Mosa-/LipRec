@@ -6,7 +6,7 @@ namespace rqt_liprec {
 
 LipRec::LipRec()
   : rqt_gui_cpp::Plugin()
-  , last(0), timeoutROIdetection(500), blackBorder(0), widget_(0), stateDetectionStartEndFrame(Idle)
+  , widget_(0), blackBorder(0), last(0),  stateDetectionStartEndFrame(Idle), timeoutROIdetection(500)
 {
   // Constructor is called first before initPlugin function, needless to say.
 
@@ -395,7 +395,6 @@ void LipRec::processImage(Mat img)
 
   this->lipsActivation(currentFrame);
 
-
   DistanceFunction df;
   if(ui_.rbABS->isChecked()){
     df = ABS;
@@ -405,24 +404,28 @@ void LipRec::processImage(Mat img)
     df = SQUARE2;
   }
 
+  if(ui_.cbDtwWindowSizeAdaptable->isChecked()){
+    ui_.cbDtwWindowSizeActivate->setChecked(true);
+  }
+
   Mat depthCamTmp;
+  int xDepth = 0;
+  int yDepth = 0;
   depthCamMtx.lock();
-  if(!depthCam.empty())
+  if(!depthCam.empty()){
     depthCam.copyTo(depthCamTmp);
+    int xDepth = faceROI.x_offset+(faceROI.width/2);
+    int yDepth = faceROI.y_offset+(faceROI.height*0.16);
+
+
+    circle(img, Point(xDepth, yDepth), 2, Scalar(255,255,255));
+    pixMap = imageProcessing.getPixmap(img, useMonoImage);
+    ui_.lbl_cam->setPixmap(pixMap);
+  }
   depthCamTmp.convertTo(depthCamTmp, CV_16U);
   depthCamMtx.unlock();
 
-  int xDepth = faceROI.x_offset+(faceROI.width/2);
-  int yDepth = faceROI.y_offset+(faceROI.height*0.16);
-
-
-  circle(img, Point(xDepth, yDepth), 2, Scalar(255,255,255));
-  pixMap = imageProcessing.getPixmap(img, useMonoImage);
-  ui_.lbl_cam->setPixmap(pixMap);
-
-  if(!depthCamTmp.empty()){
-    //ROS_INFO("%d %d -> %f", xDepth, yDepth, depthCamTmp.at<float>(yDepth, xDepth));
-  }
+  int windowSize = ui_.spDtwWindowSize->value();
 
   if(!useMonoImage){
     if(ui_.cbLipSeg->isChecked()){
@@ -454,7 +457,7 @@ void LipRec::processImage(Mat img)
 
         double mouthWidth = norm(keyPoint5-keyPoint1);
         double mouthHeight = norm(keyPoint6-keyPoint3);
-        double wh = mouthWidth / mouthHeight;
+        //double wh = mouthWidth / mouthHeight;
         double hw = mouthHeight / mouthWidth;
 
         double distanceKp12 = norm(keyPoint1-keyPoint2);
@@ -508,9 +511,9 @@ void LipRec::processImage(Mat img)
           int indexOfLowAreaCluster = 0;
           int indexOfLowAspectRatioCluster = 0;
 
-          DtwStepPattern stepPattern = SQUARESTEP;
+          DtwStepPattern stepPattern = BELLMANSTEP;
           if(ui_.rbSQUARESP->isChecked()){
-            stepPattern = SQUARESTEP;
+            stepPattern = BELLMANSTEP;
           }else if(ui_.rbDIAGONALSP->isChecked()){
             stepPattern = DIAGONALSTEP;
           }else{
@@ -530,7 +533,11 @@ void LipRec::processImage(Mat img)
 
                     dtw.seed(clusterT.at(i), currentUtteranceTrajectories[ui_.cbArea->text()], stepPattern);
 
-                    warpingCostTmpArea = dtw.calcWarpingCost(df);
+                    if(ui_.cbDtwWindowSizeActivate->isChecked()){
+                      warpingCostTmpArea = dtw.calcWarpingCost(df, windowSize, ui_.cbDtwWindowSizeAdaptable->isChecked());
+                    }else{
+                      warpingCostTmpArea = dtw.calcWarpingCost(df);
+                    }
 
                     ROS_INFO("Area Command: %s(%d) ; Utterrance: %d -> %f",
                              command.toStdString().c_str(), clusterT.at(i).size(), currentUtteranceTrajectories[ui_.cbArea->text()].size(), warpingCostTmpArea);
@@ -548,7 +555,11 @@ void LipRec::processImage(Mat img)
                   for (int i = 0; i < clusterT.size(); i++) {
                     dtw.seed(clusterT.at(i), currentUtteranceTrajectories[ui_.cbAspectRatio->text()], stepPattern);
 
-                    warpingCostTmpAspectRatio =  dtw.calcWarpingCost(df);
+                    if(ui_.cbDtwWindowSizeActivate->isChecked()){
+                      warpingCostTmpAspectRatio =  dtw.calcWarpingCost(df, windowSize, ui_.cbDtwWindowSizeAdaptable->isChecked());
+                    }else{
+                      warpingCostTmpAspectRatio =  dtw.calcWarpingCost(df);
+                    }
 
                     ROS_INFO("AspectRatio Command: %s(%d) ; Utterrance: %d -> %f",
                              command.toStdString().c_str(), clusterT.at(i).size(), currentUtteranceTrajectories[ui_.cbAspectRatio->text()].size(), warpingCostTmpAspectRatio);
@@ -589,7 +600,13 @@ void LipRec::processImage(Mat img)
 
                   for (int i = 0; i < clusterT.size(); ++i) {
                     dtw.seed(clusterT.at(i), currentUtteranceTrajectories[ui_.cbArea->text()], stepPattern);
-                    double wpArea = dtw.calcWarpingCost(df);
+
+                    double wpArea = 0.0;
+                    if(ui_.cbDtwWindowSizeActivate->isChecked()){
+                      wpArea = dtw.calcWarpingCost(df, windowSize, ui_.cbDtwWindowSizeAdaptable->isChecked());
+                    }else{
+                      wpArea = dtw.calcWarpingCost(df);
+                    }
 
                     ROS_INFO("Area Command: %s(%d) ; Utterrance: %d -> %f",
                              command.toStdString().c_str(), clusterT.at(i).size(),
@@ -603,7 +620,14 @@ void LipRec::processImage(Mat img)
 
                   for (int i = 0; i < clusterT2.size(); ++i) {
                     dtw.seed(clusterT2.at(i), currentUtteranceTrajectories[ui_.cbAspectRatio->text()], stepPattern);
-                    double wpAspectRatio =  dtw.calcWarpingCost(df);
+
+                    double wpAspectRatio = 0.0;
+
+                    if(ui_.cbDtwWindowSizeActivate->isChecked()){
+                      wpAspectRatio = dtw.calcWarpingCost(df, windowSize, ui_.cbDtwWindowSizeAdaptable->isChecked());
+                    }else{
+                      wpAspectRatio = dtw.calcWarpingCost(df);
+                    }
 
                     ROS_INFO("Aspect Ratio Command: %s(%d) ; Utterrance: %d -> %f",
                              command.toStdString().c_str(), clusterT2.at(i).size(),
@@ -794,8 +818,8 @@ void LipRec::processImage(Mat img)
 
         this->drawMouthFeatures(mouthFeatures, keyPoint1, keyPoint2, keyPoint3, keyPoint4, keyPoint5, keyPoint6);
         showMouthImg = this->drawMouthFeaturesOnGUI(mouthImg, rLowFinal, rMidFinal, rTopFinal,
-                                upLinePoint, bottomLinePoint, rightLinePoint,
-                                keyPoint1, keyPoint2, keyPoint3, keyPoint4, keyPoint5, keyPoint6);
+                                                    upLinePoint, bottomLinePoint, rightLinePoint,
+                                                    keyPoint1, keyPoint2, keyPoint3, keyPoint4, keyPoint5, keyPoint6);
 
       }
     }
@@ -809,16 +833,29 @@ void LipRec::processImage(Mat img)
 QPixmap LipRec::drawDTWPixmap(QString currentCommand, QString feature, int indexOfLowCluster, QString clusterMethod, DistanceFunction df, DtwStepPattern stepPattern){
   QPixmap dtwPixMap;
   QList<QList<double> > clusterT = this->getClusterTrajectories(currentCommand, feature, clusterMethod);
+
+  int windowSize = ui_.spDtwWindowSize->value();
+
   if(!clusterT.isEmpty()){
     dtw.seed(clusterT.at(indexOfLowCluster), currentUtteranceTrajectories[feature], stepPattern);
-    dtw.calcWarpingCost(df);
+
+    if(ui_.cbDtwWindowSizeActivate->isChecked()){
+      dtw.calcWarpingCost(df, windowSize, ui_.cbDtwWindowSizeAdaptable->isChecked());
+    }else{
+      dtw.calcWarpingCost(df);
+    }
     Mat dtwMat;
     Mat dtwMat2(dtw.getDtwDistanceMatrix().rows-1, dtw.getDtwDistanceMatrix().cols-1, CV_64F);
 
     //dtwMat.convertTo(dtwMat, CV_8U);
+    double tmpDtwDistance = 0.0;
     for (int i = 1; i < dtw.getDtwDistanceMatrix().cols; ++i) {
       for (int j = 1; j < dtw.getDtwDistanceMatrix().rows; ++j) {
-        dtwMat2.at<double>(j-1,i-1) = dtw.getDtwDistanceMatrix().at<double>(j,i);
+        tmpDtwDistance = dtw.getDtwDistanceMatrix().at<double>(j,i);
+        if(tmpDtwDistance >= INT_MAX){
+          tmpDtwDistance = 0.0;
+        }
+        dtwMat2.at<double>(j-1,i-1) = tmpDtwDistance;
         //ROS_INFO("%f", dtwMat2.at<double>(j-1,i-1));
       }
     }
@@ -1011,7 +1048,7 @@ void LipRec::changeLipActivationState(int activation, Mat& imageAbsDiff, int cur
         }
       }
 
-      Size size = Size(imageAbsDiff.size().width, imageAbsDiff.size().height);
+      //Size size = Size(imageAbsDiff.size().width, imageAbsDiff.size().height);
       Mat mt(imageAbsDiff.rows, imageAbsDiff.cols, CV_8UC1, Scalar(0));
 
 
@@ -1497,9 +1534,9 @@ void LipRec::applyCluster(QString clusterMethod, DistanceFunction df, QString co
   QList<QList<double> > clusterT = tdm.getClusterTrajectories(command, feature, clusterMethod);
   QList<QList<double> > traj = tdm.getTrajectory(command, feature);
 
-  DtwStepPattern stepPattern = SQUARESTEP;
+  DtwStepPattern stepPattern = BELLMANSTEP;
   if(ui_.rbSQUARESP->isChecked()){
-    stepPattern = SQUARESTEP;
+    stepPattern = BELLMANSTEP;
   }else if(ui_.rbDIAGONALSP->isChecked()){
     stepPattern = DIAGONALSTEP;
   }else{
@@ -1511,7 +1548,7 @@ void LipRec::applyCluster(QString clusterMethod, DistanceFunction df, QString co
 
     if(ui_.rbKmedoids->isChecked()){
       clustering.setK(ui_.sbKMethod->value());
-      traj = clustering.kMedoidsClustering(df, stepPattern);
+      traj = clustering.kMedoidsClustering(df, stepPattern, ui_.cbDtwWindowSizeActivate->isChecked(), ui_.spDtwWindowSize->value(), ui_.cbDtwWindowSizeAdaptable);
     }else{
       traj = clustering.simpleClustering(df, ui_.sbKMethod->value());
     }
@@ -1590,9 +1627,9 @@ void LipRec::lipsActivation(int currentFrame)
   this->changeLipActivationState(activation, imageAbsDiff, currentFrame);
 
   if(!imageAbsDiff.empty()){
-//    pixMap = imageProcessing.getPixmap(imageAbsDiff, true);
-//    pixMap = pixMap.scaled(ui_.lblMouthDiff->maximumWidth(), ui_.lblMouthDiff->maximumHeight(), Qt::KeepAspectRatio, Qt::SmoothTransformation);
-//    ui_.lblMouthDiff->setPixmap(pixMap);
+    //    pixMap = imageProcessing.getPixmap(imageAbsDiff, true);
+    //    pixMap = pixMap.scaled(ui_.lblMouthDiff->maximumWidth(), ui_.lblMouthDiff->maximumHeight(), Qt::KeepAspectRatio, Qt::SmoothTransformation);
+    //    ui_.lblMouthDiff->setPixmap(pixMap);
   }
 }
 
