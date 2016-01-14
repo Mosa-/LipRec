@@ -187,26 +187,11 @@ void LipRec::initPlugin(qt_gui_cpp::PluginContext& context)
 
   connect(ui_.leCollection, SIGNAL(textEdited(const QString&)), this, SLOT(lineEditChanged(const QString&)));
 
+  ui_.lwTrajectoriesInfo->setWordWrap(true);
+
+  this->updateClusterTrajectories();
+
   this->updateTrajectoriesInfoGUI();
-
-
-  QMap<QString, int> commandsWithCount = tdm.getAllCommandsWithCount();
-  foreach (QString command, commandsWithCount.keys()) {
-    QStringList strL = tdm.getFeatures(command);
-    foreach (QString feature, strL) {
-
-      QList<QList<double> > clusterT = tdm.getClusterTrajectories(command, feature, ui_.rbKmedoids->text());
-      if(clusterT.size() > 0){
-        this->setClusterTrajectories(clusterT, command, feature, ui_.rbKmedoids->text());
-      }
-
-      clusterT = tdm.getClusterTrajectories(command, feature, ui_.rbMosaCluster->text());
-      if(clusterT.size() > 0){
-        this->setClusterTrajectories(clusterT, command, feature, ui_.rbMosaCluster->text());
-      }
-    }
-  }
-
 
   QObject::connect(this, SIGNAL(updateCam(Mat)), this, SLOT(getCamPic(Mat)));
   QObject::connect(this, SIGNAL(updateDepthCam(Mat)), this, SLOT(getDepthCamPic(Mat)));
@@ -927,6 +912,9 @@ void LipRec::triggedAction(QAction *action)
 void LipRec::lineEditChanged(const QString &str)
 {
   tdm.setCollection(ui_.leCollection->text());
+  availableTrajectories.clear();
+  availableTrajectories << "all";
+  this->updateClusterTrajectories();
   this->updateTrajectoriesInfoGUI();
 }
 
@@ -1565,6 +1553,26 @@ void LipRec::applyCluster(QString clusterMethod, DistanceFunction df, QString co
   }
 }
 
+void LipRec::updateClusterTrajectories(){
+  clusterTrajectoriesOfCommand.clear();
+  QMap<QString, int> commandsWithCount = tdm.getAllCommandsWithCount();
+  foreach (QString command, commandsWithCount.keys()) {
+    QStringList strL = tdm.getFeatures(command);
+    foreach (QString feature, strL) {
+
+      QList<QList<double> > clusterT = tdm.getClusterTrajectories(command, feature, ui_.rbKmedoids->text());
+      if(clusterT.size() > 0){
+        this->setClusterTrajectories(clusterT, command, feature, ui_.rbKmedoids->text());
+      }
+
+      clusterT = tdm.getClusterTrajectories(command, feature, ui_.rbMosaCluster->text());
+      if(clusterT.size() > 0){
+        this->setClusterTrajectories(clusterT, command, feature, ui_.rbMosaCluster->text());
+      }
+    }
+  }
+}
+
 void LipRec::printTrajectory(QList<double> trajectory)
 {
   ROS_INFO(">>>Start printTrajectory");
@@ -1591,7 +1599,7 @@ void LipRec::updateTrajectoriesInfoGUI()
       featuresForCmd = featuresForCmd + feature + ", ";
     }
     //commands = commands + QString::number(i++)+ ") " + command + " (" + QString::number(commandsWithCount[command]) +")" + " :\n" +featuresForCmd + "\n";
-    ui_.lwTrajectoriesInfo->addItem(QString::number(i++)+ ") " + command + " (" + QString::number(commandsWithCount[command]) +")" + " :\n" +featuresForCmd);
+    ui_.lwTrajectoriesInfo->addItem(QString::number(i++)+ ") " + command + " (" + QString::number(commandsWithCount[command]) +")" + "\n" +featuresForCmd);
 
     if(!availableTrajectories.contains(command)){
       availableTrajectories << command;

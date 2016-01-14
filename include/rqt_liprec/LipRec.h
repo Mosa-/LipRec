@@ -184,7 +184,8 @@ private:
     void lipsActivation(int currentFrame);
     Mat drawMouthFeaturesOnGUI(Mat& mouthImg, Mat& rLowFinal, Mat& rMidFinal, Mat& rTopFinal,
                           Point upLinePoint, Point bottomLinePoint, Point rightLinePoint,
-                          Point keyPoint1, Point keyPoint2, Point keyPoint3, Point keyPoint4, Point keyPoint5, Point keyPoint6);
+                               Point keyPoint1, Point keyPoint2, Point keyPoint3, Point keyPoint4, Point keyPoint5, Point keyPoint6);
+    void updateClusterTrajectories();
 public slots:
     void getCamPic(Mat img);
     void getDepthCamPic(Mat img);

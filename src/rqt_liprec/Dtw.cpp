@@ -90,6 +90,7 @@ Mat Dtw::calculateDtwDistanceMatrix(int windowSize, bool windowAdapted){
   }
 
   dtwDistanceMatrix.at<double>(0,0) = 0.0;
+  dtwDistanceMatrix.at<double>(1,1) = distanceMatrix.at<double>(0,0);
 
   double insertion = 0.0;
   double deletion = 0.0;
@@ -115,7 +116,7 @@ Mat Dtw::calculateDtwDistanceMatrix(int windowSize, bool windowAdapted){
     }
   }else if(stepPattern == DIAGONALSTEP){
     for (int i = 1; i < dtwDistanceMatrix.cols; ++i) {
-      for (int j = 1; j < dtwDistanceMatrix.rows; ++j) {
+      for (int j = max(1, i-windowSize); j < min(dtwDistanceMatrix.rows,i+windowSize); ++j) {
         insertion = dtwDistanceMatrix.at<double>(j-1, i-1);
         deletion = dtwDistanceMatrix.at<double>(j-2, i-1);
         match = dtwDistanceMatrix.at<double>(j-1, i-2);
@@ -126,7 +127,7 @@ Mat Dtw::calculateDtwDistanceMatrix(int windowSize, bool windowAdapted){
     }
   }else{
     for (int i = 1; i < dtwDistanceMatrix.cols; ++i) {
-      for (int j = 1; j < dtwDistanceMatrix.rows; ++j) {
+      for (int j = max(1, i-windowSize); j < min(dtwDistanceMatrix.rows,i+windowSize); ++j) {
         insertion = dtwDistanceMatrix.at<double>(j-1, i-1) + distanceMatrix.at<double>(j-1,i-1);
         deletion = dtwDistanceMatrix.at<double>(j-2, i-1) + distanceMatrix.at<double>(j-2,i-1) + distanceMatrix.at<double>(j-1,i-1);
         match = dtwDistanceMatrix.at<double>(j-1, i-2) + distanceMatrix.at<double>(j-1,i-2) + distanceMatrix.at<double>(j-1,i-1);
@@ -223,7 +224,7 @@ QList<Point> Dtw::calculateGreedyWarpingPath()
   double insertion2 = 0.0;
   double deletion2 = 0.0;
 
-//  if(stepPattern == SQUARESTEP){
+  if(stepPattern == BELLMANSTEP){
 
     while(i>1 && j>1){
       if(i==1){
@@ -235,9 +236,9 @@ QList<Point> Dtw::calculateGreedyWarpingPath()
         deletion = dtwDistanceMatrix.at<double>(i-1, j);
         match = dtwDistanceMatrix.at<double>(i-1, j-1);
 
-        if(dtwDistanceMatrix.at<double>(i-1, j) == minimum(insertion, deletion, match)){
+        if(deletion == minimum(insertion, deletion, match)){
           i--;
-        }else if(dtwDistanceMatrix.at<double>(i, j-1) == minimum(insertion, deletion, match)){
+        }else if(insertion == minimum(insertion, deletion, match)){
           j--;
         }else{
           i--;
@@ -247,11 +248,70 @@ QList<Point> Dtw::calculateGreedyWarpingPath()
       }
     }
 
-//  }else if(stepPattern == DIAGONALSTEP){
+  }else if(stepPattern == DIAGONALSTEP){
 
-//  }else{
+    while(i>1 && j>1){
+      if(i==2){
+        j -= 2;
+      }else if(j==2){
+        i -= 2;
+      }else{
+        insertion = dtwDistanceMatrix.at<double>(i-1, j-1);
+        deletion = dtwDistanceMatrix.at<double>(i-2, j-1);
+        match = dtwDistanceMatrix.at<double>(i-1, j-2);
 
-//  }
+        if(insertion == minimum(insertion, deletion, match)){
+          i--;
+          j--;
+        }else if(deletion == minimum(insertion, deletion, match)){
+          i -= 2;
+          j--;
+        }else{
+          i--;
+          j -= 2;
+        }
+        warpingPath.append(Point(j,i));
+      }
+    }
+
+  }else{
+
+    while(i>1 && j>1){
+      if(i==3){
+        j -= 3;
+      }else if(j==3){
+        i -= 3;
+      }else{
+        insertion = dtwDistanceMatrix.at<double>(i-1, j-1) + distanceMatrix.at<double>(i-1,j-1);
+        deletion = dtwDistanceMatrix.at<double>(i-2, j-1) + distanceMatrix.at<double>(i-2,j-1) + distanceMatrix.at<double>(i-1,j-1);
+        match = dtwDistanceMatrix.at<double>(i-1, j-2) + distanceMatrix.at<double>(i-1,j-2) + distanceMatrix.at<double>(i-1,j-1);
+        insertion2 = dtwDistanceMatrix.at<double>(i-3, j-1) + distanceMatrix.at<double>(i-3,j-1) + distanceMatrix.at<double>(i-2,j-1) + distanceMatrix.at<double>(i-1,j-1);
+        deletion2 = dtwDistanceMatrix.at<double>(i-1, j-3) + distanceMatrix.at<double>(i-1,j-3) + distanceMatrix.at<double>(i-1,j-2) + distanceMatrix.at<double>(i-1,j-1);
+
+        double tmpMin = minimum(insertion, deletion, match);
+
+        if(insertion == minimum(tmpMin, insertion2, deletion2)){
+          i--;
+          j--;
+        }else if(deletion == minimum(tmpMin, insertion2, deletion2)){
+          i -= 2;
+          j--;
+        }else if(match == minimum(tmpMin, insertion2, deletion2)){
+          i--;
+          j -= 2;
+        }else if(insertion2 == minimum(tmpMin, insertion2, deletion2)){
+          i -= 3;
+          j--;
+        }else{
+          i--;
+          j -= 3;
+        }
+        warpingPath.append(Point(j,i));
+      }
+    }
+
+
+  }
 
 
   this->warpingPath = warpingPath;
