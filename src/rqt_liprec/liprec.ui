@@ -2288,7 +2288,7 @@ QGroupBox::title{
             <property name="minimumSize">
              <size>
               <width>770</width>
-              <height>20</height>
+              <height>40</height>
              </size>
             </property>
             <property name="maximumSize">
@@ -4544,7 +4544,7 @@ QGroupBox::title {
                     <widget class="QRadioButton" name="rbDIAGONALSP">
                      <property name="font">
                       <font>
-                       <pointsize>11</pointsize>
+                       <pointsize>9</pointsize>
                       </font>
                      </property>
                      <property name="text">
@@ -4552,11 +4552,11 @@ QGroupBox::title {
                      </property>
                     </widget>
                    </item>
-                   <item row="2" column="0">
+                   <item row="3" column="0">
                     <widget class="QRadioButton" name="rbFIVERSP">
                      <property name="font">
                       <font>
-                       <pointsize>11</pointsize>
+                       <pointsize>9</pointsize>
                       </font>
                      </property>
                      <property name="text">
@@ -4568,7 +4568,7 @@ QGroupBox::title {
                     <widget class="QRadioButton" name="rbSQUARESP">
                      <property name="font">
                       <font>
-                       <pointsize>11</pointsize>
+                       <pointsize>9</pointsize>
                       </font>
                      </property>
                      <property name="text">
@@ -4576,6 +4576,18 @@ QGroupBox::title {
                      </property>
                      <property name="checked">
                       <bool>true</bool>
+                     </property>
+                    </widget>
+                   </item>
+                   <item row="2" column="0">
+                    <widget class="QRadioButton" name="rbITAKURASTEP">
+                     <property name="font">
+                      <font>
+                       <pointsize>9</pointsize>
+                      </font>
+                     </property>
+                     <property name="text">
+                      <string>ITAKURA</string>
                      </property>
                     </widget>
                    </item>

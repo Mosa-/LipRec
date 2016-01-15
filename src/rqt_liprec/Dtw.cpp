@@ -125,12 +125,23 @@ Mat Dtw::calculateDtwDistanceMatrix(int windowSize, bool windowAdapted){
             minimum(insertion, deletion, match);
       }
     }
+  }else if(stepPattern == ITAKURASTEP){
+    for (int i = 1; i < dtwDistanceMatrix.cols; ++i) {
+      for (int j = max(1, i-windowSize); j < min(dtwDistanceMatrix.rows,i+windowSize); ++j) {
+        insertion = dtwDistanceMatrix.at<double>(j-1, i-1);
+        deletion = dtwDistanceMatrix.at<double>(j-2, i-3);
+        match = dtwDistanceMatrix.at<double>(j-3, i-2);
+
+        dtwDistanceMatrix.at<double>(j,i) = distanceMatrix.at<double>(j-1,i-1) +
+            minimum(insertion, deletion, match);
+      }
+    }
   }else{
     for (int i = 1; i < dtwDistanceMatrix.cols; ++i) {
       for (int j = max(1, i-windowSize); j < min(dtwDistanceMatrix.rows,i+windowSize); ++j) {
         insertion = dtwDistanceMatrix.at<double>(j-1, i-1) + distanceMatrix.at<double>(j-1,i-1);
-        deletion = dtwDistanceMatrix.at<double>(j-2, i-1) + distanceMatrix.at<double>(j-2,i-1) + distanceMatrix.at<double>(j-1,i-1);
-        match = dtwDistanceMatrix.at<double>(j-1, i-2) + distanceMatrix.at<double>(j-1,i-2) + distanceMatrix.at<double>(j-1,i-1);
+        deletion = dtwDistanceMatrix.at<double>(j-1, i-2) + distanceMatrix.at<double>(j-1,i-2) + distanceMatrix.at<double>(j-1,i-1);
+        match = dtwDistanceMatrix.at<double>(j-2, i-1) + distanceMatrix.at<double>(j-2,i-1) + distanceMatrix.at<double>(j-1,i-1);
         insertion2 = dtwDistanceMatrix.at<double>(j-3, i-1) + distanceMatrix.at<double>(j-3,i-1) + distanceMatrix.at<double>(j-2,i-1) + distanceMatrix.at<double>(j-1,i-1);
         deletion2 = dtwDistanceMatrix.at<double>(j-1, i-3) + distanceMatrix.at<double>(j-1,i-3) + distanceMatrix.at<double>(j-1,i-2) + distanceMatrix.at<double>(j-1,i-1);
 
@@ -188,6 +199,17 @@ Mat Dtw::calculateDtwDistanceMatrix(){
         insertion = dtwDistanceMatrix.at<double>(j-1, i-1);
         deletion = dtwDistanceMatrix.at<double>(j-2, i-1);
         match = dtwDistanceMatrix.at<double>(j-1, i-2);
+
+        dtwDistanceMatrix.at<double>(j,i) = distanceMatrix.at<double>(j-1,i-1) +
+            minimum(insertion, deletion, match);
+      }
+    }
+  }else if(stepPattern == ITAKURASTEP){
+    for (int i = 1; i < dtwDistanceMatrix.cols; ++i) {
+      for (int j = 1; j < dtwDistanceMatrix.rows; ++j) {
+        insertion = dtwDistanceMatrix.at<double>(j-1, i-1);
+        deletion = dtwDistanceMatrix.at<double>(j-2, i-3);
+        match = dtwDistanceMatrix.at<double>(j-3, i-2);
 
         dtwDistanceMatrix.at<double>(j,i) = distanceMatrix.at<double>(j-1,i-1) +
             minimum(insertion, deletion, match);
@@ -274,6 +296,30 @@ QList<Point> Dtw::calculateGreedyWarpingPath()
       }
     }
 
+  }else if(stepPattern == ITAKURASTEP){
+    while(i>1 && j>1){
+      if(i==1){
+        j--;
+      }else if(j==1){
+        i --;
+      }else{
+        insertion = dtwDistanceMatrix.at<double>(i-1, j-1);
+        deletion = dtwDistanceMatrix.at<double>(i-2, j-3);
+        match = dtwDistanceMatrix.at<double>(i-3, j-2);
+
+        if(insertion == minimum(insertion, deletion, match)){
+          i--;
+          j--;
+        }else if(deletion == minimum(insertion, deletion, match)){
+          i -= 2;
+          j -= 3;
+        }else{
+          i -= 3;
+          j -= 2;
+        }
+        warpingPath.append(Point(j,i));
+      }
+    }
   }else{
 
     while(i>1 && j>1){
@@ -408,7 +454,7 @@ double Dtw::squareDistance(double val, double val2)
 
 double Dtw::square2Distance(double val, double val2)
 {
-  return pow(val-val2, 2.0);
+  return (val-val2) * (val-val2);
 }
 
 double Dtw::absDistance(double val, double val2)

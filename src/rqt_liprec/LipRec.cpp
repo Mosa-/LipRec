@@ -501,6 +501,8 @@ void LipRec::processImage(Mat img)
             stepPattern = BELLMANSTEP;
           }else if(ui_.rbDIAGONALSP->isChecked()){
             stepPattern = DIAGONALSTEP;
+          }else if(ui_.rbITAKURASTEP->isChecked()){
+            stepPattern = ITAKURASTEP;
           }else{
             stepPattern = FIVERSTEP;
           }
@@ -574,6 +576,9 @@ void LipRec::processImage(Mat img)
 
               }else if(ui_.rbFusionFF->isChecked()){
 
+                int fusionAreaIndex = 0;
+                int fusionAspectRatioIndex = 0;
+
                 foreach (QString command, availableTrajectories) {
 
                   clusterT = this->getClusterTrajectories(command, ui_.cbArea->text(), ui_.rbKmedoids->text());
@@ -626,17 +631,19 @@ void LipRec::processImage(Mat img)
 
                   warpingCostFusionTmp = warpingCostTmpArea + warpingCostTmpAspectRatio;
 
-                  if(warpingCostFusionTmp < bestWarpingCostArea){
+                  if(warpingCostFusionTmp < bestWarpingCostFusion){
                     bestWarpingCostFusion = warpingCostFusionTmp;
+                    fusionAreaIndex = indexOfLowAreaCluster;
+                    fusionAspectRatioIndex = indexOfLowAspectRatioCluster;
                     currentCommandFusion = command;
                   }
 
-                  QPixmap dtwPixMap = this->drawDTWPixmap(currentCommandArea, ui_.cbArea->text(), indexOfLowAreaCluster, ui_.rbKmedoids->text(), df, stepPattern);
+                  QPixmap dtwPixMap = this->drawDTWPixmap(currentCommandFusion, ui_.cbArea->text(), fusionAreaIndex, ui_.rbKmedoids->text(), df, stepPattern);
                   dtwPixMap = dtwPixMap.scaled(ui_.lblDTW->maximumWidth(), ui_.lblDTW->maximumHeight(), Qt::KeepAspectRatio, Qt::SmoothTransformation);
 
                   ui_.lblDTW->setPixmap(dtwPixMap);
 
-                  dtwPixMap = this->drawDTWPixmap(currentCommandAspectRatio, ui_.cbAspectRatio->text(), indexOfLowAspectRatioCluster, ui_.rbKmedoids->text(), df, stepPattern);
+                  dtwPixMap = this->drawDTWPixmap(currentCommandFusion, ui_.cbAspectRatio->text(), fusionAspectRatioIndex, ui_.rbKmedoids->text(), df, stepPattern);
                   dtwPixMap = dtwPixMap.scaled(ui_.lblMouthDiff->maximumWidth(), ui_.lblMouthDiff->maximumHeight(), Qt::KeepAspectRatio, Qt::SmoothTransformation);
 
                   ui_.lblMouthDiff->setPixmap(dtwPixMap);
@@ -662,9 +669,13 @@ void LipRec::processImage(Mat img)
                   if(currentUtteranceTrajectories[ui_.cbArea->text()].size() > clusterT.at(i).size()){
                     keptTrajectory = clusterT.at(i);
                     shortenTrajectory = currentUtteranceTrajectories[ui_.cbArea->text()].mid(0, clusterT.at(i).size());
+//                    shortenTrajectory = currentUtteranceTrajectories[ui_.cbArea->text()].mid(
+//                          currentUtteranceTrajectories[ui_.cbArea->text()].size()-clusterT.at(i).size(), clusterT.at(i).size());
                   }else if(currentUtteranceTrajectories[ui_.cbArea->text()].size() < clusterT.at(i).size()){
                     keptTrajectory = currentUtteranceTrajectories[ui_.cbArea->text()];
                     shortenTrajectory = clusterT.at(i).mid(0, currentUtteranceTrajectories[ui_.cbArea->text()].size());
+//                    shortenTrajectory = clusterT.at(i).mid(
+//                          clusterT.at(i).size()-currentUtteranceTrajectories[ui_.cbArea->text()].size(), currentUtteranceTrajectories[ui_.cbArea->text()].size());
                   }else{
                     shortenTrajectory = currentUtteranceTrajectories[ui_.cbArea->text()];
                     keptTrajectory = clusterT.at(i);
@@ -677,7 +688,7 @@ void LipRec::processImage(Mat img)
 
                   if(euclideanDistanceTmpArea < bestEuclideanDistanceArea){
                     indexOfLowAreaCluster = i;
-                    bestWarpingCostArea = euclideanDistanceTmpArea;
+                    bestEuclideanDistanceArea = euclideanDistanceTmpArea;
                     currentCommandArea = command;
                   }
                 }
@@ -691,9 +702,13 @@ void LipRec::processImage(Mat img)
                   if(currentUtteranceTrajectories[ui_.cbAspectRatio->text()].size() > clusterT.at(i).size()){
                     keptTrajectory = clusterT.at(i);
                     shortenTrajectory = currentUtteranceTrajectories[ui_.cbAspectRatio->text()].mid(0, clusterT.at(i).size());
+//                    shortenTrajectory = currentUtteranceTrajectories[ui_.cbAspectRatio->text()].mid(
+//                          currentUtteranceTrajectories[ui_.cbAspectRatio->text()].size()-clusterT.at(i).size(), clusterT.at(i).size());
                   }else if(currentUtteranceTrajectories[ui_.cbAspectRatio->text()].size() < clusterT.at(i).size()){
                     keptTrajectory = currentUtteranceTrajectories[ui_.cbAspectRatio->text()];
                     shortenTrajectory = clusterT.at(i).mid(0, currentUtteranceTrajectories[ui_.cbAspectRatio->text()].size());
+//                    shortenTrajectory = clusterT.at(i).mid(
+//                          clusterT.at(i).size()-currentUtteranceTrajectories[ui_.cbAspectRatio->text()].size(), currentUtteranceTrajectories[ui_.cbAspectRatio->text()].size());
                   }else{
                     shortenTrajectory = currentUtteranceTrajectories[ui_.cbAspectRatio->text()];
                     keptTrajectory = clusterT.at(i);
@@ -706,7 +721,7 @@ void LipRec::processImage(Mat img)
 
                   if(euclideanDistanceTmpAspectRatio < bestEuclideanDistanceAspectRatio){
                     indexOfLowAreaCluster = i;
-                    bestWarpingCostArea = euclideanDistanceTmpAspectRatio;
+                    bestEuclideanDistanceAspectRatio = euclideanDistanceTmpAspectRatio;
                     currentCommandAspectRatio = command;
                   }
                 }
@@ -716,7 +731,7 @@ void LipRec::processImage(Mat img)
               ROS_INFO("Recognize Area: %s", currentCommandArea.toStdString().c_str());
               ROS_INFO("Recognize AspectRatio: %s", currentCommandAspectRatio.toStdString().c_str());
               ui_.label_rec->setText(QString("Area: %1").arg(currentCommandArea));
-              ui_.label_rec2->setText(QString("AspectRatio %1").arg(currentCommandAspectRatio));
+              ui_.label_rec2->setText(QString("AspectRatio: %1").arg(currentCommandAspectRatio));
             }
           }
 
@@ -1536,7 +1551,7 @@ void LipRec::applyCluster(QString clusterMethod, DistanceFunction df, QString co
 
     if(ui_.rbKmedoids->isChecked()){
       clustering.setK(ui_.sbKMethod->value());
-      traj = clustering.kMedoidsClustering(df, stepPattern, ui_.cbDtwWindowSizeActivate->isChecked(), ui_.spDtwWindowSize->value(), ui_.cbDtwWindowSizeAdaptable);
+      traj = clustering.kMedoidsClustering(df, stepPattern, ui_.cbDtwWindowSizeActivate->isChecked(), ui_.spDtwWindowSize->value(), ui_.cbDtwWindowSizeAdaptable->isChecked());
     }else{
       traj = clustering.simpleClustering(df, ui_.sbKMethod->value());
     }
