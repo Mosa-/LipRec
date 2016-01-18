@@ -299,6 +299,8 @@ void LipRec::getDepthCamPic(Mat img)
 
 void LipRec::processImage(Mat img)
 {
+  ROS_INFO("BRABS222");
+
   currentUtteranceFrame = img.clone();
 
   if(recordVideo && !recordUtterance){
@@ -317,12 +319,15 @@ void LipRec::processImage(Mat img)
     imageProcessing.closeVideoWriter();
   }
 
+  ROS_INFO("BRABS789");
+
   tdm.setCollection(ui_.leCollection->text());
 
   NO_CYCLIC_FRAME = ui_.sbNOCF->value();
 
   this->drawFaceMouthROI(img);
 
+  ROS_INFO("Zeile 330");
   QPixmap pixMap = imageProcessing.getPixmap(img, useMonoImage);
   ui_.lbl_cam->setPixmap(pixMap);
 
@@ -368,6 +373,9 @@ void LipRec::processImage(Mat img)
   showMouthImg = mouthImg;
   mouthImg.copyTo(rawMouthImg);
 
+  ROS_INFO("BRABS8576");
+
+
   //    if(mouthImg.cols != 0){
   //        //imageProcessing.squareImage(mouthImg);
   //    }
@@ -378,7 +386,11 @@ void LipRec::processImage(Mat img)
   int currentFrame = 0;
   currentFrame = updateFrameBuffer(rawMouthImg);
 
+  ROS_INFO("BRABS4276");
+
   this->lipsActivation(currentFrame);
+
+  ROS_INFO("BRABS1234");
 
   DistanceFunction df;
   if(ui_.rbABS->isChecked()){
@@ -402,8 +414,9 @@ void LipRec::processImage(Mat img)
     int xDepth = faceROI.x_offset+(faceROI.width/2);
     int yDepth = faceROI.y_offset+(faceROI.height*0.16);
 
-
     circle(img, Point(xDepth, yDepth), 2, Scalar(255,255,255));
+    ROS_INFO("Zeile 418");
+
     pixMap = imageProcessing.getPixmap(img, useMonoImage);
     ui_.lbl_cam->setPixmap(pixMap);
   }
@@ -412,13 +425,17 @@ void LipRec::processImage(Mat img)
 
   int windowSize = ui_.spDtwWindowSize->value();
 
-  if(!useMonoImage){
+  ROS_INFO("BRABS5555");
+
+  if(!useMonoImage && !mouthImg.empty()){
     if(ui_.cbLipSeg->isChecked()){
       if(ui_.rbSaturation->isChecked()){
         imageProcessing.applyLipsSegmentationSaturation(mouthImg, ui_.sbSaturation->value());
         showMouthImg = mouthImg;
       }else if(ui_.rbPseudoHue->isChecked()){
+
         keyPointsDeliverer.calcGradientImages(mouthImg);
+
         rTopFinal = keyPointsDeliverer.getRTop();
         rMidFinal = keyPointsDeliverer.getRMid();
         rLowFinal = keyPointsDeliverer.getRLow();
@@ -427,10 +444,15 @@ void LipRec::processImage(Mat img)
         Point upLinePoint(mouthROI.width/2, 0);
         Point bottomLinePoint(mouthROI.width/2, mouthROI.height);
 
+
         keyPointsDeliverer.extractMouthCornerKeyPoints(mouthImg, ui_.sbTHMouthCorners->value(), ui_.sbLLMouthCorners->value(),
                                                        ui_.sbKP1BreakMouthCorners->value(), ui_.sbKP5BreakMouthCorners->value());
         keyPointsDeliverer.extractCupidsBowKeyPoints(ui_.sbTHCupidsBow->value(), ui_.sbLLCupidsBow->value());
+        ROS_INFO("hä2");
+
         keyPointsDeliverer.extractLowerLipKeyPoint(ui_.sbTHLowerLip->value(), ui_.sbLLLowerLip->value());
+        ROS_INFO("hä");
+
 
         keyPoint1 = keyPointsDeliverer.getKeyPoint1();
         keyPoint2 = keyPointsDeliverer.getKeyPoint2();
@@ -438,7 +460,6 @@ void LipRec::processImage(Mat img)
         keyPoint4 = keyPointsDeliverer.getKeyPoint4();
         keyPoint5 = keyPointsDeliverer.getKeyPoint5();
         keyPoint6 = keyPointsDeliverer.getKeyPoint6();
-
 
         double mouthWidth = norm(keyPoint5-keyPoint1);
         double mouthHeight = norm(keyPoint6-keyPoint3);
@@ -483,7 +504,10 @@ void LipRec::processImage(Mat img)
         //distanceNormalized /= 10; // mm to cm
         //distanceNormalized = (distanceNormalized - 520)/(655-520);
 
+        ROS_INFO("BRABS0");
+
         if(utter == true && stateDetectionStartEndFrame == Idle && recordTrajectoryState != Recording){
+          ROS_INFO("BRABS1");
 
           QList<QList<double> > clusterT;
           QList<QList<double> > clusterT2;
@@ -506,6 +530,7 @@ void LipRec::processImage(Mat img)
           }else{
             stepPattern = FIVERSTEP;
           }
+          ROS_INFO("BRABS3");
 
           if(currentUtteranceTrajectories.size() > 0){
 
@@ -573,6 +598,9 @@ void LipRec::processImage(Mat img)
                 ROS_INFO("Recognize AspectRatio: %s", currentCommandAspectRatio.toStdString().c_str());
                 ui_.label_rec->setText(QString("Area: %1").arg(currentCommandArea));
                 ui_.label_rec2->setText(QString("AspectRatio: %1").arg(currentCommandAspectRatio));
+
+                ROS_INFO("BRABS4");
+
 
               }else if(ui_.rbFusionFF->isChecked()){
 
@@ -743,6 +771,7 @@ void LipRec::processImage(Mat img)
           currentUtteranceTrajectories[ui_.cbAspectRatio->text()].append(hw);
         }
 
+        ROS_INFO("BRABS111");
 
         double areaMean = 0.0;
         double aspectRatioMean = 0.0;
@@ -802,6 +831,8 @@ void LipRec::processImage(Mat img)
           break;
         }
 
+        ROS_INFO("BRABS666");
+
 
         if(QDateTime::currentMSecsSinceEpoch() > lcdUpdateTimeStamp + 500){
           //ROS_INFO("Distance to cam %f * Area: %f -> %f", distanceNormalized, area, relativeArea);
@@ -820,14 +851,21 @@ void LipRec::processImage(Mat img)
         showMouthImg = this->drawMouthFeaturesOnGUI(mouthImg, rLowFinal, rMidFinal, rTopFinal,
                                                     upLinePoint, bottomLinePoint, rightLinePoint,
                                                     keyPoint1, keyPoint2, keyPoint3, keyPoint4, keyPoint5, keyPoint6);
+        ROS_INFO("BRABS777");
+
 
       }
     }
   }
 
+  ROS_INFO("BRABS888");
+
   this->showLips(showMouthImg);
+  ROS_INFO("BRABS888222");
 
   last = currentFrame;
+  ROS_INFO("BRABS888222333");
+
 }
 
 QPixmap LipRec::drawDTWPixmap(QString currentCommand, QString feature, int indexOfLowCluster, QString clusterMethod, DistanceFunction df, DtwStepPattern stepPattern){
@@ -883,6 +921,8 @@ QPixmap LipRec::drawDTWPixmap(QString currentCommand, QString feature, int index
     //ROS_INFO("SUM %f", sum);
 
     dtwMat = 255 - dtwMat;
+
+    ROS_INFO("Zeile 924");
 
     dtwPixMap = imageProcessing.getPixmap(dtwMat, true);
   }
@@ -962,6 +1002,8 @@ void LipRec::showLips(Mat& mouthImg, bool useMonoImage){
     if(mouthImg.type() == CV_8UC1){
       monoImg = true;
     }
+    ROS_INFO("Zeile 1004");
+
     pixMap = imageProcessing.getPixmap(mouthImg, monoImg);
 
     pixMap = pixMap.scaled(ui_.lbl_lips->maximumWidth(), ui_.lbl_lips->maximumHeight(), Qt::KeepAspectRatio, Qt::SmoothTransformation);
@@ -987,12 +1029,16 @@ int LipRec::updateFrameBuffer(Mat img){
 }
 
 void LipRec::changeLipActivationState(int activation, Mat& imageAbsDiff, int currentFrame){
+  ROS_INFO("BRABS864");
+
   QPixmap pixMap;
   switch (stateDetectionStartEndFrame) {
   case Idle:
     utterance.clear();
     utterancePixelDiff.clear();
     silenceCounter = 0;
+
+    ROS_INFO("BRABS896578");
 
     // Uterrance detected
     if(activation > ui_.sbST->value()){
@@ -1009,9 +1055,12 @@ void LipRec::changeLipActivationState(int activation, Mat& imageAbsDiff, int cur
     }else{
 
     }
+    ROS_INFO("BRABS6578");
 
     break;
   case Utterance:
+    ROS_INFO("BRABS21155");
+
     if(activation <= ui_.sbST->value() && silenceCounter == ui_.sbNoSF->value()){
       //Utterrance finished
 
@@ -1020,6 +1069,8 @@ void LipRec::changeLipActivationState(int activation, Mat& imageAbsDiff, int cur
       if(!utterance.isEmpty()){
         uLast = utterance.last();
       }
+      ROS_INFO("BRABS1155");
+
 
       // only add imageAbsDiff if the last DOF-image has the same size
       if(uLast.cols == imageAbsDiff.cols && uLast.rows == imageAbsDiff.rows){
@@ -1034,6 +1085,8 @@ void LipRec::changeLipActivationState(int activation, Mat& imageAbsDiff, int cur
         this->recordUtterance = false;
       }
       ui_.lcdUtterance->display(QString::number(utterance.size(),'f',0));
+
+      ROS_INFO("BRABS132655");
 
       //1. Generate weighted DOFs
       for (int i = 0; i < utterance.size(); ++i) {
@@ -1050,35 +1103,74 @@ void LipRec::changeLipActivationState(int activation, Mat& imageAbsDiff, int cur
           }
         }
       }
+      ROS_INFO("BRABS255");
+
 
       //Size size = Size(imageAbsDiff.size().width, imageAbsDiff.size().height);
       Mat mt(imageAbsDiff.rows, imageAbsDiff.cols, CV_8UC1, Scalar(0));
 
+      ROS_INFO("BRABS2533225");
 
       //2. take max pixel intensity value
       for (int i = 0; i < utterance.size(); ++i) {
+        ROS_INFO("BRABS2234234523523455");
 
         if(!utterance.at(i).empty()){
 
           for (int k = 0; k < utterance.at(i).cols; ++k) {
             for (int j = 0; j < utterance.at(i).rows; ++j) {
-              if(mt.at<uchar>(j,k) < utterance[i].at<uchar>(j,k)){
-                mt.at<uchar>(j,k) = utterance[i].at<uchar>(j,k);
+              if(mt.at<uchar>(j,k) < utterance.at(i).at<uchar>(j,k)){
+                mt.at<uchar>(j,k) = utterance.at(i).at<uchar>(j,k);
               }
             }
           }
         }
       }
 
-      imageProcessing.squareImage(mt);
+      ROS_INFO("BRABS7i9345");
 
-      pixMap = imageProcessing.getPixmap(mt, useMonoImage);
+
+      //imageProcessing.squareImage(mt);
+
+      ROS_INFO("BRABS78874645");
+
+
+      if(!mt.empty()){
+        string r;
+        uchar depth = mt.type() & CV_MAT_DEPTH_MASK;
+         uchar chans = 1 + (mt.type() >> CV_CN_SHIFT);
+
+         switch ( depth ) {
+           case CV_8U:  r = "8U"; break;
+           case CV_8S:  r = "8S"; break;
+           case CV_16U: r = "16U"; break;
+           case CV_16S: r = "16S"; break;
+           case CV_32S: r = "32S"; break;
+           case CV_32F: r = "32F"; break;
+           case CV_64F: r = "64F"; break;
+           default:     r = "User"; break;
+         }
+
+         r += "C";
+         r += (chans+'0');
+        ROS_INFO("Zeile 1138 %d %d %s", mt.cols, mt.rows, r.c_str());
+
+        pixMap = imageProcessing.getPixmap(mt, useMonoImage);
+      }
+      ROS_INFO("BRABS456645");
+
 
       pixMap = pixMap.scaled(ui_.lblMouthDiffSum->maximumWidth(), ui_.lblMouthDiffSum->maximumHeight(), Qt::KeepAspectRatio, Qt::SmoothTransformation);
       ui_.lblMouthDiffSum->setPixmap(pixMap);
 
+      ROS_INFO("BRABS4576457845");
+
+
       QString currentTextSignalWindow1 = ui_.cbSignalWindow1->currentText();
       QString currentTextSignalWindow2 = ui_.cbSignalWindow2->currentText();
+
+      ROS_INFO("BRABS89762343479345");
+
 
       if(currentTextSignalWindow1 == "None"){
         this->applySignalSmoothing(1, S_NONE);
@@ -1095,7 +1187,12 @@ void LipRec::changeLipActivationState(int activation, Mat& imageAbsDiff, int cur
       }else{
 
       }
+
+      ROS_INFO("BRABS2u8255");
+
     }else if(activation <= ui_.sbST->value()){
+      ROS_INFO("BRABS5654");
+
       //Silence during Utterance
       silenceCounter++;
       utterancePixelDiff.append(activation);
@@ -1106,8 +1203,13 @@ void LipRec::changeLipActivationState(int activation, Mat& imageAbsDiff, int cur
         this->recordUtteranceFrame(currentUtteranceFrame);
       }
 
+      ROS_INFO("BRABS333355");
+
+
     }else{
       //During Utterance
+      ROS_INFO("BRABS8787856455");
+
       silenceCounter = 0;
       Mat uLast = imageAbsDiff;
       if(!utterance.isEmpty()){
@@ -1125,10 +1227,14 @@ void LipRec::changeLipActivationState(int activation, Mat& imageAbsDiff, int cur
         }
       }
     }
+    ROS_INFO("BRABS8978454534546");
+
     break;
   default:
     break;
   }
+
+  ROS_INFO("BRABS37754");
 
 }
 
@@ -1328,6 +1434,8 @@ void LipRec::drawMouthFeatures(Mat &mouthFeatures, Point keyPoint1, Point keyPoi
     if(mouthFeatures.type() == CV_8UC1){
       monoImg = true;
     }
+    ROS_INFO("Zeile 1419");
+
     pixMap = imageProcessing.getPixmap(mouthFeatures, monoImg);
 
     pixMap = pixMap.scaled(ui_.lblMouthFeatureRaw->maximumWidth(), ui_.lblMouthFeatureRaw->maximumHeight(), Qt::KeepAspectRatio, Qt::SmoothTransformation);
@@ -1636,6 +1744,7 @@ void LipRec::lipsActivation(int currentFrame)
   if(frameBuffer.at(last).cols == frameBuffer.at(currentFrame).cols
      && frameBuffer.at(last).rows == frameBuffer.at(currentFrame).rows){
 
+
     //temporal segmentation
     d = imageProcessing.generatePixelDifference(frameBuffer[currentFrame], frameBuffer[last]);
 
@@ -1643,17 +1752,23 @@ void LipRec::lipsActivation(int currentFrame)
 
     imageAbsDiff = imageProcessing.createImageAbsDiff(frameBuffer[currentFrame], frameBuffer[last]);
   }
+  ROS_INFO("BRABS7845656");
+
 
   //temporal segmentation
   int activation = QString::number(d,'f',0).toInt();
+  ROS_INFO("BRABS346");
 
   this->changeLipActivationState(activation, imageAbsDiff, currentFrame);
+  ROS_INFO("BRABS345656");
 
   if(!imageAbsDiff.empty()){
     //    pixMap = imageProcessing.getPixmap(imageAbsDiff, true);
     //    pixMap = pixMap.scaled(ui_.lblMouthDiff->maximumWidth(), ui_.lblMouthDiff->maximumHeight(), Qt::KeepAspectRatio, Qt::SmoothTransformation);
     //    ui_.lblMouthDiff->setPixmap(pixMap);
   }
+  ROS_INFO("BRABS97645");
+
 }
 
 Mat LipRec::drawMouthFeaturesOnGUI(Mat &mouthImg, Mat &rLowFinal, Mat &rMidFinal, Mat &rTopFinal, Point upLinePoint, Point bottomLinePoint, Point rightLinePoint, Point keyPoint1, Point keyPoint2, Point keyPoint3, Point keyPoint4, Point keyPoint5, Point keyPoint6)

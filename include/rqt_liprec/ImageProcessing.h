@@ -28,43 +28,43 @@ using namespace cv;
 
 class ImageProcessing {
 public:
-    ImageProcessing();
-	virtual ~ImageProcessing();
+  ImageProcessing();
+  virtual ~ImageProcessing();
 
-    void drawRectangle(Mat& iplImg, sensor_msgs::RegionOfInterest& roi, Scalar color);
-	void cutROIfromImage(Mat& src, Mat& out, sensor_msgs::RegionOfInterest& roi);
+  void drawRectangle(Mat& iplImg, sensor_msgs::RegionOfInterest& roi, Scalar color);
+  void cutROIfromImage(Mat& src, Mat& out, sensor_msgs::RegionOfInterest& roi);
 
-    void squareImage(Mat& src);
+  void squareImage(Mat& src);
 
-    void applyHistogramForLightCorrectionGHE(Mat& mat);
-	void applyHistogramForLightCorrectionAHE(Mat& mat, int clipLimit, Size size);
-	void applyBlur(Mat& mat, int sbMask, BlurType bt);
+  void applyHistogramForLightCorrectionGHE(Mat& mat);
+  void applyHistogramForLightCorrectionAHE(Mat& mat, int clipLimit, Size size);
+  void applyBlur(Mat& mat, int sbMask, BlurType bt);
 
-    void applyLipsSegmentationSaturation(Mat &mouthImg, int saturationValue);
-    Mat calcColorHistogramEqualization(Mat &img);
+  void applyLipsSegmentationSaturation(Mat &mouthImg, int saturationValue);
+  Mat calcColorHistogramEqualization(Mat &img);
 
-    double pseudoHuePxl(Mat img, int x, int y);
-    int luminancePxl(Mat img, int x, int y);
+  double pseudoHuePxl(Mat img, int x, int y);
+  int luminancePxl(Mat img, int x, int y);
 
 
 
-    int generatePixelDifference(Mat& currentFrame, Mat& lastFrame);
-	Mat createImageAbsDiff(Mat& currentFrame, Mat& lastFrame);
+  int generatePixelDifference(Mat& currentFrame, Mat& lastFrame);
+  Mat createImageAbsDiff(Mat& currentFrame, Mat& lastFrame);
 
-    Mat createMotionHistoryImage(Mat& img, Mat& mhi, bool binarization, double binarThreshold, double mhiDuration);
+  Mat createMotionHistoryImage(Mat& img, Mat& mhi, bool binarization, double binarThreshold, double mhiDuration);
 
-    QPixmap getPixmap(Mat &iplImg, bool useMonoImage);
+  QPixmap getPixmap(Mat &iplImg, bool useMonoImage);
 
-    void setupVideoWriter(QString videoName, int frameWidth, int frameHeight);
-    void writeFrameToVideo(Mat frame);
-    void closeVideoWriter();
+  void setupVideoWriter(QString videoName, int frameWidth, int frameHeight);
+  void writeFrameToVideo(Mat frame);
+  void closeVideoWriter();
 
-    void setUseMonoImage(bool use);
+  void setUseMonoImage(bool use);
 
 private:
-    VideoWriter video;
+  VideoWriter video;
 
-    bool useMonoImage;
+  bool useMonoImage;
 };
 
 #endif /* IMAGEPROCESSING_H_ */

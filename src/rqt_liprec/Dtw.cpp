@@ -101,7 +101,6 @@ Mat Dtw::calculateDtwDistanceMatrix(int windowSize, bool windowAdapted){
   if(windowAdapted){
     windowSize = max(windowSize, abs(dtwDistanceMatrix.cols - dtwDistanceMatrix.rows));
   }
-  ROS_INFO("WINDOWSIZE = %d", windowSize);
 
   if(stepPattern == BELLMANSTEP){
     for (int i = 1; i < dtwDistanceMatrix.cols; ++i) {
