@@ -163,7 +163,7 @@ void KeyPointsDeliverer::extractMouthCornerKeyPoints(Mat &mouthImg, int threshol
             keyPoint1.x = pKPoints.at(i).keyPoint.x;
             keyPoint1.y = pKPoints.at(i).keyPoint.y;
         }
-        circle(rMidFinal, pKPoints.at(i).keyPoint, 2, Scalar(255,255,255));
+        //circle(rMidFinal, pKPoints.at(i).keyPoint, 2, Scalar(255,255,255));
     }
 
 

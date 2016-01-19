@@ -53,7 +53,7 @@ public:
 
   Mat createMotionHistoryImage(Mat& img, Mat& mhi, bool binarization, double binarThreshold, double mhiDuration);
 
-  QPixmap getPixmap(Mat &iplImg, bool useMonoImage);
+  QPixmap getPixmap(Mat iplImg, bool useMonoImage);
 
   void setupVideoWriter(QString videoName, int frameWidth, int frameHeight);
   void writeFrameToVideo(Mat frame);

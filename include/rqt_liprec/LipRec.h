@@ -131,6 +131,15 @@ private:
 
     bool printFeatures;
 
+    bool updateRecognizedText;
+    struct CommandWithCost{
+      bool operator<(const CommandWithCost& other) const {
+          return cost < other.cost;
+      }
+      QString command;
+      double cost;
+    };
+
     qint64 lcdUpdateTimeStamp;
 
     RecordTrajectoryState recordTrajectoryState;
@@ -212,6 +221,8 @@ private slots:
     void clickedAbortOrSaveTrajectory();
 
     void clickedCluster();
+
+    void clickedUpdateRecognizedText(bool checked);
 
 };
 } // namespace
