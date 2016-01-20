@@ -38,30 +38,18 @@
    <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;br/&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
   </property>
   <layout class="QGridLayout" name="gridLayout_17">
-   <item row="4" column="0">
-    <widget class="QGroupBox" name="groupBoxWidget_2">
-     <property name="minimumSize">
-      <size>
-       <width>540</width>
-       <height>0</height>
-      </size>
-     </property>
-     <property name="maximumSize">
-      <size>
-       <width>540</width>
-       <height>130</height>
-      </size>
-     </property>
-     <property name="title">
-      <string>Signal Window 1</string>
-     </property>
-     <layout class="QGridLayout" name="gridLayout_8">
-      <item row="0" column="0">
-       <widget class="QGraphicsView" name="gvSignalWindow1"/>
-      </item>
-     </layout>
-    </widget>
-   </item>
+   <property name="leftMargin">
+    <number>0</number>
+   </property>
+   <property name="topMargin">
+    <number>0</number>
+   </property>
+   <property name="rightMargin">
+    <number>0</number>
+   </property>
+   <property name="bottomMargin">
+    <number>0</number>
+   </property>
    <item row="0" column="0" colspan="5">
     <widget class="QFrame" name="frameTop">
      <property name="minimumSize">
@@ -99,7 +87,7 @@
        <number>0</number>
       </property>
       <item row="0" column="4">
-       <widget class="QPushButton" name="pbUPDP">
+       <widget class="QPushButton" name="pbRecorderOptions">
         <property name="styleSheet">
          <string notr="true">QPushButton{background:rgba(0,0,0,0);}</string>
         </property>
@@ -207,7 +195,7 @@ QPushButton:checked{
      </property>
      <property name="maximumSize">
       <size>
-       <width>210</width>
+       <width>180</width>
        <height>16777215</height>
       </size>
      </property>
@@ -1513,7 +1501,7 @@ QPushButton:checked{
           <item row="6" column="2">
            <widget class="QSpinBox" name="sbST">
             <property name="value">
-             <number>2</number>
+             <number>1</number>
             </property>
            </widget>
           </item>
@@ -4280,6 +4268,12 @@ QGroupBox::title{
             <layout class="QGridLayout" name="gridLayout_42">
              <item row="0" column="1">
               <widget class="QLabel" name="labelArea">
+               <property name="font">
+                <font>
+                 <weight>75</weight>
+                 <bold>true</bold>
+                </font>
+               </property>
                <property name="text">
                 <string>Area</string>
                </property>
@@ -4290,6 +4284,12 @@ QGroupBox::title{
              </item>
              <item row="0" column="2">
               <widget class="QLabel" name="labelAspectRatio">
+               <property name="font">
+                <font>
+                 <weight>75</weight>
+                 <bold>true</bold>
+                </font>
+               </property>
                <property name="text">
                 <string>Aspect ratio</string>
                </property>
@@ -4333,7 +4333,7 @@ QGroupBox::title{
                  </widget>
                 </item>
                 <item row="0" column="1">
-                 <widget class="QLabel" name="labelUtteranceLenght">
+                 <widget class="QLabel" name="labelUtteranceLength">
                   <property name="font">
                    <font>
                     <pointsize>9</pointsize>
@@ -4973,96 +4973,272 @@ QGroupBox::title {
      </widget>
     </widget>
    </item>
-   <item row="4" column="4">
-    <widget class="QGroupBox" name="groupBox_7">
-     <property name="maximumSize">
-      <size>
-       <width>16777215</width>
-       <height>130</height>
-      </size>
-     </property>
-     <property name="title">
-      <string>Signal Smoothing</string>
-     </property>
-     <layout class="QGridLayout" name="gridLayout_10">
-      <property name="topMargin">
-       <number>40</number>
-      </property>
-      <property name="horizontalSpacing">
-       <number>100</number>
-      </property>
-      <item row="0" column="1">
-       <widget class="QLabel" name="label_12">
-        <property name="text">
-         <string>Signal Window 2</string>
-        </property>
-       </widget>
-      </item>
-      <item row="1" column="0">
-       <widget class="QComboBox" name="cbSignalWindow1"/>
-      </item>
-      <item row="0" column="0">
-       <widget class="QLabel" name="label_11">
-        <property name="text">
-         <string>Signal Window 1</string>
-        </property>
-       </widget>
-      </item>
-      <item row="1" column="1">
-       <widget class="QComboBox" name="cbSignalWindow2"/>
-      </item>
-      <item row="2" column="0">
-       <spacer name="verticalSpacer_2">
-        <property name="orientation">
-         <enum>Qt::Vertical</enum>
-        </property>
-        <property name="sizeHint" stdset="0">
-         <size>
-          <width>20</width>
-          <height>40</height>
-         </size>
-        </property>
-       </spacer>
-      </item>
-     </layout>
-    </widget>
-   </item>
-   <item row="4" column="1" colspan="2">
-    <widget class="QGroupBox" name="groupBoxWidget">
-     <property name="minimumSize">
-      <size>
-       <width>540</width>
-       <height>0</height>
-      </size>
-     </property>
-     <property name="maximumSize">
-      <size>
-       <width>540</width>
-       <height>130</height>
-      </size>
-     </property>
-     <property name="title">
-      <string>Signal Window 2</string>
-     </property>
-     <layout class="QGridLayout" name="gridLayout_4">
-      <item row="0" column="0">
-       <widget class="QGraphicsView" name="gvSignalWindow2"/>
-      </item>
-     </layout>
-    </widget>
-   </item>
-   <item row="4" column="3">
-    <widget class="Line" name="line_2">
-     <property name="orientation">
-      <enum>Qt::Vertical</enum>
-     </property>
-    </widget>
-   </item>
    <item row="3" column="0" colspan="5">
     <widget class="Line" name="line">
+     <property name="frameShadow">
+      <enum>QFrame::Raised</enum>
+     </property>
+     <property name="lineWidth">
+      <number>10</number>
+     </property>
      <property name="orientation">
       <enum>Qt::Horizontal</enum>
      </property>
+    </widget>
+   </item>
+   <item row="4" column="4">
+    <spacer name="horizontalSpacer_14">
+     <property name="orientation">
+      <enum>Qt::Horizontal</enum>
+     </property>
+     <property name="sizeHint" stdset="0">
+      <size>
+       <width>40</width>
+       <height>20</height>
+      </size>
+     </property>
+    </spacer>
+   </item>
+   <item row="4" column="1">
+    <widget class="QGroupBox" name="gbLipRecRecorder">
+     <property name="minimumSize">
+      <size>
+       <width>50</width>
+       <height>100</height>
+      </size>
+     </property>
+     <property name="maximumSize">
+      <size>
+       <width>600</width>
+       <height>16777215</height>
+      </size>
+     </property>
+     <property name="styleSheet">
+      <string notr="true">QGroupBox {
+    border: 1px solid gray;
+    border-radius: 9px;
+    margin-top: 0.5em;
+	font-weight: bold;
+	font-size: 10pt;
+}
+QGroupBox::title {
+    subcontrol-origin: margin;
+    left: 10px;
+    padding: 0 3px 0 3px;
+}
+</string>
+     </property>
+     <property name="title">
+      <string>LipRecRecorder</string>
+     </property>
+     <layout class="QGridLayout" name="gridLayout_4">
+      <property name="topMargin">
+       <number>0</number>
+      </property>
+      <property name="bottomMargin">
+       <number>0</number>
+      </property>
+      <item row="0" column="1" rowspan="3">
+       <widget class="Line" name="line_2">
+        <property name="orientation">
+         <enum>Qt::Vertical</enum>
+        </property>
+       </widget>
+      </item>
+      <item row="0" column="2" rowspan="3">
+       <widget class="QFrame" name="frame_22">
+        <property name="minimumSize">
+         <size>
+          <width>245</width>
+          <height>0</height>
+         </size>
+        </property>
+        <property name="maximumSize">
+         <size>
+          <width>245</width>
+          <height>16777215</height>
+         </size>
+        </property>
+        <property name="frameShape">
+         <enum>QFrame::StyledPanel</enum>
+        </property>
+        <property name="frameShadow">
+         <enum>QFrame::Plain</enum>
+        </property>
+        <layout class="QGridLayout" name="gridLayout_10">
+         <item row="0" column="0">
+          <spacer name="horizontalSpacer_15">
+           <property name="orientation">
+            <enum>Qt::Horizontal</enum>
+           </property>
+           <property name="sizeHint" stdset="0">
+            <size>
+             <width>32</width>
+             <height>20</height>
+            </size>
+           </property>
+          </spacer>
+         </item>
+         <item row="0" column="1" colspan="3">
+          <widget class="QPushButton" name="pbRecordRecognition">
+           <property name="minimumSize">
+            <size>
+             <width>143</width>
+             <height>0</height>
+            </size>
+           </property>
+           <property name="maximumSize">
+            <size>
+             <width>143</width>
+             <height>16777215</height>
+            </size>
+           </property>
+           <property name="text">
+            <string>Record</string>
+           </property>
+           <property name="checkable">
+            <bool>true</bool>
+           </property>
+          </widget>
+         </item>
+         <item row="0" column="4">
+          <spacer name="horizontalSpacer_16">
+           <property name="orientation">
+            <enum>Qt::Horizontal</enum>
+           </property>
+           <property name="sizeHint" stdset="0">
+            <size>
+             <width>32</width>
+             <height>20</height>
+            </size>
+           </property>
+          </spacer>
+         </item>
+         <item row="1" column="0" colspan="2">
+          <widget class="QPushButton" name="pbSaveRecognition">
+           <property name="enabled">
+            <bool>false</bool>
+           </property>
+           <property name="text">
+            <string>Save</string>
+           </property>
+          </widget>
+         </item>
+         <item row="1" column="2">
+          <widget class="QLabel" name="lblMsgRecognition">
+           <property name="minimumSize">
+            <size>
+             <width>43</width>
+             <height>0</height>
+            </size>
+           </property>
+           <property name="styleSheet">
+            <string notr="true">QLabel{ 
+rgb(255, 0, 0);
+font: 8pt;
+}</string>
+           </property>
+           <property name="text">
+            <string/>
+           </property>
+           <property name="alignment">
+            <set>Qt::AlignCenter</set>
+           </property>
+          </widget>
+         </item>
+         <item row="1" column="3" colspan="2">
+          <widget class="QPushButton" name="pbDeclineRecogntion">
+           <property name="enabled">
+            <bool>false</bool>
+           </property>
+           <property name="text">
+            <string>Decline</string>
+           </property>
+           <property name="checkable">
+            <bool>false</bool>
+           </property>
+           <property name="checked">
+            <bool>false</bool>
+           </property>
+           <property name="autoDefault">
+            <bool>false</bool>
+           </property>
+           <property name="default">
+            <bool>false</bool>
+           </property>
+           <property name="flat">
+            <bool>false</bool>
+           </property>
+          </widget>
+         </item>
+        </layout>
+       </widget>
+      </item>
+      <item row="0" column="0" rowspan="3">
+       <widget class="QFrame" name="frame_23">
+        <property name="minimumSize">
+         <size>
+          <width>320</width>
+          <height>0</height>
+         </size>
+        </property>
+        <property name="maximumSize">
+         <size>
+          <width>320</width>
+          <height>16777215</height>
+         </size>
+        </property>
+        <property name="frameShape">
+         <enum>QFrame::StyledPanel</enum>
+        </property>
+        <property name="frameShadow">
+         <enum>QFrame::Plain</enum>
+        </property>
+        <layout class="QGridLayout" name="gridLayout_8">
+         <property name="leftMargin">
+          <number>0</number>
+         </property>
+         <property name="topMargin">
+          <number>0</number>
+         </property>
+         <property name="rightMargin">
+          <number>0</number>
+         </property>
+         <property name="bottomMargin">
+          <number>0</number>
+         </property>
+         <property name="verticalSpacing">
+          <number>0</number>
+         </property>
+         <item row="0" column="0">
+          <widget class="QLabel" name="label_11">
+           <property name="text">
+            <string>Filename:</string>
+           </property>
+          </widget>
+         </item>
+         <item row="0" column="1">
+          <widget class="QLineEdit" name="leFilenameRecord"/>
+         </item>
+         <item row="1" column="0" colspan="2">
+          <widget class="QCheckBox" name="cbSOLR">
+           <property name="font">
+            <font>
+             <pointsize>9</pointsize>
+            </font>
+           </property>
+           <property name="text">
+            <string>Save only lowest recognition</string>
+           </property>
+           <property name="tristate">
+            <bool>false</bool>
+           </property>
+          </widget>
+         </item>
+        </layout>
+       </widget>
+      </item>
+     </layout>
     </widget>
    </item>
   </layout>

@@ -19,7 +19,7 @@
 #include <opencv2/imgproc/imgproc.hpp>
 #include <opencv2/highgui/highgui.hpp>
 
-#include "CommonEnums.h"
+#include "CommonData.h"
 
 using namespace std_msgs;
 using namespace std;

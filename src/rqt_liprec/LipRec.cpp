@@ -69,8 +69,9 @@ void LipRec::initPlugin(qt_gui_cpp::PluginContext& context)
   QObject::connect(&faceROITimer, SIGNAL(timeout()), this, SLOT(faceROItimeout()));
   QObject::connect(&mouthROITimer, SIGNAL(timeout()), this, SLOT(mouthROItimeout()));
 
-  QObject::connect(ui_.pbUPDP, SIGNAL(clicked()), this, SLOT(clickedUtteranceDiffPlot()));
   QObject::connect(ui_.pbContinueVideo, SIGNAL(clicked()), this, SLOT(clickedContinueVideo()));
+
+  QObject::connect(ui_.pbRecorderOptions, SIGNAL(clicked()), this, SLOT(clickedRecorderOptions()));
 
   QObject::connect(ui_.pbPrintFeatures, SIGNAL(clicked()), this, SLOT(clickedPrintFeatures()));
 
@@ -83,6 +84,10 @@ void LipRec::initPlugin(qt_gui_cpp::PluginContext& context)
   QObject::connect(ui_.pbCluster, SIGNAL(clicked()), this, SLOT(clickedCluster()));
 
   QObject::connect(ui_.pbUpdateRecognizedText, SIGNAL(clicked(bool)), this, SLOT(clickedUpdateRecognizedText(bool)));
+
+  QObject::connect(ui_.pbRecordRecognition, SIGNAL(clicked(bool)), this, SLOT(clickedRecordRecognized(bool)));
+  QObject::connect(ui_.pbSaveRecognition, SIGNAL(clicked()), this, SLOT(clickedSaveRecordRecognition()));
+  QObject::connect(ui_.pbDeclineRecogntion, SIGNAL(clicked()), this, SLOT(clickedDeclineRecordRecognition()));
 
 
   drawKeyPointState = 0;
@@ -111,12 +116,6 @@ void LipRec::initPlugin(qt_gui_cpp::PluginContext& context)
 
   faceROITimer.start(timeoutROIdetection);
   mouthROITimer.start(timeoutROIdetection);
-  ui_.groupBoxWidget->setShown(false);
-  ui_.groupBoxWidget_2->setShown(false);
-  ui_.cbSignalWindow1->addItem("None");
-  ui_.cbSignalWindow1->addItem("Average");
-  ui_.cbSignalWindow2->addItem("None");
-  ui_.cbSignalWindow2->addItem("Average");
 
   QMenuBar* menuBar = new QMenuBar(widget_);
 
@@ -142,14 +141,14 @@ void LipRec::initPlugin(qt_gui_cpp::PluginContext& context)
 
   connect(menuBar, SIGNAL(triggered(QAction*)), this, SLOT(triggedAction(QAction*)));
 
-  ui_.pbUPDP->setToolTip("Plot the pixel difference of an utterance.");
+  ui_.pbRecorderOptions->setToolTip("Show options for recording results of the recognition.");
   pixmap = QPixmap("src/liprec/res/plot3.png");
   bi = QIcon(pixmap);
-  ui_.pbUPDP->setSizePolicy( QSizePolicy::Fixed, QSizePolicy::Preferred );
-  ui_.pbUPDP->setFlat(true);
-  ui_.pbUPDP->setIcon(bi);
-  ui_.pbUPDP->setIconSize(pixmap.rect().size());
-  ui_.pbUPDP->setMaximumSize(pixmap.rect().size());
+  ui_.pbRecorderOptions->setSizePolicy( QSizePolicy::Fixed, QSizePolicy::Preferred );
+  ui_.pbRecorderOptions->setFlat(true);
+  ui_.pbRecorderOptions->setIcon(bi);
+  ui_.pbRecorderOptions->setIconSize(pixmap.rect().size());
+  ui_.pbRecorderOptions->setMaximumSize(pixmap.rect().size());
 
   ui_.pbContinueVideo->setToolTip("Stop video stream from camera.");
   pixmap = QPixmap("src/liprec/res/videostop1.png");
@@ -169,6 +168,8 @@ void LipRec::initPlugin(qt_gui_cpp::PluginContext& context)
   ui_.lcdAspectRatio->setDigitCount(10);
   ui_.lcdDistance->setDigitCount(10);
 
+  ui_.gbLipRecRecorder->setShown(false);
+
   lcdUpdateTimeStamp = QDateTime::currentMSecsSinceEpoch();
 
   utter = false;
@@ -180,6 +181,7 @@ void LipRec::initPlugin(qt_gui_cpp::PluginContext& context)
   useCam = true;
   printFeatures = false;
   updateRecognizedText = true;
+  recordRecognitionState = RRNONE;
   recordTrajectoryState = None;
 
   availableTrajectories << "all";
@@ -415,7 +417,7 @@ void LipRec::processImage(Mat img)
 
   int windowSize = ui_.spDtwWindowSize->value();
 
-  if(!useMonoImage && !mouthImg.empty()){
+  if(!useMonoImage && !mouthImg.empty() && recordRecognitionState != RRDECISION){
     if(ui_.cbLipSeg->isChecked()){
       if(ui_.rbSaturation->isChecked()){
         imageProcessing.applyLipsSegmentationSaturation(mouthImg, ui_.sbSaturation->value());
@@ -513,12 +515,15 @@ void LipRec::processImage(Mat img)
 
           if(currentUtteranceTrajectories.size() > 0){
 
-            QList<CommandWithCost> areaCommandsWithCost;
-            QList<CommandWithCost> aspectRatioCommandsWithCost;
+            recordRecognitionData.clear();
+
             CommandWithCost commandWithCost;
 
             if(ui_.rbDTWSA->isChecked()){
               if(ui_.rbSingleFF->isChecked()){
+
+                QList<CommandWithCost> areaCommandsWithCost;
+                QList<CommandWithCost> aspectRatioCommandsWithCost;
 
                 foreach (QString command, availableTrajectories) {
                   clusterT = this->getClusterTrajectories(command, ui_.cbArea->text(), ui_.rbKmedoids->text());
@@ -549,7 +554,7 @@ void LipRec::processImage(Mat img)
                       bestWarpingCostArea = warpingCostTmpArea;
                       currentCommandArea = command;
 
-                    }           
+                    }
                   }
 
                   if(commandWithCost.command != ""){
@@ -591,21 +596,23 @@ void LipRec::processImage(Mat img)
                     aspectRatioCommandsWithCost.append(commandWithCost);
                     commandWithCost.command = "";
                   }
-
-                  QPixmap dtwPixMap = this->drawDTWPixmap(currentCommandArea, ui_.cbArea->text(), indexOfLowAreaCluster, ui_.rbKmedoids->text(), df, stepPattern);
-                  dtwPixMap = dtwPixMap.scaled(ui_.lblDTW->maximumWidth(), ui_.lblDTW->maximumHeight(), Qt::KeepAspectRatio, Qt::SmoothTransformation);
-
-                  ui_.lblDTW->setPixmap(dtwPixMap);
-
-                  dtwPixMap = this->drawDTWPixmap(currentCommandAspectRatio, ui_.cbAspectRatio->text(), indexOfLowAspectRatioCluster, ui_.rbKmedoids->text(), df, stepPattern);
-                  dtwPixMap = dtwPixMap.scaled(ui_.lblMouthDiff->maximumWidth(), ui_.lblMouthDiff->maximumHeight(), Qt::KeepAspectRatio, Qt::SmoothTransformation);
-
-                  ui_.lblMouthDiff->setPixmap(dtwPixMap);
                 }
+
+                QPixmap dtwPixMap = this->drawDTWPixmap(currentCommandArea, ui_.cbArea->text(), indexOfLowAreaCluster, ui_.rbKmedoids->text(), df, stepPattern);
+                dtwPixMap = dtwPixMap.scaled(ui_.lblDTW->maximumWidth(), ui_.lblDTW->maximumHeight(), Qt::KeepAspectRatio, Qt::SmoothTransformation);
+
+                ui_.lblDTW->setPixmap(dtwPixMap);
+
+                dtwPixMap = this->drawDTWPixmap(currentCommandAspectRatio, ui_.cbAspectRatio->text(), indexOfLowAspectRatioCluster, ui_.rbKmedoids->text(), df, stepPattern);
+                dtwPixMap = dtwPixMap.scaled(ui_.lblMouthDiff->maximumWidth(), ui_.lblMouthDiff->maximumHeight(), Qt::KeepAspectRatio, Qt::SmoothTransformation);
+
+                ui_.lblMouthDiff->setPixmap(dtwPixMap);
 
                 if(updateRecognizedText){
                   ui_.lwArea->clear();
                   ui_.lwAspectRatio->clear();
+                  ui_.labelArea->setText("Area");
+                  ui_.labelAspectRatio->setText("Aspect ratio");
 
                   qSort(areaCommandsWithCost);
                   qSort(aspectRatioCommandsWithCost);
@@ -623,6 +630,17 @@ void LipRec::processImage(Mat img)
                   }
                 }
 
+                if(recordRecognitionState == RRRECORDING){
+                  ui_.pbSaveRecognition->setEnabled(true);
+                  ui_.pbDeclineRecogntion->setEnabled(true);
+                  recordRecognitionState = RRDECISION;
+
+                  this->setLblMsgRecordRecognition(QString::number(currentUtteranceTrajectories[ui_.cbAspectRatio->text()].size()));
+
+                  recordRecognitionData.fileName = ui_.leFilenameRecord->text();
+
+                }
+
                 ROS_INFO("Recognize Area: %s", currentCommandArea.toStdString().c_str());
                 ROS_INFO("Recognize AspectRatio: %s", currentCommandAspectRatio.toStdString().c_str());
 
@@ -630,6 +648,8 @@ void LipRec::processImage(Mat img)
 
                 int fusionAreaIndex = 0;
                 int fusionAspectRatioIndex = 0;
+
+                QList<CommandWithCost> commandsWithCost;
 
                 foreach (QString command, availableTrajectories) {
 
@@ -683,22 +703,50 @@ void LipRec::processImage(Mat img)
 
                   warpingCostFusionTmp = warpingCostTmpArea + warpingCostTmpAspectRatio;
 
+                  if(command != "all"){
+                    commandWithCost.command = command;
+                    commandWithCost.cost = warpingCostFusionTmp;
+                    commandsWithCost.append(commandWithCost);
+                  }
+
                   if(warpingCostFusionTmp < bestWarpingCostFusion){
                     bestWarpingCostFusion = warpingCostFusionTmp;
                     fusionAreaIndex = indexOfLowAreaCluster;
                     fusionAspectRatioIndex = indexOfLowAspectRatioCluster;
                     currentCommandFusion = command;
                   }
+                }
 
-                  QPixmap dtwPixMap = this->drawDTWPixmap(currentCommandFusion, ui_.cbArea->text(), fusionAreaIndex, ui_.rbKmedoids->text(), df, stepPattern);
-                  dtwPixMap = dtwPixMap.scaled(ui_.lblDTW->maximumWidth(), ui_.lblDTW->maximumHeight(), Qt::KeepAspectRatio, Qt::SmoothTransformation);
+                QPixmap dtwPixMap = this->drawDTWPixmap(currentCommandFusion, ui_.cbArea->text(), fusionAreaIndex, ui_.rbKmedoids->text(), df, stepPattern);
+                dtwPixMap = dtwPixMap.scaled(ui_.lblDTW->maximumWidth(), ui_.lblDTW->maximumHeight(), Qt::KeepAspectRatio, Qt::SmoothTransformation);
 
-                  ui_.lblDTW->setPixmap(dtwPixMap);
+                ui_.lblDTW->setPixmap(dtwPixMap);
 
-                  dtwPixMap = this->drawDTWPixmap(currentCommandFusion, ui_.cbAspectRatio->text(), fusionAspectRatioIndex, ui_.rbKmedoids->text(), df, stepPattern);
-                  dtwPixMap = dtwPixMap.scaled(ui_.lblMouthDiff->maximumWidth(), ui_.lblMouthDiff->maximumHeight(), Qt::KeepAspectRatio, Qt::SmoothTransformation);
+                dtwPixMap = this->drawDTWPixmap(currentCommandFusion, ui_.cbAspectRatio->text(), fusionAspectRatioIndex, ui_.rbKmedoids->text(), df, stepPattern);
+                dtwPixMap = dtwPixMap.scaled(ui_.lblMouthDiff->maximumWidth(), ui_.lblMouthDiff->maximumHeight(), Qt::KeepAspectRatio, Qt::SmoothTransformation);
 
-                  ui_.lblMouthDiff->setPixmap(dtwPixMap);
+                ui_.lblMouthDiff->setPixmap(dtwPixMap);
+
+                if(updateRecognizedText){
+                  ui_.lwArea->clear();
+                  ui_.lwAspectRatio->clear();
+                  ui_.labelArea->setText("Fusion");
+                  ui_.labelAspectRatio->setText("");
+
+                  qSort(commandsWithCost);
+                  for (int i = 0; i < commandsWithCost.size(); ++i) {
+                    commandWithCost.command = commandsWithCost.at(i).command;
+                    commandWithCost.cost = commandsWithCost.at(i).cost;
+                    ui_.lwArea->addItem(QString("%1: %2").arg(commandWithCost.command, -14).arg(commandWithCost.cost, 8));
+                  }
+                }
+
+                if(recordRecognitionState == RRRECORDING){
+                  ui_.pbSaveRecognition->setEnabled(true);
+                  ui_.pbDeclineRecogntion->setEnabled(true);
+                  recordRecognitionState = RRDECISION;
+
+                  this->setLblMsgRecordRecognition(QString::number(currentUtteranceTrajectories[ui_.cbAspectRatio->text()].size()));
                 }
 
                 ROS_INFO("Recognize Fusion: %s", currentCommandFusion.toStdString().c_str());
@@ -709,7 +757,11 @@ void LipRec::processImage(Mat img)
               double bestEuclideanDistanceArea = INT_MAX;
               double bestEuclideanDistanceAspectRatio = INT_MAX;
 
+              QList<CommandWithCost> areaCommandsWithCost;
+              QList<CommandWithCost> aspectRatioCommandsWithCost;
+
               foreach (QString command, availableTrajectories) {
+                double localCost = INT_MAX;
                 clusterT = this->getClusterTrajectories(command, ui_.cbArea->text(), ui_.rbKmedoids->text());
 
                 double euclideanDistanceTmpArea = 0.0;
@@ -719,19 +771,25 @@ void LipRec::processImage(Mat img)
                   if(currentUtteranceTrajectories[ui_.cbArea->text()].size() > clusterT.at(i).size()){
                     keptTrajectory = clusterT.at(i);
                     shortenTrajectory = currentUtteranceTrajectories[ui_.cbArea->text()].mid(0, clusterT.at(i).size());
-//                    shortenTrajectory = currentUtteranceTrajectories[ui_.cbArea->text()].mid(
-//                          currentUtteranceTrajectories[ui_.cbArea->text()].size()-clusterT.at(i).size(), clusterT.at(i).size());
+                    //                    shortenTrajectory = currentUtteranceTrajectories[ui_.cbArea->text()].mid(
+                    //                          currentUtteranceTrajectories[ui_.cbArea->text()].size()-clusterT.at(i).size(), clusterT.at(i).size());
                   }else if(currentUtteranceTrajectories[ui_.cbArea->text()].size() < clusterT.at(i).size()){
                     keptTrajectory = currentUtteranceTrajectories[ui_.cbArea->text()];
                     shortenTrajectory = clusterT.at(i).mid(0, currentUtteranceTrajectories[ui_.cbArea->text()].size());
-//                    shortenTrajectory = clusterT.at(i).mid(
-//                          clusterT.at(i).size()-currentUtteranceTrajectories[ui_.cbArea->text()].size(), currentUtteranceTrajectories[ui_.cbArea->text()].size());
+                    //                    shortenTrajectory = clusterT.at(i).mid(
+                    //                          clusterT.at(i).size()-currentUtteranceTrajectories[ui_.cbArea->text()].size(), currentUtteranceTrajectories[ui_.cbArea->text()].size());
                   }else{
                     shortenTrajectory = currentUtteranceTrajectories[ui_.cbArea->text()];
                     keptTrajectory = clusterT.at(i);
                   }
 
                   euclideanDistanceTmpArea = calculateEuclideanDistance(keptTrajectory, shortenTrajectory);
+
+                  if(euclideanDistanceTmpArea < localCost){
+                    localCost = euclideanDistanceTmpArea;
+                    commandWithCost.command = command;
+                    commandWithCost.cost = euclideanDistanceTmpArea;
+                  }
 
                   ROS_INFO("Area Command: %s(%d) ; Utterrance: %d -> %f",
                            command.toStdString().c_str(), clusterT.at(i).size(), currentUtteranceTrajectories[ui_.cbArea->text()].size(), euclideanDistanceTmpArea);
@@ -743,7 +801,13 @@ void LipRec::processImage(Mat img)
                   }
                 }
 
+                if(commandWithCost.command != ""){
+                  areaCommandsWithCost.append(commandWithCost);
+                  commandWithCost.command = "";
+                }
+
                 clusterT = this->getClusterTrajectories(command, ui_.cbAspectRatio->text(), ui_.rbKmedoids->text());
+                localCost = INT_MAX;
 
                 double euclideanDistanceTmpAspectRatio = 0.0;
                 for (int i = 0; i < clusterT.size(); i++) {
@@ -752,19 +816,25 @@ void LipRec::processImage(Mat img)
                   if(currentUtteranceTrajectories[ui_.cbAspectRatio->text()].size() > clusterT.at(i).size()){
                     keptTrajectory = clusterT.at(i);
                     shortenTrajectory = currentUtteranceTrajectories[ui_.cbAspectRatio->text()].mid(0, clusterT.at(i).size());
-//                    shortenTrajectory = currentUtteranceTrajectories[ui_.cbAspectRatio->text()].mid(
-//                          currentUtteranceTrajectories[ui_.cbAspectRatio->text()].size()-clusterT.at(i).size(), clusterT.at(i).size());
+                    //                    shortenTrajectory = currentUtteranceTrajectories[ui_.cbAspectRatio->text()].mid(
+                    //                          currentUtteranceTrajectories[ui_.cbAspectRatio->text()].size()-clusterT.at(i).size(), clusterT.at(i).size());
                   }else if(currentUtteranceTrajectories[ui_.cbAspectRatio->text()].size() < clusterT.at(i).size()){
                     keptTrajectory = currentUtteranceTrajectories[ui_.cbAspectRatio->text()];
                     shortenTrajectory = clusterT.at(i).mid(0, currentUtteranceTrajectories[ui_.cbAspectRatio->text()].size());
-//                    shortenTrajectory = clusterT.at(i).mid(
-//                          clusterT.at(i).size()-currentUtteranceTrajectories[ui_.cbAspectRatio->text()].size(), currentUtteranceTrajectories[ui_.cbAspectRatio->text()].size());
+                    //                    shortenTrajectory = clusterT.at(i).mid(
+                    //                          clusterT.at(i).size()-currentUtteranceTrajectories[ui_.cbAspectRatio->text()].size(), currentUtteranceTrajectories[ui_.cbAspectRatio->text()].size());
                   }else{
                     shortenTrajectory = currentUtteranceTrajectories[ui_.cbAspectRatio->text()];
                     keptTrajectory = clusterT.at(i);
                   }
 
                   euclideanDistanceTmpAspectRatio = calculateEuclideanDistance(keptTrajectory, shortenTrajectory);
+
+                  if(euclideanDistanceTmpAspectRatio < localCost){
+                    localCost = euclideanDistanceTmpAspectRatio;
+                    commandWithCost.command = command;
+                    commandWithCost.cost = euclideanDistanceTmpAspectRatio;
+                  }
 
                   ROS_INFO("Aspect Ratio Command: %s(%d) ; Utterrance: %d -> %f",
                            command.toStdString().c_str(), clusterT.at(i).size(), currentUtteranceTrajectories[ui_.cbAspectRatio->text()].size(), euclideanDistanceTmpAspectRatio);
@@ -776,16 +846,55 @@ void LipRec::processImage(Mat img)
                   }
                 }
 
+                if(commandWithCost.command != ""){
+                  aspectRatioCommandsWithCost.append(commandWithCost);
+                  commandWithCost.command = "";
+                }
+
+              }
+
+              if(updateRecognizedText){
+                ui_.lwArea->clear();
+                ui_.lwAspectRatio->clear();
+                ui_.labelArea->setText("Area");
+                ui_.labelAspectRatio->setText("Aspect ratio");
+
+                qSort(areaCommandsWithCost);
+                qSort(aspectRatioCommandsWithCost);
+
+                for (int i = 0; i < areaCommandsWithCost.size(); ++i) {
+                  commandWithCost.command = areaCommandsWithCost.at(i).command;
+                  commandWithCost.cost = areaCommandsWithCost.at(i).cost;
+                  ui_.lwArea->addItem(QString("%1: %2").arg(commandWithCost.command, -14).arg(commandWithCost.cost, 8));
+                }
+
+                for (int i = 0; i < aspectRatioCommandsWithCost.size(); ++i) {
+                  commandWithCost.command = aspectRatioCommandsWithCost.at(i).command;
+                  commandWithCost.cost = aspectRatioCommandsWithCost.at(i).cost;
+                  ui_.lwAspectRatio->addItem(QString("%1 : %2").arg(commandWithCost.command, -14).arg(commandWithCost.cost, 8));
+                }
+              }
+
+              if(recordRecognitionState == RRRECORDING){
+                ui_.pbSaveRecognition->setEnabled(true);
+                ui_.pbDeclineRecogntion->setEnabled(true);
+                recordRecognitionState = RRDECISION;
+
+                this->setLblMsgRecordRecognition(QString::number(currentUtteranceTrajectories[ui_.cbAspectRatio->text()].size()));
               }
 
               ROS_INFO("Recognize Area: %s", currentCommandArea.toStdString().c_str());
               ROS_INFO("Recognize AspectRatio: %s", currentCommandAspectRatio.toStdString().c_str());
+
             }
           }
 
+          int utteranceLength = currentUtteranceTrajectories[ui_.cbAspectRatio->text()].size();
+
           if(updateRecognizedText){
-            ui_.labelUtteranceLenght->setText(QString::number(currentUtteranceTrajectories[ui_.cbAspectRatio->text()].size()));
+            ui_.labelUtteranceLength->setText(QString::number(utteranceLength));
           }
+
           currentUtteranceTrajectories.clear();
           utter = false;
 
@@ -1128,24 +1237,6 @@ void LipRec::changeLipActivationState(int activation, Mat& imageAbsDiff, int cur
       pixMap = pixMap.scaled(ui_.lblMouthDiffSum->maximumWidth(), ui_.lblMouthDiffSum->maximumHeight(), Qt::KeepAspectRatio, Qt::SmoothTransformation);
       ui_.lblMouthDiffSum->setPixmap(pixMap);
 
-      QString currentTextSignalWindow1 = ui_.cbSignalWindow1->currentText();
-      QString currentTextSignalWindow2 = ui_.cbSignalWindow2->currentText();
-
-      if(currentTextSignalWindow1 == "None"){
-        this->applySignalSmoothing(1, S_NONE);
-      }else if(currentTextSignalWindow1 == "Average"){
-        this->applySignalSmoothing(1, AVERAGE);
-      }else{
-
-      }
-
-      if(currentTextSignalWindow2 == "None"){
-        this->applySignalSmoothing(2, S_NONE);
-      }else if(currentTextSignalWindow2 == "Average"){
-        this->applySignalSmoothing(2, AVERAGE);
-      }else{
-
-      }
     }else if(activation <= ui_.sbST->value()){
       //Silence during Utterance
       silenceCounter++;
@@ -1227,47 +1318,6 @@ double LipRec::calculateEuclideanDistance(QList<double> &trj1, QList<double> &tr
   return euclideanDistance;
 }
 
-void LipRec::applySignalSmoothing(int graphicView, SignalSmoothingType type)
-{
-  QGraphicsView* gv;
-  if(graphicView == 1){
-    gv = ui_.gvSignalWindow1;
-  }else{
-    gv = ui_.gvSignalWindow2;
-  }
-
-  QList<int> upd = utterancePixelDiff;
-
-  switch (type) {
-  case S_NONE:
-    break;
-  case AVERAGE:
-    this->averageSignalSmoothing(upd);
-    break;
-  default:
-    break;
-  }
-
-  QVector<QPointF> points;
-
-  for (int i = 0; i < upd.size(); ++i) {
-    points.append(QPoint(i, -upd.at(i)));
-  }
-  QGraphicsScene * scene = new QGraphicsScene();
-  QPolygonF plyline;
-  QPainterPath myPath;
-  gv->setScene(scene);
-  double rad = 1;
-  for (int i = 0; i < points.size(); ++i) {
-    plyline.append(points[i]);
-    myPath.addPolygon(plyline);
-    scene->addEllipse(points[i].x(), points[i].y(), rad*0.3, rad*0.3, QPen(), QBrush(Qt::red, Qt::SolidPattern));
-  }
-  scene->addPath(myPath);
-  gv->fitInView(scene->sceneRect(), Qt::KeepAspectRatio);
-
-
-}
 
 void LipRec::averageSignalSmoothing(QList<int>& signalsSmoothing){
 
@@ -1396,22 +1446,21 @@ void LipRec::mouthROItimeout(){
   mouthROI_detected = false;
 }
 
-void LipRec::clickedUtteranceDiffPlot(){
-  if(ui_.groupBoxWidget->isHidden()){
-    ui_.groupBoxWidget->setShown(true);
-    ui_.groupBoxWidget_2->setShown(true);
-
-  }else{
-    ui_.groupBoxWidget->setShown(false);
-    ui_.groupBoxWidget_2->setShown(false);
-  }
-}
-
 void LipRec::clickedContinueVideo()
 {
   this->loadUtterance = false;
 
   this->changeUseCam();
+}
+
+void LipRec::clickedRecorderOptions()
+{
+  if(ui_.gbLipRecRecorder->isHidden()){
+    ui_.gbLipRecRecorder->setShown(true);
+  }else{
+    ui_.gbLipRecRecorder->setShown(false);
+  }
+
 }
 
 void LipRec::toggleKpLines()
@@ -1595,6 +1644,66 @@ void LipRec::clickedUpdateRecognizedText(bool checked)
   }
 }
 
+
+void LipRec::clickedSaveRecordRecognition(){
+  if(recordRecognitionState == RRDECISION){
+
+    QTimer::singleShot(1500, this, SLOT(clickedDeclineOrSaveRecordRecognition()));
+    QString fontColor = tr("<font color='%1'>%2</font>");
+    ui_.lblMsgRecognition->setText( fontColor.arg( "red", "Save" ) );
+    ui_.lblMsgRecognition->setFont(QFont("Times New Roman", 10, QFont::Bold));
+
+    ui_.pbSaveRecognition->setEnabled(false);
+    ui_.pbDeclineRecogntion->setEnabled(false);
+    ui_.pbRecordRecognition->setText("Record");
+    ui_.pbRecordRecognition->setChecked(false);
+
+    recordRecognitionState = RRNONE;
+  }
+}
+
+void LipRec::clickedDeclineRecordRecognition(){
+  if(recordRecognitionState == RRDECISION){
+
+    QTimer::singleShot(1500, this, SLOT(clickedDeclineOrSaveRecordRecognition()));
+    QString fontColor = tr("<font color='%1'>%2</font>");
+    ui_.lblMsgRecognition->setText( fontColor.arg( "red", "Decline" ) );
+    ui_.lblMsgRecognition->setFont(QFont("Times New Roman", 10, QFont::Bold));
+
+    ui_.pbSaveRecognition->setEnabled(false);
+    ui_.pbDeclineRecogntion->setEnabled(false);
+    ui_.pbRecordRecognition->setText("Record");
+    ui_.pbRecordRecognition->setChecked(false);
+
+    recordRecognitionState = RRNONE;
+  }
+}
+
+void LipRec::clickedDeclineOrSaveRecordRecognition()
+{
+  ui_.lblMsgRecognition->setText("");
+}
+
+void LipRec::clickedRecordRecognized(bool checked)
+{
+  if(checked){
+    if(!ui_.leFilenameRecord->text().isEmpty()){
+      recordRecognitionState = RRRECORDING;
+      ui_.pbRecordRecognition->setText("Stop Recording");
+    }else{
+      ui_.pbRecordRecognition->setChecked(false);
+    }
+  }else{
+    if(recordRecognitionState == RRRECORDING || recordRecognitionState == RRDECISION){
+      ui_.pbRecordRecognition->setChecked(true);
+    }else{
+      ui_.pbRecordRecognition->setText("Record");
+    }
+  }
+}
+
+
+
 void LipRec::applyCluster(QString clusterMethod, DistanceFunction df, QString command, QString feature){
   QList<QList<double> > clusterT = tdm.getClusterTrajectories(command, feature, clusterMethod);
   QList<QList<double> > traj = tdm.getTrajectory(command, feature);
@@ -1648,6 +1757,13 @@ void LipRec::updateClusterTrajectories(){
       }
     }
   }
+}
+
+void LipRec::setLblMsgRecordRecognition(QString msg)
+{
+  QString fontColor = tr("<font color='%1'>%2</font>");
+  ui_.lblMsgRecognition->setText( fontColor.arg( "red", msg) );
+  ui_.lblMsgRecognition->setFont(QFont("Times New Roman", 10, QFont::Bold));
 }
 
 void LipRec::printTrajectory(QList<double> trajectory)

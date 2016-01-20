@@ -45,6 +45,9 @@
 #include "Dtw.h"
 #include "TrajectoriesDataManager.h"
 #include "Clustering.h"
+#include "LipRecRecorder.h"
+
+#include "CommonData.h"
 
 using namespace std_msgs;
 using namespace std;
@@ -63,6 +66,14 @@ enum RecordTrajectoryState{
     Recording,
     Save,
     Abort
+};
+
+enum RecordRecognitionState{
+  RRNONE,
+  RRRECORDING,
+  RRDECISION,
+  RRSAVE,
+  RRDECLINE
 };
 
 class LipRec
@@ -140,6 +151,9 @@ private:
       double cost;
     };
 
+    RecordRecognitionState recordRecognitionState;
+    RecordRecognitionData recordRecognitionData;
+
     qint64 lcdUpdateTimeStamp;
 
     RecordTrajectoryState recordTrajectoryState;
@@ -156,6 +170,7 @@ private:
     Dtw dtw;
     TrajectoriesDataManager tdm;
     Clustering clustering;
+    LipRecRecorder lipRecRecorder;
 
     void processImage(Mat img);
 
@@ -176,7 +191,6 @@ private:
 
     void changeUseCam();
 
-    void applySignalSmoothing(int graphicView, SignalSmoothingType type);
     void averageSignalSmoothing(QList<int>& signalsSmoothing);
 
     void drawMouthFeatures(Mat& mouth, Point keyPoint1, Point keyPoint2, Point keyPoint3, Point keyPoint4, Point keyPoint5, Point keyPoint6);
@@ -195,6 +209,9 @@ private:
                           Point upLinePoint, Point bottomLinePoint, Point rightLinePoint,
                                Point keyPoint1, Point keyPoint2, Point keyPoint3, Point keyPoint4, Point keyPoint5, Point keyPoint6);
     void updateClusterTrajectories();
+
+    void setLblMsgRecordRecognition(QString msg);
+
 public slots:
     void getCamPic(Mat img);
     void getDepthCamPic(Mat img);
@@ -209,8 +226,8 @@ signals:
 private slots:
     void faceROItimeout();
     void mouthROItimeout();
-    void clickedUtteranceDiffPlot();
     void clickedContinueVideo();
+    void clickedRecorderOptions();
     void toggleKpLines();
     void toggleSupportLines(bool checked);
     void clickedPrintFeatures();
@@ -223,7 +240,12 @@ private slots:
     void clickedCluster();
 
     void clickedUpdateRecognizedText(bool checked);
+    void clickedRecordRecognized(bool checked);
 
+
+    void clickedDeclineRecordRecognition();
+    void clickedSaveRecordRecognition();
+    void clickedDeclineOrSaveRecordRecognition();
 };
 } // namespace
 #endif

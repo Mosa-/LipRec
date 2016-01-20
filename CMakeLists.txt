@@ -71,6 +71,9 @@ qt4_wrap_ui(rqt_liprec_UIS_H ${rqt_liprec_UIS})
 
 include_directories(${rqt_liprec_INCLUDE_DIRECTORIES} ${catkin_INCLUDE_DIRS} ${OpenCV_INCLUDE_DIRS})
 
+add_library(liprecRecorder src/rqt_liprec/LipRecRecorder.cpp)
+target_link_libraries(liprecRecorder ${catkin_LIBRARIES} ${OpenCV_LIBRARIES} ${QT_QTCORE_LIBRARY} ${QT_QTGUI_LIBRARY})
+
 add_library(dtw src/rqt_liprec/Dtw.cpp)
 target_link_libraries(dtw ${catkin_LIBRARIES} ${OpenCV_LIBRARIES} ${QT_QTCORE_LIBRARY} ${QT_QTGUI_LIBRARY})
 
@@ -87,7 +90,7 @@ add_library(clustering src/rqt_liprec/Clustering.cpp)
 target_link_libraries(clustering ${catkin_LIBRARIES} ${OpenCV_LIBRARIES} ${QT_QTCORE_LIBRARY} ${QT_QTGUI_LIBRARY} dtw)
 
 add_library(${PROJECT_NAME} ${rqt_liprec_SRCS} ${rqt_liprec_MOCS} ${rqt_liprec_UIS_H})
-target_link_libraries(${PROJECT_NAME} ${OpenCV_LIBRARIES} ${catkin_LIBRARIES} ${QT_QTCORE_LIBRARY} ${QT_QTGUI_LIBRARY} imageProcessing clustering keyPointsDeliverer trajectoriesDataManager dtw)
+target_link_libraries(${PROJECT_NAME} ${OpenCV_LIBRARIES} ${catkin_LIBRARIES} ${QT_QTCORE_LIBRARY} ${QT_QTGUI_LIBRARY} imageProcessing clustering keyPointsDeliverer trajectoriesDataManager dtw liprecRecorder)
 
 find_package(class_loader)
 class_loader_hide_library_symbols(${PROJECT_NAME})
