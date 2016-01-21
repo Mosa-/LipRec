@@ -13,7 +13,7 @@ Clustering::~Clustering(){
 
 }
 
-QList<QList<double> > Clustering::kMedoidsClustering(DistanceFunction df, DtwStepPattern stepPattern, bool windowSizeActive, int windowSize, bool windowAdapted)
+QList<QList<double> > Clustering::kMedoidsClustering(DistanceFunction df, DtwStepPattern stepPattern, bool slopeWeights, bool windowSizeActive, int windowSize, bool windowAdapted)
 {
     //ROS_INFO("size in clustering %d k: %d", this->trajectories.size(), this->k);
     QList<int> kIndices;
@@ -58,7 +58,7 @@ QList<QList<double> > Clustering::kMedoidsClustering(DistanceFunction df, DtwSte
             if(!kIndices.contains(i)){
                 for (int j = 0; j < kIndices.size(); ++j) {
                     kIndex = kIndices.at(j);
-                    dtw.seed(trajectories.at(kIndex), trajectories.at(i), stepPattern);
+                    dtw.seed(trajectories.at(kIndex), trajectories.at(i), stepPattern, slopeWeights);
 
 
                     tmpWarpingCost = calcWarpingCost(df, windowSizeActive, windowSize, windowAdapted);
@@ -93,7 +93,7 @@ QList<QList<double> > Clustering::kMedoidsClustering(DistanceFunction df, DtwSte
                 average = 0.0;
                 for (int j = 0; j < cluster.size(); ++j) {
                     if(i != j){
-                        dtw.seed(trajectories.at(cluster.at(i)), trajectories.at(cluster.at(j)), stepPattern);
+                        dtw.seed(trajectories.at(cluster.at(i)), trajectories.at(cluster.at(j)), stepPattern, slopeWeights);
                         //this->printTrajectory(trajectories.at(cluster.at(j)));
                         average += calcWarpingCost(df, windowSizeActive, windowSize, windowAdapted);
                         //ROS_INFO("currentAvg: %f", average);
@@ -235,12 +235,7 @@ double Clustering::calcWarpingCost(DistanceFunction df, bool windowSizeActive, i
     double warpingCost = 0.0;
 
     dtw.calculateDistanceMatrix(df);
-    if(windowSizeActive){
-       dtw.calculateDtwDistanceMatrix(windowSize, windowAdapted);
-    }else{
-      dtw.calculateDtwDistanceMatrix();
-    }
-
+    dtw.calculateDtwDistanceMatrix(windowSizeActive, windowSize, windowAdapted);
     dtw.calculateGreedyWarpingPath();
 
     warpingCost = dtw.getWarpingPathCost();

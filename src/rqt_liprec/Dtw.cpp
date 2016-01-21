@@ -6,22 +6,24 @@ Dtw::Dtw()
 
 }
 
-Dtw::Dtw(QList<double> trajectory1, QList<double> trajectory2, DtwStepPattern stepPattern){
+Dtw::Dtw(QList<double> trajectory1, QList<double> trajectory2, DtwStepPattern stepPattern, bool slopeWeights){
 
   this->trajectory1 = trajectory1;
   this->trajectory2 = trajectory2;
   this->stepPattern = stepPattern;
+  this->slopeWeights = slopeWeights;
 }
 
 Dtw::~Dtw(){
 
 }
 
-void Dtw::seed(QList<double> trajectory1, QList<double> trajectory2, DtwStepPattern stepPattern)
+void Dtw::seed(QList<double> trajectory1, QList<double> trajectory2, DtwStepPattern stepPattern, bool slopeWeights)
 {
   this->trajectory1 = trajectory1;
   this->trajectory2 = trajectory2;
   this->stepPattern = stepPattern;
+  this->slopeWeights = slopeWeights;
 
   double min1 = *std::min_element(this->trajectory1.begin(), this->trajectory1.end());
   double min2 = *std::min_element(this->trajectory2.begin(), this->trajectory2.end());
@@ -64,7 +66,7 @@ Mat Dtw::calculateDistanceMatrix(DistanceFunction distanceFunction){
   return distanceMatrix;
 }
 
-Mat Dtw::calculateDtwDistanceMatrix(int windowSize, bool windowAdapted){
+Mat Dtw::calculateDtwDistanceMatrix(bool activeWindowSize, int windowSize, bool windowAdapted){
   dtwDistanceMatrix = distanceMatrix;
 
   vector<Mat> matrices;
@@ -83,161 +85,481 @@ Mat Dtw::calculateDtwDistanceMatrix(int windowSize, bool windowAdapted){
 
   vconcat(matrices, dtwDistanceMatrix);
 
-  for (int i = 0; i < dtwDistanceMatrix.cols; ++i) {
-    for (int j = 0; j < dtwDistanceMatrix.rows; ++j) {
-      dtwDistanceMatrix.at<double>(j,i) = INT_MAX;
-    }
-  }
 
+  if(activeWindowSize){
+    for (int i = 0; i < dtwDistanceMatrix.cols; ++i) {
+      for (int j = 0; j < dtwDistanceMatrix.rows; ++j) {
+        dtwDistanceMatrix.at<double>(j,i) = INT_MAX;
+      }
+    }
+    dtwDistanceMatrix.at<double>(1,1) = distanceMatrix.at<double>(0,0);
+  }
   dtwDistanceMatrix.at<double>(0,0) = 0.0;
-  dtwDistanceMatrix.at<double>(1,1) = distanceMatrix.at<double>(0,0);
 
-  double insertion = 0.0;
-  double deletion = 0.0;
-  double match = 0.0;
-  double insertion2 = 0.0;
-  double deletion2 = 0.0;
 
-  if(windowAdapted){
-    windowSize = max(windowSize, abs(dtwDistanceMatrix.cols - dtwDistanceMatrix.rows));
-  }
-
-  if(stepPattern == BELLMANSTEP){
-    for (int i = 1; i < dtwDistanceMatrix.cols; ++i) {
-      for (int j = max(1, i-windowSize); j < min(dtwDistanceMatrix.rows,i+windowSize); ++j) {
-        insertion = dtwDistanceMatrix.at<double>(j, i-1);
-        deletion = dtwDistanceMatrix.at<double>(j-1, i);
-        match = dtwDistanceMatrix.at<double>(j-1, i-1);
-
-        dtwDistanceMatrix.at<double>(j,i) = distanceMatrix.at<double>(j-1,i-1) +
-            minimum(insertion, deletion, match);
-      }
-    }
-  }else if(stepPattern == DIAGONALSTEP){
-    for (int i = 1; i < dtwDistanceMatrix.cols; ++i) {
-      for (int j = max(1, i-windowSize); j < min(dtwDistanceMatrix.rows,i+windowSize); ++j) {
-        insertion = dtwDistanceMatrix.at<double>(j-1, i-1);
-        deletion = dtwDistanceMatrix.at<double>(j-2, i-1);
-        match = dtwDistanceMatrix.at<double>(j-1, i-2);
-
-        dtwDistanceMatrix.at<double>(j,i) = distanceMatrix.at<double>(j-1,i-1) +
-            minimum(insertion, deletion, match);
-      }
-    }
-  }else if(stepPattern == ITAKURASTEP){
-    for (int i = 1; i < dtwDistanceMatrix.cols; ++i) {
-      for (int j = max(1, i-windowSize); j < min(dtwDistanceMatrix.rows,i+windowSize); ++j) {
-        insertion = dtwDistanceMatrix.at<double>(j-1, i-1);
-        deletion = dtwDistanceMatrix.at<double>(j-2, i-3);
-        match = dtwDistanceMatrix.at<double>(j-3, i-2);
-
-        dtwDistanceMatrix.at<double>(j,i) = distanceMatrix.at<double>(j-1,i-1) +
-            minimum(insertion, deletion, match);
-      }
-    }
+  if(stepPattern == TYPE1){
+    applyStepPatternType1(activeWindowSize, windowSize, windowAdapted);
+  }else if(stepPattern == TYPE2){
+    applyStepPatternType2(activeWindowSize, windowSize, windowAdapted);
+  }else if(stepPattern == TYPE3){
+    applyStepPatternType3(activeWindowSize, windowSize, windowAdapted);
+  }else if(stepPattern == TYPE4){
+    applyStepPatternType4(activeWindowSize, windowSize, windowAdapted);
+  }else if(stepPattern == TYPE5){
+    applyStepPatternType5(activeWindowSize, windowSize, windowAdapted);
   }else{
-    for (int i = 1; i < dtwDistanceMatrix.cols; ++i) {
-      for (int j = max(1, i-windowSize); j < min(dtwDistanceMatrix.rows,i+windowSize); ++j) {
-        insertion = dtwDistanceMatrix.at<double>(j-1, i-1) + distanceMatrix.at<double>(j-1,i-1);
-        deletion = dtwDistanceMatrix.at<double>(j-1, i-2) + distanceMatrix.at<double>(j-1,i-2) + distanceMatrix.at<double>(j-1,i-1);
-        match = dtwDistanceMatrix.at<double>(j-2, i-1) + distanceMatrix.at<double>(j-2,i-1) + distanceMatrix.at<double>(j-1,i-1);
-        insertion2 = dtwDistanceMatrix.at<double>(j-3, i-1) + distanceMatrix.at<double>(j-3,i-1) + distanceMatrix.at<double>(j-2,i-1) + distanceMatrix.at<double>(j-1,i-1);
-        deletion2 = dtwDistanceMatrix.at<double>(j-1, i-3) + distanceMatrix.at<double>(j-1,i-3) + distanceMatrix.at<double>(j-1,i-2) + distanceMatrix.at<double>(j-1,i-1);
-
-        double tmpMin = minimum(insertion, deletion, match);
-
-        dtwDistanceMatrix.at<double>(j,i) = minimum(tmpMin, insertion2, deletion2);
-      }
-    }
+    applyStepPatternItakura(activeWindowSize, windowSize, windowAdapted);
   }
 
   return dtwDistanceMatrix;
 }
 
-Mat Dtw::calculateDtwDistanceMatrix(){
-  dtwDistanceMatrix = distanceMatrix;
-
-  vector<Mat> matrices;
-
-  Mat infRow(dtwDistanceMatrix.rows, 1, CV_64F, Scalar(INT_MAX));
-  Mat infCol(1, dtwDistanceMatrix.cols+1, CV_64F, Scalar(INT_MAX));
-
-  matrices.push_back(infRow);
-  matrices.push_back(dtwDistanceMatrix);
-
-  hconcat(matrices, dtwDistanceMatrix);
-
-  matrices.clear();
-  matrices.push_back(infCol);
-  matrices.push_back(dtwDistanceMatrix);
-
-  vconcat(matrices, dtwDistanceMatrix);
-
-  dtwDistanceMatrix.at<double>(0,0) = 0.0;
-
-  double insertion = 0.0;
-  double deletion = 0.0;
-  double match = 0.0;
-  double insertion2 = 0.0;
-  double deletion2 = 0.0;
-
-  if(stepPattern == BELLMANSTEP){
-    for (int i = 1; i < dtwDistanceMatrix.cols; ++i) {
-      for (int j = 1; j < dtwDistanceMatrix.rows; ++j) {
-        insertion = dtwDistanceMatrix.at<double>(j, i-1);
-        deletion = dtwDistanceMatrix.at<double>(j-1, i);
-        match = dtwDistanceMatrix.at<double>(j-1, i-1);
-
-        dtwDistanceMatrix.at<double>(j,i) = distanceMatrix.at<double>(j-1,i-1) +
-            minimum(insertion, deletion, match);
-      }
-    }
-  }else if(stepPattern == DIAGONALSTEP){
-    for (int i = 1; i < dtwDistanceMatrix.cols; ++i) {
-      for (int j = 1; j < dtwDistanceMatrix.rows; ++j) {
-        insertion = dtwDistanceMatrix.at<double>(j-1, i-1);
-        deletion = dtwDistanceMatrix.at<double>(j-2, i-1);
-        match = dtwDistanceMatrix.at<double>(j-1, i-2);
-
-        dtwDistanceMatrix.at<double>(j,i) = distanceMatrix.at<double>(j-1,i-1) +
-            minimum(insertion, deletion, match);
-      }
-    }
-  }else if(stepPattern == ITAKURASTEP){
-    for (int i = 1; i < dtwDistanceMatrix.cols; ++i) {
-      for (int j = 1; j < dtwDistanceMatrix.rows; ++j) {
-        insertion = dtwDistanceMatrix.at<double>(j-1, i-1);
-        deletion = dtwDistanceMatrix.at<double>(j-2, i-3);
-        match = dtwDistanceMatrix.at<double>(j-3, i-2);
-
-        dtwDistanceMatrix.at<double>(j,i) = distanceMatrix.at<double>(j-1,i-1) +
-            minimum(insertion, deletion, match);
-      }
-    }
-  }else{
-    for (int i = 1; i < dtwDistanceMatrix.cols; ++i) {
-      for (int j = 1; j < dtwDistanceMatrix.rows; ++j) {
-        insertion = dtwDistanceMatrix.at<double>(j-1, i-1) + distanceMatrix.at<double>(j-1,i-1);
-        deletion = dtwDistanceMatrix.at<double>(j-2, i-1) + distanceMatrix.at<double>(j-2,i-1) + distanceMatrix.at<double>(j-1,i-1);
-        match = dtwDistanceMatrix.at<double>(j-1, i-2) + distanceMatrix.at<double>(j-1,i-2) + distanceMatrix.at<double>(j-1,i-1);
-        insertion2 = dtwDistanceMatrix.at<double>(j-3, i-1) + distanceMatrix.at<double>(j-3,i-1) + distanceMatrix.at<double>(j-2,i-1) + distanceMatrix.at<double>(j-1,i-1);
-        deletion2 = dtwDistanceMatrix.at<double>(j-1, i-3) + distanceMatrix.at<double>(j-1,i-3) + distanceMatrix.at<double>(j-1,i-2) + distanceMatrix.at<double>(j-1,i-1);
-
-        double tmpMin = minimum(insertion, deletion, match);
-
-        dtwDistanceMatrix.at<double>(j,i) = minimum(tmpMin, insertion2, deletion2);
-      }
-    }
-  }
-
-  return dtwDistanceMatrix;
-}
 
 QList<Point> Dtw::calculateGreedyWarpingPath()
 {
   QList<Point> warpingPath;
-  int i = dtwDistanceMatrix.rows-1;
-  int j = dtwDistanceMatrix.cols-1;
+  int i = dtwDistanceMatrix.cols-1;
+  int j = dtwDistanceMatrix.rows-1;
+
+  double insertion = 0.0;
+  double deletion = 0.0;
+  double match = 0.0;
+  double insertion2 = 0.0;
+  double deletion2 = 0.0;
+  double match2 = 0.0;
+
+
+  double insertionDistance = 0.0;
+  double deletionDistance = 0.0;
+  double matchDistance = 0.0;
+  double match2Distance = 0.0;
+
+  if(stepPattern == TYPE1){
+
+    while(i>1 && j>1){
+      if(j==1){
+        i--;
+      }else if(i==1){
+        j--;
+      }else{
+        insertion = dtwDistanceMatrix.at<double>(j, i-1);
+        deletion = dtwDistanceMatrix.at<double>(j-1, i);
+        match = dtwDistanceMatrix.at<double>(j-1, i-1);
+
+        if(slopeWeights){
+          insertion += distanceMatrix.at<double>(j-1,i-1);
+          deletion +=  distanceMatrix.at<double>(j-1,i-1);
+          match += 2*distanceMatrix.at<double>(j-1,i-1);
+        }
+
+        if(deletion == minimum(insertion, deletion, match)){
+          j--;
+        }else if(insertion == minimum(insertion, deletion, match)){
+          i--;
+        }else{
+          i--;
+          j--;
+        }
+        warpingPath.append(Point(j,i));
+      }
+    }
+
+  }else if(stepPattern == TYPE2){
+
+    while(i>1 && j>1){
+      if(j==1){
+        i--;
+      }else if(i==1){
+        j--;
+      }else{
+        insertion = dtwDistanceMatrix.at<double>(j-1, i-2);
+        deletion = dtwDistanceMatrix.at<double>(j-1, i-1);
+        match = dtwDistanceMatrix.at<double>(j-2, i-1);
+
+        insertionDistance = distanceMatrix.at<double>(j-1,i-2) + distanceMatrix.at<double>(j-1,i-1);
+        deletionDistance = distanceMatrix.at<double>(j-1,i-1);
+        matchDistance = distanceMatrix.at<double>(j-2,i-1) + distanceMatrix.at<double>(j-1,i-1);
+
+        if(slopeWeights){
+          insertion += 0.5*(insertionDistance);
+          deletion +=  deletionDistance;
+          match += 0.5*(matchDistance);
+        }else{
+          insertion += insertionDistance;
+          deletion +=  deletionDistance;
+          match += matchDistance;
+        }
+
+        if(deletion == minimum(insertion, deletion, match)){
+          i--;
+          j--;
+        }else if(insertion == minimum(insertion, deletion, match)){
+          j--;
+          i -=2;
+        }else{
+          j-=2;
+          i--;
+        }
+        warpingPath.append(Point(j,i));
+      }
+    }
+
+  }else if(stepPattern == TYPE3){
+
+    while(i>1 && j>1){
+      if(j==1){
+        i--;
+      }else if(i==1){
+        j--;
+      }else{
+        insertion = dtwDistanceMatrix.at<double>(j-1, i-1);
+        deletion = dtwDistanceMatrix.at<double>(j-2, i-1);
+        match = dtwDistanceMatrix.at<double>(j-1, i-2);
+
+        if(slopeWeights){
+          insertion += 2*distanceMatrix.at<double>(j-1,i-1);
+          deletion +=  3*distanceMatrix.at<double>(j-1,i-1);
+          match += 3*distanceMatrix.at<double>(j-1,i-1);
+        }
+
+        if(deletion == minimum(insertion, deletion, match)){
+          j-=2;
+          i--;
+        }else if(insertion == minimum(insertion, deletion, match)){
+          j--;
+          i --;
+        }else{
+          j--;
+          i=-2;
+        }
+        warpingPath.append(Point(j,i));
+      }
+    }
+
+  }else if(stepPattern == TYPE4){
+
+    while(i>1 && j>1){
+      if(j==1){
+        i--;
+      }else if(i==1){
+        j--;
+      }else{
+        insertion = dtwDistanceMatrix.at<double>(j-1, i-2);
+        deletion = dtwDistanceMatrix.at<double>(j-2, i-2);
+        match = dtwDistanceMatrix.at<double>(j-1, i-1);
+        match2 = dtwDistanceMatrix.at<double>(j-2, i-1);
+
+        insertionDistance = distanceMatrix.at<double>(j-1,i-2) + distanceMatrix.at<double>(j-1,i-1);
+        deletionDistance = distanceMatrix.at<double>(j-1,i-2) + distanceMatrix.at<double>(j-1,i-1);
+        matchDistance =  distanceMatrix.at<double>(j-1,i-1);
+        match2Distance = distanceMatrix.at<double>(j-1,i-1);
+
+        insertion += insertionDistance;
+        deletion += deletionDistance;
+        match += matchDistance;
+        match2 += match2Distance;
+
+        double tmpMin = minimum(insertion, deletion, match);
+
+        if(deletion == minimum(tmpMin, deletion, match2)){
+          j-=2;
+          i-=2;
+        }else if(insertion == minimum(tmpMin, deletion, match2)){
+          j--;
+          i-=2;
+        }else if(match == minimum(tmpMin, deletion, match2)){
+          j--;
+          i--;
+        }else{
+          j-=2;
+          i--;
+        }
+        warpingPath.append(Point(j,i));
+      }
+    }
+
+  }else if(stepPattern == TYPE5){
+
+    while(i>1 && j>1){
+      if(j==1){
+        i--;
+      }else if(i==1){
+        j--;
+      }else{
+        insertion = dtwDistanceMatrix.at<double>(j-1, i-3);
+        deletion = dtwDistanceMatrix.at<double>(j-1, i-2);
+        match = dtwDistanceMatrix.at<double>(j-1, i-1);
+        insertion2 = dtwDistanceMatrix.at<double>(j-2, i-1);
+        deletion2 = dtwDistanceMatrix.at<double>(j-3, i-1);
+
+        if(slopeWeights){
+          insertion += 2*distanceMatrix.at<double>(j-1,i-3)+distanceMatrix.at<double>(j-1,i-2)+distanceMatrix.at<double>(j-1,i-1);
+          deletion +=  2*distanceMatrix.at<double>(j-1,i-2)+distanceMatrix.at<double>(j-1,i-1);
+          match += 2*distanceMatrix.at<double>(j-1,i-1);
+          insertion2 += 2*distanceMatrix.at<double>(j-2,i-1)+distanceMatrix.at<double>(j-1,i-1);
+          deletion2 += 2*distanceMatrix.at<double>(j-3,i-1)+distanceMatrix.at<double>(j-2,i-1)+distanceMatrix.at<double>(j-1,i-1);
+        }else{
+          insertion += distanceMatrix.at<double>(j-1,i-3)+distanceMatrix.at<double>(j-1,i-2)+distanceMatrix.at<double>(j-1,i-1);
+          deletion +=  distanceMatrix.at<double>(j-1,i-2)+distanceMatrix.at<double>(j-1,i-1);
+          match += distanceMatrix.at<double>(j-1,i-1);
+          insertion2 += distanceMatrix.at<double>(j-2,i-1)+distanceMatrix.at<double>(j-1,i-1);
+          deletion2 += distanceMatrix.at<double>(j-3,i-1)+distanceMatrix.at<double>(j-2,i-1)+distanceMatrix.at<double>(j-1,i-1);
+        }
+
+        double tmpMin = minimum(insertion, deletion, match);
+
+        if(deletion == minimum(tmpMin, insertion2, deletion2)){
+          j--;
+          i-=2;
+        }else if(insertion == minimum(tmpMin, insertion2, deletion2)){
+          j--;
+          i-=3;
+        }else if(match == minimum(tmpMin, insertion2, deletion2)){
+          j--;
+          i--;
+        }else if(insertion2 == minimum(tmpMin, insertion2, deletion2)){
+          j-=2;
+          i--;
+        }else{
+          j-=3;
+          i--;
+        }
+        warpingPath.append(Point(j,i));
+      }
+    }
+
+  }else{
+
+    while(i>1 && j>1){
+      if(j==1){
+        i--;
+      }else if(i==1){
+        j--;
+      }else{
+        insertion = dtwDistanceMatrix.at<double>(j, i-1);
+        deletion = dtwDistanceMatrix.at<double>(j-1, i-1);
+        match = dtwDistanceMatrix.at<double>(j-2, i-2);
+
+        insertion += distanceMatrix.at<double>(j-1,i-1);;
+        deletion += distanceMatrix.at<double>(j-1,i-1);;
+        match += distanceMatrix.at<double>(j-1,i-1);;
+
+        if(deletion == minimum(insertion, deletion, match)){
+          j--;
+          i--;
+        }else if(insertion == minimum(insertion, deletion, match)){
+          i--;
+        }else{
+          i-=2;
+          j-=2;
+        }
+        warpingPath.append(Point(j,i));
+      }
+    }
+  }
+
+  this->warpingPath = warpingPath;
+
+  return warpingPath;
+}
+
+void Dtw::applyStepPatternType1(bool activeWindowSize, int windowSize, bool windowAdapted)
+{
+  double insertion = 0.0;
+  double deletion = 0.0;
+  double match = 0.0;
+
+  double dtwValue = 0.0;
+
+  int currentWindowSize = windowSize;
+  if(activeWindowSize && windowAdapted){
+    currentWindowSize = max(windowSize, abs(dtwDistanceMatrix.cols - dtwDistanceMatrix.rows));
+  }
+
+  int newI = 1;
+  int newCondition = dtwDistanceMatrix.rows;
+
+  for (int i = 1; i < dtwDistanceMatrix.cols; ++i) {
+
+    if(activeWindowSize){
+      newI =  max(1, i-currentWindowSize);
+      newCondition = min(dtwDistanceMatrix.rows,i+currentWindowSize);
+    }
+
+    for (int j = newI; j < newCondition; ++j) {
+      insertion = dtwDistanceMatrix.at<double>(j, i-1);
+      deletion = dtwDistanceMatrix.at<double>(j-1, i);
+      match = dtwDistanceMatrix.at<double>(j-1, i-1);
+
+      if(slopeWeights){
+        insertion += distanceMatrix.at<double>(j-1,i-1);
+        deletion +=  distanceMatrix.at<double>(j-1,i-1);
+        match += 2*distanceMatrix.at<double>(j-1,i-1);
+
+        dtwValue =  minimum(insertion, deletion, match);
+      }else{
+        dtwValue =  distanceMatrix.at<double>(j-1,i-1) + minimum(insertion, deletion, match);
+      }
+      //ROS_INFO("match %f value %f", match, dtwValue);
+
+
+      dtwDistanceMatrix.at<double>(j,i) = dtwValue;
+    }
+  }
+}
+
+void Dtw::applyStepPatternType2(bool activeWindowSize, int windowSize, bool windowAdapted)
+{
+  double insertion = 0.0;
+  double deletion = 0.0;
+  double match = 0.0;
+
+  double insertionDistance = 0.0;
+  double deletionDistance = 0.0;
+  double matchDistance = 0.0;
+
+  double dtwValue = 0.0;
+
+  int currentWindowSize = windowSize;
+  if(activeWindowSize && windowAdapted){
+    currentWindowSize = max(windowSize, abs(dtwDistanceMatrix.cols - dtwDistanceMatrix.rows));
+  }
+
+  int newI = 1;
+  int newCondition = dtwDistanceMatrix.rows;
+
+  for (int i = 1; i < dtwDistanceMatrix.cols; ++i) {
+
+    if(activeWindowSize){
+      newI =  max(1, i-currentWindowSize);
+      newCondition = min(dtwDistanceMatrix.rows,i+currentWindowSize);
+    }
+
+    for (int j = newI; j < newCondition; ++j) {
+      insertion = dtwDistanceMatrix.at<double>(j-1, i-2);
+      deletion = dtwDistanceMatrix.at<double>(j-1, i-1);
+      match = dtwDistanceMatrix.at<double>(j-2, i-1);
+
+      insertionDistance = distanceMatrix.at<double>(j-1,i-2) + distanceMatrix.at<double>(j-1,i-1);
+      deletionDistance = distanceMatrix.at<double>(j-1,i-1);
+      matchDistance = distanceMatrix.at<double>(j-2,i-1) + distanceMatrix.at<double>(j-1,i-1);
+
+      if(slopeWeights){
+        insertion += 0.5*(insertionDistance);
+        deletion +=  deletionDistance;
+        match += 0.5*(matchDistance);
+      }else{
+        insertion += insertionDistance;
+        deletion +=  deletionDistance;
+        match += matchDistance;
+      }
+
+      dtwValue =  minimum(insertion, deletion, match);
+
+      dtwDistanceMatrix.at<double>(j,i) = dtwValue;
+    }
+  }
+}
+
+void Dtw::applyStepPatternType3(bool activeWindowSize, int windowSize, bool windowAdapted)
+{
+  double insertion = 0.0;
+  double deletion = 0.0;
+  double match = 0.0;
+
+  double dtwValue = 0.0;
+
+  int currentWindowSize = windowSize;
+  if(activeWindowSize && windowAdapted){
+    currentWindowSize = max(windowSize, abs(dtwDistanceMatrix.cols - dtwDistanceMatrix.rows));
+  }
+
+  int newI = 1;
+  int newCondition = dtwDistanceMatrix.rows;
+
+  for (int i = 1; i < dtwDistanceMatrix.cols; ++i) {
+
+    if(activeWindowSize){
+      newI =  max(1, i-currentWindowSize);
+      newCondition = min(dtwDistanceMatrix.rows,i+currentWindowSize);
+    }
+
+    for (int j = newI; j < newCondition; ++j) {
+      insertion = dtwDistanceMatrix.at<double>(j-1, i-1);
+      deletion = dtwDistanceMatrix.at<double>(j-2, i-1);
+      match = dtwDistanceMatrix.at<double>(j-1, i-2);
+
+      if(slopeWeights){
+        insertion += 2*distanceMatrix.at<double>(j-1,i-1);
+        deletion +=  3*distanceMatrix.at<double>(j-1,i-1);
+        match += 3*distanceMatrix.at<double>(j-1,i-1);
+
+        dtwValue =  minimum(insertion, deletion, match);
+      }else{
+        dtwValue =  distanceMatrix.at<double>(j-1,i-1) + minimum(insertion, deletion, match);
+      }
+
+      dtwDistanceMatrix.at<double>(j,i) = dtwValue;
+    }
+  }
+}
+
+void Dtw::applyStepPatternType4(bool activeWindowSize, int windowSize, bool windowAdapted)
+{
+  double insertion = 0.0;
+  double deletion = 0.0;
+  double match = 0.0;
+  double match2 = 0.0;
+
+  double insertionDistance = 0.0;
+  double deletionDistance = 0.0;
+  double matchDistance = 0.0;
+  double match2Distance = 0.0;
+
+  double dtwValue = 0.0;
+
+  int currentWindowSize = windowSize;
+  if(activeWindowSize && windowAdapted){
+    currentWindowSize = max(windowSize, abs(dtwDistanceMatrix.cols - dtwDistanceMatrix.rows));
+  }
+
+  int newI = 1;
+  int newCondition = dtwDistanceMatrix.rows;
+
+  for (int i = 1; i < dtwDistanceMatrix.cols; ++i) {
+
+    if(activeWindowSize){
+      newI =  max(1, i-currentWindowSize);
+      newCondition = min(dtwDistanceMatrix.rows,i+currentWindowSize);
+    }
+
+    for (int j = newI; j < newCondition; ++j) {
+      insertion = dtwDistanceMatrix.at<double>(j-1, i-2);
+      deletion = dtwDistanceMatrix.at<double>(j-2, i-2);
+      match = dtwDistanceMatrix.at<double>(j-1, i-1);
+      match2 = dtwDistanceMatrix.at<double>(j-2, i-1);
+
+      insertionDistance = distanceMatrix.at<double>(j-1,i-2) + distanceMatrix.at<double>(j-1,i-1);
+      deletionDistance = distanceMatrix.at<double>(j-1,i-2) + distanceMatrix.at<double>(j-1,i-1);
+      matchDistance =  distanceMatrix.at<double>(j-1,i-1);
+      match2Distance = distanceMatrix.at<double>(j-1,i-1);
+
+      insertion += insertionDistance;
+      deletion += deletionDistance;
+      match += matchDistance;
+      match2 += match2Distance;
+
+      dtwValue = minimum(insertion, deletion, match);
+      dtwValue = minimum(dtwValue, match, match2);
+
+      dtwDistanceMatrix.at<double>(j,i) = dtwValue;
+    }
+  }
+}
+
+void Dtw::applyStepPatternType5(bool activeWindowSize, int windowSize, bool windowAdapted)
+{
+
 
   double insertion = 0.0;
   double deletion = 0.0;
@@ -245,123 +567,89 @@ QList<Point> Dtw::calculateGreedyWarpingPath()
   double insertion2 = 0.0;
   double deletion2 = 0.0;
 
-  if(stepPattern == BELLMANSTEP){
+  double dtwValue = 0.0;
 
-    while(i>1 && j>1){
-      if(i==1){
-        j--;
-      }else if(j==1){
-        i--;
-      }else{
-        insertion = dtwDistanceMatrix.at<double>(i, j-1);
-        deletion = dtwDistanceMatrix.at<double>(i-1, j);
-        match = dtwDistanceMatrix.at<double>(i-1, j-1);
-
-        if(deletion == minimum(insertion, deletion, match)){
-          i--;
-        }else if(insertion == minimum(insertion, deletion, match)){
-          j--;
-        }else{
-          i--;
-          j--;
-        }
-        warpingPath.append(Point(j,i));
-      }
-    }
-
-  }else if(stepPattern == DIAGONALSTEP){
-
-    while(i>1 && j>1){
-      if(i==2){
-        j -= 2;
-      }else if(j==2){
-        i -= 2;
-      }else{
-        insertion = dtwDistanceMatrix.at<double>(i-1, j-1);
-        deletion = dtwDistanceMatrix.at<double>(i-2, j-1);
-        match = dtwDistanceMatrix.at<double>(i-1, j-2);
-
-        if(insertion == minimum(insertion, deletion, match)){
-          i--;
-          j--;
-        }else if(deletion == minimum(insertion, deletion, match)){
-          i -= 2;
-          j--;
-        }else{
-          i--;
-          j -= 2;
-        }
-        warpingPath.append(Point(j,i));
-      }
-    }
-
-  }else if(stepPattern == ITAKURASTEP){
-    while(i>1 && j>1){
-      if(i==1){
-        j--;
-      }else if(j==1){
-        i --;
-      }else{
-        insertion = dtwDistanceMatrix.at<double>(i-1, j-1);
-        deletion = dtwDistanceMatrix.at<double>(i-2, j-3);
-        match = dtwDistanceMatrix.at<double>(i-3, j-2);
-
-        if(insertion == minimum(insertion, deletion, match)){
-          i--;
-          j--;
-        }else if(deletion == minimum(insertion, deletion, match)){
-          i -= 2;
-          j -= 3;
-        }else{
-          i -= 3;
-          j -= 2;
-        }
-        warpingPath.append(Point(j,i));
-      }
-    }
-  }else{
-
-    while(i>1 && j>1){
-      if(i==3){
-        j -= 3;
-      }else if(j==3){
-        i -= 3;
-      }else{
-        insertion = dtwDistanceMatrix.at<double>(i-1, j-1) + distanceMatrix.at<double>(i-1,j-1);
-        deletion = dtwDistanceMatrix.at<double>(i-2, j-1) + distanceMatrix.at<double>(i-2,j-1) + distanceMatrix.at<double>(i-1,j-1);
-        match = dtwDistanceMatrix.at<double>(i-1, j-2) + distanceMatrix.at<double>(i-1,j-2) + distanceMatrix.at<double>(i-1,j-1);
-        insertion2 = dtwDistanceMatrix.at<double>(i-3, j-1) + distanceMatrix.at<double>(i-3,j-1) + distanceMatrix.at<double>(i-2,j-1) + distanceMatrix.at<double>(i-1,j-1);
-        deletion2 = dtwDistanceMatrix.at<double>(i-1, j-3) + distanceMatrix.at<double>(i-1,j-3) + distanceMatrix.at<double>(i-1,j-2) + distanceMatrix.at<double>(i-1,j-1);
-
-        double tmpMin = minimum(insertion, deletion, match);
-
-        if(insertion == minimum(tmpMin, insertion2, deletion2)){
-          i--;
-          j--;
-        }else if(deletion == minimum(tmpMin, insertion2, deletion2)){
-          i -= 2;
-          j--;
-        }else if(match == minimum(tmpMin, insertion2, deletion2)){
-          i--;
-          j -= 2;
-        }else if(insertion2 == minimum(tmpMin, insertion2, deletion2)){
-          i -= 3;
-          j--;
-        }else{
-          i--;
-          j -= 3;
-        }
-        warpingPath.append(Point(j,i));
-      }
-    }
-
-
+  int currentWindowSize = windowSize;
+  if(activeWindowSize && windowAdapted){
+    currentWindowSize = max(windowSize, abs(dtwDistanceMatrix.cols - dtwDistanceMatrix.rows));
   }
 
+  int newI = 1;
+  int newCondition = dtwDistanceMatrix.rows;
 
-  this->warpingPath = warpingPath;
+  for (int i = 1; i < dtwDistanceMatrix.cols; ++i) {
 
-  return warpingPath;
+    if(activeWindowSize){
+      newI =  max(1, i-currentWindowSize);
+      newCondition = min(dtwDistanceMatrix.rows,i+currentWindowSize);
+    }
+
+    for (int j = newI; j < newCondition; ++j) {
+      insertion = dtwDistanceMatrix.at<double>(j-1, i-3);
+      deletion = dtwDistanceMatrix.at<double>(j-1, i-2);
+      match = dtwDistanceMatrix.at<double>(j-1, i-1);
+      insertion2 = dtwDistanceMatrix.at<double>(j-2, i-1);
+      deletion2 = dtwDistanceMatrix.at<double>(j-3, i-1);
+
+      if(slopeWeights){
+        insertion += 2*distanceMatrix.at<double>(j-1,i-3)+distanceMatrix.at<double>(j-1,i-2)+distanceMatrix.at<double>(j-1,i-1);
+        deletion +=  2*distanceMatrix.at<double>(j-1,i-2)+distanceMatrix.at<double>(j-1,i-1);
+        match += 2*distanceMatrix.at<double>(j-1,i-1);
+        insertion2 += 2*distanceMatrix.at<double>(j-2,i-1)+distanceMatrix.at<double>(j-1,i-1);
+        deletion2 += 2*distanceMatrix.at<double>(j-3,i-1)+distanceMatrix.at<double>(j-2,i-1)+distanceMatrix.at<double>(j-1,i-1);
+      }else{
+        insertion += distanceMatrix.at<double>(j-1,i-3)+distanceMatrix.at<double>(j-1,i-2)+distanceMatrix.at<double>(j-1,i-1);
+        deletion +=  distanceMatrix.at<double>(j-1,i-2)+distanceMatrix.at<double>(j-1,i-1);
+        match += distanceMatrix.at<double>(j-1,i-1);
+        insertion2 += distanceMatrix.at<double>(j-2,i-1)+distanceMatrix.at<double>(j-1,i-1);
+        deletion2 += distanceMatrix.at<double>(j-3,i-1)+distanceMatrix.at<double>(j-2,i-1)+distanceMatrix.at<double>(j-1,i-1);
+      }
+
+      dtwValue = minimum(insertion, deletion, match);
+      dtwValue = minimum(dtwValue, insertion2, deletion2);
+
+      dtwDistanceMatrix.at<double>(j,i) = dtwValue;
+    }
+  }
+}
+
+void Dtw::applyStepPatternItakura(bool activeWindowSize, int windowSize, bool windowAdapted)
+{
+  double insertion = 0.0;
+  double deletion = 0.0;
+  double match = 0.0;
+
+  double dtwValue = 0.0;
+
+  int currentWindowSize = windowSize;
+  if(activeWindowSize && windowAdapted){
+    currentWindowSize = max(windowSize, abs(dtwDistanceMatrix.cols - dtwDistanceMatrix.rows));
+  }
+
+  int newI = 1;
+  int newCondition = dtwDistanceMatrix.rows;
+
+  for (int i = 1; i < dtwDistanceMatrix.cols; ++i) {
+
+    if(activeWindowSize){
+      newI =  max(1, i-currentWindowSize);
+      newCondition = min(dtwDistanceMatrix.rows,i+currentWindowSize);
+    }
+
+    for (int j = newI; j < newCondition; ++j) {
+      insertion = dtwDistanceMatrix.at<double>(j, i-1);
+      deletion = dtwDistanceMatrix.at<double>(j-1, i-1);
+      match = dtwDistanceMatrix.at<double>(j-2, i-2);
+
+      insertion += distanceMatrix.at<double>(j-1,i-1);;
+      deletion += distanceMatrix.at<double>(j-1,i-1);;
+      match += distanceMatrix.at<double>(j-1,i-1);;
+
+      dtwValue = minimum(insertion, deletion, match);
+
+      dtwDistanceMatrix.at<double>(j,i) = dtwValue;
+    }
+  }
 }
 
 double Dtw::getWarpingPathCost()
@@ -404,25 +692,12 @@ void Dtw::printDtwDistanceMatric()
   ROS_INFO("########DtwDistanceMatrix2########");
 }
 
-double Dtw::calcWarpingCost(DistanceFunction df, int windowSize, bool windowAdapted)
+double Dtw::calcWarpingCost(DistanceFunction df, bool activeWindow, int windowSize, bool windowAdapted)
 {
   double warpingCost = 0.0;
 
   this->calculateDistanceMatrix(df);
-  this->calculateDtwDistanceMatrix(windowSize, windowAdapted);
-  this->calculateGreedyWarpingPath();
-
-  warpingCost = this->getWarpingPathCost();
-
-  return warpingCost;
-}
-
-double Dtw::calcWarpingCost(DistanceFunction df)
-{
-  double warpingCost = 0.0;
-
-  this->calculateDistanceMatrix(df);
-  this->calculateDtwDistanceMatrix();
+  this->calculateDtwDistanceMatrix(activeWindow, windowSize, windowAdapted);
   this->calculateGreedyWarpingPath();
 
   warpingCost = this->getWarpingPathCost();

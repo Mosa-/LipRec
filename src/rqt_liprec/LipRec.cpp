@@ -502,15 +502,20 @@ void LipRec::processImage(Mat img)
           int indexOfLowAreaCluster = 0;
           int indexOfLowAspectRatioCluster = 0;
 
-          DtwStepPattern stepPattern = BELLMANSTEP;
-          if(ui_.rbSQUARESP->isChecked()){
-            stepPattern = BELLMANSTEP;
-          }else if(ui_.rbDIAGONALSP->isChecked()){
-            stepPattern = DIAGONALSTEP;
-          }else if(ui_.rbITAKURASTEP->isChecked()){
-            stepPattern = ITAKURASTEP;
+          DtwStepPattern stepPattern = TYPE1;
+          QString currentStepPattern = ui_.cbDTWStepPattern->currentText();
+          if(currentStepPattern == "TYPE1"){
+            stepPattern = TYPE1;
+          }else if(currentStepPattern == "TYPE2"){
+            stepPattern = TYPE2;
+          }else if(currentStepPattern == "TYPE3"){
+            stepPattern = TYPE3;
+          }else if(currentStepPattern == "TYPE4"){
+            stepPattern = TYPE4;
+          }else if(currentStepPattern == "TYPE5"){
+            stepPattern = TYPE5;
           }else{
-            stepPattern = FIVERSTEP;
+            stepPattern = ITAKURA;
           }
 
           if(currentUtteranceTrajectories.size() > 0){
@@ -532,18 +537,18 @@ void LipRec::processImage(Mat img)
                   double warpingCostTmpArea = 0.0;
                   for (int i = 0; i < clusterT.size(); i++) {
 
-                    dtw.seed(clusterT.at(i), currentUtteranceTrajectories[ui_.cbArea->text()], stepPattern);
+                    dtw.seed(clusterT.at(i), currentUtteranceTrajectories[ui_.cbArea->text()], stepPattern, ui_.cbDtwSlopeWeights->isChecked());
 
-                    if(ui_.cbDtwWindowSizeActivate->isChecked()){
-                      warpingCostTmpArea = dtw.calcWarpingCost(df, windowSize, ui_.cbDtwWindowSizeAdaptable->isChecked());
-                    }else{
-                      warpingCostTmpArea = dtw.calcWarpingCost(df);
-                    }
+                    warpingCostTmpArea = dtw.calcWarpingCost(df, ui_.cbDtwWindowSizeActivate->isChecked(), windowSize, ui_.cbDtwWindowSizeAdaptable->isChecked());
 
                     if(warpingCostTmpArea < localCost){
                       localCost = warpingCostTmpArea;
                       commandWithCost.command = command;
                       commandWithCost.cost = warpingCostTmpArea;
+                    }
+
+                    if(!ui_.cbSOLR->isChecked()){
+                      recordRecognitionData.commandArea[command].append(warpingCostTmpArea);
                     }
 
                     ROS_INFO("Area Command: %s(%d) ; Utterrance: %d -> %f",
@@ -559,6 +564,10 @@ void LipRec::processImage(Mat img)
 
                   if(commandWithCost.command != ""){
                     areaCommandsWithCost.append(commandWithCost);
+
+                    if(ui_.cbSOLR->isChecked()){
+                      recordRecognitionData.commandArea[commandWithCost.command].append(commandWithCost.cost);
+                    }
                     commandWithCost.command = "";
                   }
 
@@ -568,18 +577,18 @@ void LipRec::processImage(Mat img)
 
                   double warpingCostTmpAspectRatio = 0.0;
                   for (int i = 0; i < clusterT.size(); i++) {
-                    dtw.seed(clusterT.at(i), currentUtteranceTrajectories[ui_.cbAspectRatio->text()], stepPattern);
+                    dtw.seed(clusterT.at(i), currentUtteranceTrajectories[ui_.cbAspectRatio->text()], stepPattern, ui_.cbDtwSlopeWeights->isChecked());
 
-                    if(ui_.cbDtwWindowSizeActivate->isChecked()){
-                      warpingCostTmpAspectRatio =  dtw.calcWarpingCost(df, windowSize, ui_.cbDtwWindowSizeAdaptable->isChecked());
-                    }else{
-                      warpingCostTmpAspectRatio =  dtw.calcWarpingCost(df);
-                    }
+                    warpingCostTmpAspectRatio = dtw.calcWarpingCost(df, ui_.cbDtwWindowSizeActivate->isChecked(), windowSize, ui_.cbDtwWindowSizeAdaptable->isChecked());
 
                     if(warpingCostTmpAspectRatio < localCost){
                       localCost = warpingCostTmpArea;
                       commandWithCost.command = command;
                       commandWithCost.cost = warpingCostTmpAspectRatio;
+                    }
+
+                    if(!ui_.cbSOLR->isChecked()){
+                      recordRecognitionData.commandAspectRatio[command].append(warpingCostTmpAspectRatio);
                     }
 
                     ROS_INFO("AspectRatio Command: %s(%d) ; Utterrance: %d -> %f",
@@ -594,6 +603,10 @@ void LipRec::processImage(Mat img)
 
                   if(commandWithCost.command != ""){
                     aspectRatioCommandsWithCost.append(commandWithCost);
+
+                    if(ui_.cbSOLR->isChecked()){
+                      recordRecognitionData.commandAspectRatio[commandWithCost.command].append(commandWithCost.cost);
+                    }
                     commandWithCost.command = "";
                   }
                 }
@@ -637,7 +650,53 @@ void LipRec::processImage(Mat img)
 
                   this->setLblMsgRecordRecognition(QString::number(currentUtteranceTrajectories[ui_.cbAspectRatio->text()].size()));
 
+//                  QMap<QString, QList<double> > commandFusion;
+//                  QMap<QString, QList<double> > commandArea;
+//                  QMap<QString, QList<double> > commandAspectRatio;
+
                   recordRecognitionData.fileName = ui_.leFilenameRecord->text();
+                  recordRecognitionData.onlyLowestRecognition = ui_.cbSOLR->isChecked();
+
+                  if(ui_.rbDTWSA->isChecked()){
+                    recordRecognitionData.similarityAlgorithm = "DTW";
+                  }else{
+                    recordRecognitionData.similarityAlgorithm = "EUCLIDEAN";
+                  }
+
+                  if(ui_.rbABS->isChecked()){
+                    recordRecognitionData.distanceFunction =  "ABS";
+                  }else if(ui_.rbSQUARE->isChecked()){
+                    recordRecognitionData.distanceFunction =  "SQUARE";
+                  }else{
+                    recordRecognitionData.distanceFunction = "SQUARE2";
+                  }
+
+                  recordRecognitionData.dtwStepPattern = ui_.cbDTWStepPattern->currentText();
+                  recordRecognitionData.dtwWindowActive = ui_.cbDtwWindowSizeActivate->isChecked();
+                  recordRecognitionData.dtwWindowSize = ui_.spDtwWindowSize->value();
+                  recordRecognitionData.dtwWindowAdaptable = ui_.cbDtwWindowSizeAdaptable->isChecked();
+                  recordRecognitionData.dtwSlopeWeights = ui_.cbDtwSlopeWeights->isChecked();
+
+                  if(ui_.rbSingleFF->isChecked()){
+                    recordRecognitionData.featureFusion = "SINGLE";
+                  }else if(ui_.rbFusionFF->isChecked()){
+                    recordRecognitionData.featureFusion = "FUSION";
+                  }else{
+                    recordRecognitionData.featureFusion = "BOTH";
+                  }
+
+                  if(ui_.rbKmedoids->isChecked()){
+                    recordRecognitionData.clusterMethod = "K-MEDOIDS";
+                  }else{
+                    recordRecognitionData.clusterMethod = "SIMPLE-CLUSTER";
+                  }
+
+                  recordRecognitionData.clusterK = ui_.sbKMethod->value();
+
+                  recordRecognitionData.utteranceLength = currentUtteranceTrajectories[ui_.cbAspectRatio->text()].size();
+
+                  if(ui_.cbSOLR->isChecked()){
+                  }
 
                 }
 
@@ -661,14 +720,10 @@ void LipRec::processImage(Mat img)
                   double warpingCostFusionTmp = 0.0;
 
                   for (int i = 0; i < clusterT.size(); ++i) {
-                    dtw.seed(clusterT.at(i), currentUtteranceTrajectories[ui_.cbArea->text()], stepPattern);
+                    dtw.seed(clusterT.at(i), currentUtteranceTrajectories[ui_.cbArea->text()], stepPattern, ui_.cbDtwSlopeWeights->isChecked());
 
-                    double wpArea = 0.0;
-                    if(ui_.cbDtwWindowSizeActivate->isChecked()){
-                      wpArea = dtw.calcWarpingCost(df, windowSize, ui_.cbDtwWindowSizeAdaptable->isChecked());
-                    }else{
-                      wpArea = dtw.calcWarpingCost(df);
-                    }
+                    double wpArea = dtw.calcWarpingCost(df, ui_.cbDtwWindowSizeActivate->isChecked(), windowSize, ui_.cbDtwWindowSizeAdaptable->isChecked());
+
 
                     ROS_INFO("Area Command: %s(%d) ; Utterrance: %d -> %f",
                              command.toStdString().c_str(), clusterT.at(i).size(),
@@ -681,15 +736,11 @@ void LipRec::processImage(Mat img)
                   }
 
                   for (int i = 0; i < clusterT2.size(); ++i) {
-                    dtw.seed(clusterT2.at(i), currentUtteranceTrajectories[ui_.cbAspectRatio->text()], stepPattern);
+                    dtw.seed(clusterT2.at(i), currentUtteranceTrajectories[ui_.cbAspectRatio->text()], stepPattern, ui_.cbDtwSlopeWeights->isChecked());
 
                     double wpAspectRatio = 0.0;
 
-                    if(ui_.cbDtwWindowSizeActivate->isChecked()){
-                      wpAspectRatio = dtw.calcWarpingCost(df, windowSize, ui_.cbDtwWindowSizeAdaptable->isChecked());
-                    }else{
-                      wpAspectRatio = dtw.calcWarpingCost(df);
-                    }
+                    wpAspectRatio = dtw.calcWarpingCost(df, ui_.cbDtwWindowSizeActivate->isChecked(), windowSize, ui_.cbDtwWindowSizeAdaptable->isChecked());
 
                     ROS_INFO("Aspect Ratio Command: %s(%d) ; Utterrance: %d -> %f",
                              command.toStdString().c_str(), clusterT2.at(i).size(),
@@ -994,13 +1045,10 @@ QPixmap LipRec::drawDTWPixmap(QString currentCommand, QString feature, int index
   int windowSize = ui_.spDtwWindowSize->value();
 
   if(!clusterT.isEmpty()){
-    dtw.seed(clusterT.at(indexOfLowCluster), currentUtteranceTrajectories[feature], stepPattern);
+    dtw.seed(clusterT.at(indexOfLowCluster), currentUtteranceTrajectories[feature], stepPattern, ui_.cbDtwSlopeWeights->isChecked());
 
-    if(ui_.cbDtwWindowSizeActivate->isChecked()){
-      dtw.calcWarpingCost(df, windowSize, ui_.cbDtwWindowSizeAdaptable->isChecked());
-    }else{
-      dtw.calcWarpingCost(df);
-    }
+    dtw.calcWarpingCost(df, ui_.cbDtwWindowSizeActivate->isChecked(), windowSize, ui_.cbDtwWindowSizeAdaptable->isChecked());
+
     Mat dtwMat;
     Mat dtwMat2(dtw.getDtwDistanceMatrix().rows-1, dtw.getDtwDistanceMatrix().cols-1, CV_64F);
 
@@ -1708,13 +1756,20 @@ void LipRec::applyCluster(QString clusterMethod, DistanceFunction df, QString co
   QList<QList<double> > clusterT = tdm.getClusterTrajectories(command, feature, clusterMethod);
   QList<QList<double> > traj = tdm.getTrajectory(command, feature);
 
-  DtwStepPattern stepPattern = BELLMANSTEP;
-  if(ui_.rbSQUARESP->isChecked()){
-    stepPattern = BELLMANSTEP;
-  }else if(ui_.rbDIAGONALSP->isChecked()){
-    stepPattern = DIAGONALSTEP;
+  DtwStepPattern stepPattern = TYPE1;
+  QString currentStepPattern = ui_.cbDTWStepPattern->currentText();
+  if(currentStepPattern == "TYPE1"){
+    stepPattern = TYPE1;
+  }else if(currentStepPattern == "TYPE2"){
+    stepPattern = TYPE2;
+  }else if(currentStepPattern == "TYPE3"){
+    stepPattern = TYPE3;
+  }else if(currentStepPattern == "TYPE4"){
+    stepPattern = TYPE4;
+  }else if(currentStepPattern == "TYPE5"){
+    stepPattern = TYPE5;
   }else{
-    stepPattern = FIVERSTEP;
+    stepPattern = ITAKURA;
   }
 
   if(traj.size() > 0){
@@ -1722,7 +1777,7 @@ void LipRec::applyCluster(QString clusterMethod, DistanceFunction df, QString co
 
     if(ui_.rbKmedoids->isChecked()){
       clustering.setK(ui_.sbKMethod->value());
-      traj = clustering.kMedoidsClustering(df, stepPattern, ui_.cbDtwWindowSizeActivate->isChecked(), ui_.spDtwWindowSize->value(), ui_.cbDtwWindowSizeAdaptable->isChecked());
+      traj = clustering.kMedoidsClustering(df, stepPattern, ui_.cbDtwSlopeWeights->isChecked(), ui_.cbDtwWindowSizeActivate->isChecked(), ui_.spDtwWindowSize->value(), ui_.cbDtwWindowSizeAdaptable->isChecked());
     }else{
       traj = clustering.simpleClustering(df, ui_.sbKMethod->value());
     }

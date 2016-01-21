@@ -36,10 +36,12 @@ enum DistanceFunction{
 };
 
 enum DtwStepPattern{
-  BELLMANSTEP,
-  DIAGONALSTEP,
-  FIVERSTEP,
-  ITAKURASTEP
+  TYPE1,
+  TYPE2,
+  TYPE3,
+  TYPE4,
+  TYPE5,
+  ITAKURA
 };
 
 struct RecordRecognitionData{
@@ -52,6 +54,7 @@ struct RecordRecognitionData{
   bool dtwWindowActive;
   int dtwWindowSize;
   bool dtwWindowAdaptable;
+  bool dtwSlopeWeights;
 
   QString featureFusion;
 

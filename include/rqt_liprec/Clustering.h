@@ -20,7 +20,7 @@ public:
     Clustering(int k);
     virtual ~Clustering();
 
-    QList<QList<double> > kMedoidsClustering(DistanceFunction df, DtwStepPattern stepPattern, bool windowSizeActive, int windowSize, bool windowAdapted);
+    QList<QList<double> > kMedoidsClustering(DistanceFunction df, DtwStepPattern stepPattern, bool slopeWeights, bool windowSizeActive, int windowSize, bool windowAdapted);
     QList<QList<double> > simpleClustering(DistanceFunction df, int noExceptTrajectories);
 
     void addTrajectories(QList<QList<double> > trajectories);

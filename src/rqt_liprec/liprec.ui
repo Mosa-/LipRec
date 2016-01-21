@@ -4639,54 +4639,54 @@ QGroupBox::title {
                     <number>0</number>
                    </property>
                    <item row="1" column="0">
-                    <widget class="QRadioButton" name="rbDIAGONALSP">
+                    <widget class="QCheckBox" name="cbDtwSlopeWeights">
                      <property name="font">
                       <font>
-                       <pointsize>9</pointsize>
+                       <pointsize>8</pointsize>
+                       <weight>50</weight>
+                       <bold>false</bold>
                       </font>
                      </property>
-                     <property name="text">
-                      <string>DIAGONAL</string>
-                     </property>
-                    </widget>
-                   </item>
-                   <item row="3" column="0">
-                    <widget class="QRadioButton" name="rbFIVERSP">
-                     <property name="font">
-                      <font>
-                       <pointsize>9</pointsize>
-                      </font>
+                     <property name="styleSheet">
+                      <string notr="true"/>
                      </property>
                      <property name="text">
-                      <string>FIVER</string>
+                      <string>Slope weights</string>
                      </property>
                     </widget>
                    </item>
                    <item row="0" column="0">
-                    <widget class="QRadioButton" name="rbSQUARESP">
-                     <property name="font">
-                      <font>
-                       <pointsize>9</pointsize>
-                      </font>
-                     </property>
-                     <property name="text">
-                      <string>BELLMAN</string>
-                     </property>
-                     <property name="checked">
-                      <bool>true</bool>
-                     </property>
-                    </widget>
-                   </item>
-                   <item row="2" column="0">
-                    <widget class="QRadioButton" name="rbITAKURASTEP">
-                     <property name="font">
-                      <font>
-                       <pointsize>9</pointsize>
-                      </font>
-                     </property>
-                     <property name="text">
-                      <string>ITAKURA</string>
-                     </property>
+                    <widget class="QComboBox" name="cbDTWStepPattern">
+                     <item>
+                      <property name="text">
+                       <string>TYPE1</string>
+                      </property>
+                     </item>
+                     <item>
+                      <property name="text">
+                       <string>TYPE2</string>
+                      </property>
+                     </item>
+                     <item>
+                      <property name="text">
+                       <string>TYPE3</string>
+                      </property>
+                     </item>
+                     <item>
+                      <property name="text">
+                       <string>TYPE4</string>
+                      </property>
+                     </item>
+                     <item>
+                      <property name="text">
+                       <string>TYPE5</string>
+                      </property>
+                     </item>
+                     <item>
+                      <property name="text">
+                       <string>ITAKURA</string>
+                      </property>
+                     </item>
                     </widget>
                    </item>
                   </layout>
@@ -4846,6 +4846,9 @@ QGroupBox::title {
                      </property>
                      <property name="text">
                       <string>Activate</string>
+                     </property>
+                     <property name="checked">
+                      <bool>false</bool>
                      </property>
                     </widget>
                    </item>
