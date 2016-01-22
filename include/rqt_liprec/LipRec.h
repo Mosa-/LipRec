@@ -153,6 +153,7 @@ private:
 
     RecordRecognitionState recordRecognitionState;
     RecordRecognitionData recordRecognitionData;
+    QString currentRecordRecognitionFilename;
 
     qint64 lcdUpdateTimeStamp;
 
@@ -210,7 +211,9 @@ private:
                                Point keyPoint1, Point keyPoint2, Point keyPoint3, Point keyPoint4, Point keyPoint5, Point keyPoint6);
     void updateClusterTrajectories();
 
+    void changeRecordRecognitionStateToDecisionIfPossible();
     void setLblMsgRecordRecognition(QString msg);
+    void fillRecordRecognitionData();
 
 public slots:
     void getCamPic(Mat img);

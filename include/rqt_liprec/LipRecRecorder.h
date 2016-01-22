@@ -37,6 +37,9 @@ public:
   void setFileName(QString fileName);
 
   void writeToTextFile(QString fileName, RecordRecognitionData &recordRecognitionData);
+  void writeHeaderToTextFile(QString fileName, RecordRecognitionData &recordRecognitionData);
+
+  void composeRecords(QString& text, QString postFix, QMap<QString, QList<double> > &records);
 private:
   QString fileName;
 
