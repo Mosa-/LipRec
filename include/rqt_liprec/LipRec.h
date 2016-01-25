@@ -143,13 +143,6 @@ private:
     bool printFeatures;
 
     bool updateRecognizedText;
-    struct CommandWithCost{
-      bool operator<(const CommandWithCost& other) const {
-          return cost < other.cost;
-      }
-      QString command;
-      double cost;
-    };
 
     RecordRecognitionState recordRecognitionState;
     RecordRecognitionData recordRecognitionData;

@@ -30,6 +30,10 @@ void LipRec::initPlugin(qt_gui_cpp::PluginContext& context)
 
   if(argv.size() != 4){
     ROS_INFO("Four arguments necessary!");
+    blackBorder = false;
+    ui_.cbFaceROI->setChecked(false);
+    ui_.cbMouthROI->setChecked(false);
+    useMonoImage = false;
   }else{
     int showFaceROI = argv[0].toInt();
     int showMouthROI = argv[1].toInt();
@@ -384,7 +388,9 @@ void LipRec::processImage(Mat img)
   int currentFrame = 0;
   currentFrame = updateFrameBuffer(rawMouthImg);
 
-  this->lipsActivation(currentFrame);
+  if(!rawMouthImg.empty()){
+    this->lipsActivation(currentFrame);
+  }
 
   DistanceFunction df;
   if(ui_.rbABS->isChecked()){
@@ -551,8 +557,8 @@ void LipRec::processImage(Mat img)
                       recordRecognitionData.commandArea[command].append(warpingCostTmpArea);
                     }
 
-                    ROS_INFO("Area Command: %s(%d) ; Utterrance: %d -> %f",
-                             command.toStdString().c_str(), clusterT.at(i).size(), currentUtteranceTrajectories[ui_.cbArea->text()].size(), warpingCostTmpArea);
+//                    ROS_INFO("Area Command: %s(%d) ; Utterrance: %d -> %f",
+//                             command.toStdString().c_str(), clusterT.at(i).size(), currentUtteranceTrajectories[ui_.cbArea->text()].size(), warpingCostTmpArea);
 
                     if(warpingCostTmpArea < bestWarpingCostArea){
                       indexOfLowAreaCluster = i;
@@ -591,8 +597,8 @@ void LipRec::processImage(Mat img)
                       recordRecognitionData.commandAspectRatio[command].append(warpingCostTmpAspectRatio);
                     }
 
-                    ROS_INFO("AspectRatio Command: %s(%d) ; Utterrance: %d -> %f",
-                             command.toStdString().c_str(), clusterT.at(i).size(), currentUtteranceTrajectories[ui_.cbAspectRatio->text()].size(), warpingCostTmpAspectRatio);
+//                    ROS_INFO("AspectRatio Command: %s(%d) ; Utterrance: %d -> %f",
+//                             command.toStdString().c_str(), clusterT.at(i).size(), currentUtteranceTrajectories[ui_.cbAspectRatio->text()].size(), warpingCostTmpAspectRatio);
 
                     if(warpingCostTmpAspectRatio < bestWarpingCostAspectRatio){
                       indexOfLowAspectRatioCluster = i;
@@ -645,8 +651,8 @@ void LipRec::processImage(Mat img)
 
                 this->changeRecordRecognitionStateToDecisionIfPossible();
 
-                ROS_INFO("Recognize Area: %s", currentCommandArea.toStdString().c_str());
-                ROS_INFO("Recognize AspectRatio: %s", currentCommandAspectRatio.toStdString().c_str());
+//                ROS_INFO("Recognize Area: %s", currentCommandArea.toStdString().c_str());
+//                ROS_INFO("Recognize AspectRatio: %s", currentCommandAspectRatio.toStdString().c_str());
 
               }else if(ui_.rbFusionFF->isChecked()){
 
@@ -669,10 +675,9 @@ void LipRec::processImage(Mat img)
 
                     double wpArea = dtw.calcWarpingCost(df, ui_.cbDtwWindowSizeActivate->isChecked(), windowSize, ui_.cbDtwWindowSizeAdaptable->isChecked());
 
-
-                    ROS_INFO("Area Command: %s(%d) ; Utterrance: %d -> %f",
-                             command.toStdString().c_str(), clusterT.at(i).size(),
-                             currentUtteranceTrajectories[ui_.cbArea->text()].size(), wpArea);
+//                    ROS_INFO("Area Command: %s(%d) ; Utterrance: %d -> %f",
+//                             command.toStdString().c_str(), clusterT.at(i).size(),
+//                             currentUtteranceTrajectories[ui_.cbArea->text()].size(), wpArea);
 
                     if(wpArea < warpingCostTmpArea){
                       indexOfLowAreaCluster = i;
@@ -687,9 +692,9 @@ void LipRec::processImage(Mat img)
 
                     wpAspectRatio = dtw.calcWarpingCost(df, ui_.cbDtwWindowSizeActivate->isChecked(), windowSize, ui_.cbDtwWindowSizeAdaptable->isChecked());
 
-                    ROS_INFO("Aspect Ratio Command: %s(%d) ; Utterrance: %d -> %f",
-                             command.toStdString().c_str(), clusterT2.at(i).size(),
-                             currentUtteranceTrajectories[ui_.cbAspectRatio->text()].size(), wpAspectRatio);
+//                    ROS_INFO("Aspect Ratio Command: %s(%d) ; Utterrance: %d -> %f",
+//                             command.toStdString().c_str(), clusterT2.at(i).size(),
+//                             currentUtteranceTrajectories[ui_.cbAspectRatio->text()].size(), wpAspectRatio);
 
                     if(wpAspectRatio < warpingCostTmpAspectRatio){
                       indexOfLowAspectRatioCluster = i;
@@ -741,7 +746,7 @@ void LipRec::processImage(Mat img)
 
                 this->changeRecordRecognitionStateToDecisionIfPossible();
 
-                ROS_INFO("Recognize Fusion: %s", currentCommandFusion.toStdString().c_str());
+//                ROS_INFO("Recognize Fusion: %s", currentCommandFusion.toStdString().c_str());
               }
 
             }else if(ui_.rbEuclideanDistSA->isChecked()){
@@ -787,8 +792,8 @@ void LipRec::processImage(Mat img)
                     recordRecognitionData.commandArea[command].append(euclideanDistanceTmpArea);
                   }
 
-                  ROS_INFO("Area Command: %s(%d) ; Utterrance: %d -> %f",
-                           command.toStdString().c_str(), clusterT.at(i).size(), currentUtteranceTrajectories[ui_.cbArea->text()].size(), euclideanDistanceTmpArea);
+//                  ROS_INFO("Area Command: %s(%d) ; Utterrance: %d -> %f",
+//                           command.toStdString().c_str(), clusterT.at(i).size(), currentUtteranceTrajectories[ui_.cbArea->text()].size(), euclideanDistanceTmpArea);
 
                   if(euclideanDistanceTmpArea < bestEuclideanDistanceArea){
                     indexOfLowAreaCluster = i;
@@ -839,8 +844,8 @@ void LipRec::processImage(Mat img)
                     recordRecognitionData.commandAspectRatio[command].append(euclideanDistanceTmpAspectRatio);
                   }
 
-                  ROS_INFO("Aspect Ratio Command: %s(%d) ; Utterrance: %d -> %f",
-                           command.toStdString().c_str(), clusterT.at(i).size(), currentUtteranceTrajectories[ui_.cbAspectRatio->text()].size(), euclideanDistanceTmpAspectRatio);
+//                  ROS_INFO("Aspect Ratio Command: %s(%d) ; Utterrance: %d -> %f",
+//                           command.toStdString().c_str(), clusterT.at(i).size(), currentUtteranceTrajectories[ui_.cbAspectRatio->text()].size(), euclideanDistanceTmpAspectRatio);
 
                   if(euclideanDistanceTmpAspectRatio < bestEuclideanDistanceAspectRatio){
                     indexOfLowAreaCluster = i;
@@ -883,9 +888,8 @@ void LipRec::processImage(Mat img)
 
               this->changeRecordRecognitionStateToDecisionIfPossible();
 
-              ROS_INFO("Recognize Area: %s", currentCommandArea.toStdString().c_str());
-              ROS_INFO("Recognize AspectRatio: %s", currentCommandAspectRatio.toStdString().c_str());
-
+//              ROS_INFO("Recognize Area: %s", currentCommandArea.toStdString().c_str());
+//              ROS_INFO("Recognize AspectRatio: %s", currentCommandAspectRatio.toStdString().c_str());
             }
           }
 
@@ -1032,8 +1036,12 @@ QPixmap LipRec::drawDTWPixmap(QString currentCommand, QString feature, int index
     double sum = 0.0;
     for (int i = 0; i < dtw.getWarpingPath().size(); ++i) {
       circle(dtwMat, dtw.getWarpingPath().at(i), 1, Scalar(255,255,255));
-      sum += dtw.getDtwDistanceMatrix().at<double>(dtw.getWarpingPath().at(i).y, dtw.getWarpingPath().at(i).x);
+
+      if(dtw.getWarpingPath().at(i).y < dtw.getDtwDistanceMatrix().rows && dtw.getWarpingPath().at(i).x < dtw.getDtwDistanceMatrix().cols){
+        sum += dtw.getDtwDistanceMatrix().at<double>(dtw.getWarpingPath().at(i));
+      }
     }
+
     //ROS_INFO("SUM %f", sum);
 
     dtwMat = 255 - dtwMat;
@@ -1209,7 +1217,7 @@ void LipRec::changeLipActivationState(int activation, Mat& imageAbsDiff, int cur
       }
 
       //Size size = Size(imageAbsDiff.size().width, imageAbsDiff.size().height);
-      Mat mt(imageAbsDiff.rows, imageAbsDiff.cols, CV_8UC1, Scalar(0));
+      Mat mt(imageAbsDiff.rows, imageAbsDiff.cols, CV_8UC1, Scalar(-1));
 
       //2. take max pixel intensity value
       for (int i = 0; i < utterance.size(); ++i) {
@@ -1227,12 +1235,12 @@ void LipRec::changeLipActivationState(int activation, Mat& imageAbsDiff, int cur
 
       //imageProcessing.squareImage(mt);
 
-      if(!mt.empty()){
+      if(!mt.empty() || mt.at<double>(0,0) != -1){
         pixMap = imageProcessing.getPixmap(mt, useMonoImage);
-      }
 
-      pixMap = pixMap.scaled(ui_.lblMouthDiffSum->maximumWidth(), ui_.lblMouthDiffSum->maximumHeight(), Qt::KeepAspectRatio, Qt::SmoothTransformation);
-      ui_.lblMouthDiffSum->setPixmap(pixMap);
+        pixMap = pixMap.scaled(ui_.lblMouthDiffSum->maximumWidth(), ui_.lblMouthDiffSum->maximumHeight(), Qt::KeepAspectRatio, Qt::SmoothTransformation);
+        ui_.lblMouthDiffSum->setPixmap(pixMap);
+      }
 
     }else if(activation <= ui_.sbST->value()){
       //Silence during Utterance
@@ -1656,6 +1664,9 @@ void LipRec::clickedSaveRecordRecognition(){
     ui_.pbRecordRecognition->setChecked(false);
 
 
+
+
+
     if(ui_.cbContinueAppending->isChecked() || currentRecordRecognitionFilename == ui_.leFilenameRecord->text()){
       lipRecRecorder.writeToTextFile(ui_.leFilenameRecord->text(), recordRecognitionData);
     }else{
@@ -1884,24 +1895,25 @@ void LipRec::lipsActivation(int currentFrame)
   if(frameBuffer.at(last).cols == frameBuffer.at(currentFrame).cols
      && frameBuffer.at(last).rows == frameBuffer.at(currentFrame).rows){
 
-
     //temporal segmentation
     d = imageProcessing.generatePixelDifference(frameBuffer[currentFrame], frameBuffer[last]);
 
     ui_.lcdPixelWiseDiff->display(QString::number(d,'f',0));
 
     imageAbsDiff = imageProcessing.createImageAbsDiff(frameBuffer[currentFrame], frameBuffer[last]);
-  }
 
-  //temporal segmentation
-  int activation = QString::number(d,'f',0).toInt();
+    //temporal segmentation
+    int activation = QString::number(d,'f',0).toInt();
 
-  this->changeLipActivationState(activation, imageAbsDiff, currentFrame);
+    ROS_INFO("imagAbsDiff %d, %d, %d", imageAbsDiff.cols, imageAbsDiff.rows, imageAbsDiff.empty());
 
-  if(!imageAbsDiff.empty()){
-    //    pixMap = imageProcessing.getPixmap(imageAbsDiff, true);
-    //    pixMap = pixMap.scaled(ui_.lblMouthDiff->maximumWidth(), ui_.lblMouthDiff->maximumHeight(), Qt::KeepAspectRatio, Qt::SmoothTransformation);
-    //    ui_.lblMouthDiff->setPixmap(pixMap);
+    if(!imageAbsDiff.empty()){
+      this->changeLipActivationState(activation, imageAbsDiff, currentFrame);
+      //    pixMap = imageProcessing.getPixmap(imageAbsDiff, true);
+      //    pixMap = pixMap.scaled(ui_.lblMouthDiff->maximumWidth(), ui_.lblMouthDiff->maximumHeight(), Qt::KeepAspectRatio, Qt::SmoothTransformation);
+      //    ui_.lblMouthDiff->setPixmap(pixMap);
+    }
+
   }
 }
 

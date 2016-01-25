@@ -7,32 +7,32 @@
 
 enum HistogramType{
   H_NONE,
-	GHE,
-	AHE
+  GHE,
+  AHE
 };
 
 enum BlurType{
   B_NONE,
-	BLUR,
-	MEDIAN,
-	GAUSSIAN
+  BLUR,
+  MEDIAN,
+  GAUSSIAN
 };
 
 enum SignalSmoothingType{
-    S_NONE,
-    AVERAGE
+  S_NONE,
+  AVERAGE
 };
 
 enum RGB{
-    B = 0,
-    G = 1,
-    R = 2
+  B = 0,
+  G = 1,
+  R = 2
 };
 
 enum DistanceFunction{
-    SQUARE,
-    SQUARE2,
-    ABS
+  SQUARE,
+  SQUARE2,
+  ABS
 };
 
 enum DtwStepPattern{
@@ -42,6 +42,14 @@ enum DtwStepPattern{
   TYPE4,
   TYPE5,
   ITAKURA
+};
+
+struct CommandWithCost{
+  bool operator<(const CommandWithCost& other) const {
+      return cost < other.cost;
+  }
+  QString command;
+  double cost;
 };
 
 struct RecordRecognitionData{
@@ -71,6 +79,20 @@ struct RecordRecognitionData{
     commandFusion.clear();
     commandArea.clear();
     commandAspectRatio.clear();
+  }
+
+  void sortCommands(){
+
+    foreach (QString command, commandFusion.keys()) {
+      qSort(commandFusion[command].begin(), commandFusion[command].end());
+    }
+    foreach (QString command, commandArea.keys()) {
+      qSort(commandArea[command].begin(), commandArea[command].end());
+    }
+    foreach (QString command, commandAspectRatio.keys()) {
+      qSort(commandAspectRatio[command].begin(), commandAspectRatio[command].end());
+    }
+
   }
 };
 

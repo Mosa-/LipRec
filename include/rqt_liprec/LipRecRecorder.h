@@ -40,6 +40,7 @@ public:
   void writeHeaderToTextFile(QString fileName, RecordRecognitionData &recordRecognitionData);
 
   void composeRecords(QString& text, QString postFix, QMap<QString, QList<double> > &records);
+  void composeRecords(QString &text, QString postFix, QList<CommandWithCost>& records);
 private:
   QString fileName;
 
