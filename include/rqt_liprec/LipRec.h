@@ -159,6 +159,8 @@ private:
     QMap<QString, QList<double> > currentUtteranceTrajectories;
     bool utter;
 
+    bool applyUtteranceOfLoadedFile;
+
     KeyPointsDeliverer keyPointsDeliverer;
     ImageProcessing imageProcessing;
     Dtw dtw;
@@ -238,10 +240,11 @@ private slots:
     void clickedUpdateRecognizedText(bool checked);
     void clickedRecordRecognized(bool checked);
 
-
     void clickedDeclineRecordRecognition();
     void clickedSaveRecordRecognition();
     void clickedDeclineOrSaveRecordRecognition();
+
+    void clickedUtter();
 };
 } // namespace
 #endif

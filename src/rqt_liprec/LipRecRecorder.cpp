@@ -2,7 +2,7 @@
 
 LipRecRecorder::LipRecRecorder() {
 	// TODO Auto-generated constructor stub
-
+  this->postFixFileNameUtterance = "_utter";
 }
 
 LipRecRecorder::~LipRecRecorder() {
@@ -12,6 +12,7 @@ LipRecRecorder::~LipRecRecorder() {
 void LipRecRecorder::setFileName(QString fileName)
 {
   this->fileName = fileName;
+  this->fileNameUtterance = fileName+this->postFixFileNameUtterance;
 }
 
 void LipRecRecorder::writeToTextFile(QString fileName, RecordRecognitionData& recordRecognitionData){
@@ -172,6 +173,76 @@ void LipRecRecorder::writeHeaderToTextFile(QString fileName, RecordRecognitionDa
   }else{
     ROS_INFO("QFile txtFile failed!");
   }
+}
+
+void LipRecRecorder::writeUtteranceToTextFile(QString fileName, QMap<QString, QList<double> >& currentUtteranceTrajectories)
+{
+  this->fileName = fileName;
+  this->fileNameUtterance = fileName + this->postFixFileNameUtterance;
+
+  QFile txtFile(fileNameUtterance+".txt");
+
+  if(txtFile.open(QIODevice::Append | QIODevice::Text)){
+
+    QTextStream stream(&txtFile);
+    QString text;
+
+    foreach (QString feature, currentUtteranceTrajectories.keys()) {
+      text += feature + ":\n";
+      for (int i = 0; i < currentUtteranceTrajectories[feature].size(); ++i) {
+        text += QString("%1:%2\n").arg(i).arg(currentUtteranceTrajectories[feature].at(i));
+      }
+    }
+    stream << text;
+
+    stream.flush();
+    txtFile.close();
+
+  }else{
+    ROS_INFO("QFile write utteranceTxtFile failed!: %s", txtFile.errorString().toStdString().c_str());
+  }
+}
+
+QMap<QString, QList<double> > LipRecRecorder::readUtteranceFromTextFile(QString fileName)
+{
+  this->fileName = fileName;
+  this->fileNameUtterance = fileName + this->postFixFileNameUtterance;
+
+  QMap<QString, QList<double> > currentUtteranceTrajectories;
+
+  QFile txtFile(fileNameUtterance+".txt");
+
+  if(txtFile.open(QIODevice::ReadOnly)) {
+
+    QTextStream in(&txtFile);
+
+    QString line = "";
+    QStringList fields;
+    QString currentFeature = "";
+    bool isNum = false;
+
+    while(!in.atEnd()) {
+        line = in.readLine();
+        fields = line.split(":");
+
+        // check feature string
+        fields.at(0).toInt(&isNum);
+
+        if(!isNum){
+          currentFeature = fields.at(0);
+        }else{
+          currentUtteranceTrajectories[currentFeature].append(fields.at(1).toDouble());
+        }
+    }
+
+  }else{
+    ROS_INFO("QFile read utteranceTxtFile failed!: %s", txtFile.errorString().toStdString().c_str());
+  }
+
+
+  txtFile.close();
+
+  return currentUtteranceTrajectories;
 }
 
 void LipRecRecorder::sortCommands(RecordRecognitionData &recordRecognitionData, QList<CommandWithCost> &commandFusion, QList<CommandWithCost> &commandArea, QList<CommandWithCost> &commandAspectRatio)

@@ -38,407 +38,7 @@
    <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;br/&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
   </property>
   <layout class="QGridLayout" name="gridLayout_17">
-   <property name="leftMargin">
-    <number>0</number>
-   </property>
-   <property name="topMargin">
-    <number>0</number>
-   </property>
-   <property name="rightMargin">
-    <number>0</number>
-   </property>
-   <property name="bottomMargin">
-    <number>0</number>
-   </property>
-   <item row="0" column="0" colspan="5">
-    <widget class="QFrame" name="frameTop">
-     <property name="minimumSize">
-      <size>
-       <width>0</width>
-       <height>30</height>
-      </size>
-     </property>
-     <property name="maximumSize">
-      <size>
-       <width>16777215</width>
-       <height>40</height>
-      </size>
-     </property>
-     <property name="frameShape">
-      <enum>QFrame::NoFrame</enum>
-     </property>
-     <property name="frameShadow">
-      <enum>QFrame::Raised</enum>
-     </property>
-     <layout class="QGridLayout" name="gridLayout_7">
-      <property name="leftMargin">
-       <number>0</number>
-      </property>
-      <property name="topMargin">
-       <number>0</number>
-      </property>
-      <property name="rightMargin">
-       <number>0</number>
-      </property>
-      <property name="bottomMargin">
-       <number>0</number>
-      </property>
-      <property name="spacing">
-       <number>0</number>
-      </property>
-      <item row="0" column="4">
-       <widget class="QPushButton" name="pbRecorderOptions">
-        <property name="styleSheet">
-         <string notr="true">QPushButton{background:rgba(0,0,0,0);}</string>
-        </property>
-        <property name="text">
-         <string/>
-        </property>
-        <property name="iconSize">
-         <size>
-          <width>0</width>
-          <height>0</height>
-         </size>
-        </property>
-        <property name="shortcut">
-         <string/>
-        </property>
-       </widget>
-      </item>
-      <item row="0" column="5">
-       <widget class="QPushButton" name="pbContinueVideo">
-        <property name="styleSheet">
-         <string notr="true">QPushButton{background:rgba(0,0,0,0);}</string>
-        </property>
-        <property name="text">
-         <string/>
-        </property>
-        <property name="iconSize">
-         <size>
-          <width>0</width>
-          <height>0</height>
-         </size>
-        </property>
-        <property name="shortcut">
-         <string/>
-        </property>
-       </widget>
-      </item>
-      <item row="0" column="0">
-       <spacer name="horizontalSpacer_2">
-        <property name="orientation">
-         <enum>Qt::Horizontal</enum>
-        </property>
-        <property name="sizeHint" stdset="0">
-         <size>
-          <width>40</width>
-          <height>20</height>
-         </size>
-        </property>
-       </spacer>
-      </item>
-      <item row="0" column="3">
-       <widget class="QPushButton" name="pbToggleKpLines">
-        <property name="styleSheet">
-         <string notr="true">QPushButton{
-
-}
-
-QPushButton:checked{
-
-}</string>
-        </property>
-        <property name="text">
-         <string/>
-        </property>
-        <property name="checkable">
-         <bool>true</bool>
-        </property>
-        <property name="checked">
-         <bool>false</bool>
-        </property>
-       </widget>
-      </item>
-      <item row="0" column="2">
-       <widget class="QPushButton" name="pbToggleSupportLines">
-        <property name="styleSheet">
-         <string notr="true">QPushButton{background:rgba(0,0,0,0);}</string>
-        </property>
-        <property name="text">
-         <string/>
-        </property>
-        <property name="checkable">
-         <bool>true</bool>
-        </property>
-        <property name="checked">
-         <bool>false</bool>
-        </property>
-       </widget>
-      </item>
-      <item row="0" column="1">
-       <widget class="QPushButton" name="pbPrintFeatures">
-        <property name="text">
-         <string>Print Features</string>
-        </property>
-       </widget>
-      </item>
-     </layout>
-    </widget>
-   </item>
-   <item row="1" column="2" rowspan="2">
-    <widget class="QFrame" name="frame">
-     <property name="minimumSize">
-      <size>
-       <width>180</width>
-       <height>0</height>
-      </size>
-     </property>
-     <property name="maximumSize">
-      <size>
-       <width>180</width>
-       <height>16777215</height>
-      </size>
-     </property>
-     <property name="frameShape">
-      <enum>QFrame::Box</enum>
-     </property>
-     <property name="frameShadow">
-      <enum>QFrame::Raised</enum>
-     </property>
-     <layout class="QGridLayout" name="gridLayout">
-      <property name="leftMargin">
-       <number>3</number>
-      </property>
-      <property name="topMargin">
-       <number>0</number>
-      </property>
-      <property name="rightMargin">
-       <number>3</number>
-      </property>
-      <property name="bottomMargin">
-       <number>0</number>
-      </property>
-      <property name="spacing">
-       <number>0</number>
-      </property>
-      <item row="2" column="0">
-       <widget class="QLabel" name="lblMouthFeatureRaw">
-        <property name="sizePolicy">
-         <sizepolicy hsizetype="Maximum" vsizetype="Maximum">
-          <horstretch>0</horstretch>
-          <verstretch>0</verstretch>
-         </sizepolicy>
-        </property>
-        <property name="minimumSize">
-         <size>
-          <width>200</width>
-          <height>108</height>
-         </size>
-        </property>
-        <property name="maximumSize">
-         <size>
-          <width>200</width>
-          <height>108</height>
-         </size>
-        </property>
-        <property name="text">
-         <string/>
-        </property>
-       </widget>
-      </item>
-      <item row="1" column="0">
-       <widget class="QLabel" name="lbl_lips">
-        <property name="sizePolicy">
-         <sizepolicy hsizetype="Maximum" vsizetype="Maximum">
-          <horstretch>0</horstretch>
-          <verstretch>0</verstretch>
-         </sizepolicy>
-        </property>
-        <property name="minimumSize">
-         <size>
-          <width>200</width>
-          <height>108</height>
-         </size>
-        </property>
-        <property name="maximumSize">
-         <size>
-          <width>200</width>
-          <height>108</height>
-         </size>
-        </property>
-        <property name="text">
-         <string/>
-        </property>
-       </widget>
-      </item>
-      <item row="0" column="0">
-       <widget class="QFrame" name="frame_9">
-        <property name="maximumSize">
-         <size>
-          <width>16777215</width>
-          <height>40</height>
-         </size>
-        </property>
-        <property name="font">
-         <font>
-          <pointsize>8</pointsize>
-         </font>
-        </property>
-        <property name="frameShape">
-         <enum>QFrame::StyledPanel</enum>
-        </property>
-        <property name="frameShadow">
-         <enum>QFrame::Plain</enum>
-        </property>
-        <property name="lineWidth">
-         <number>1</number>
-        </property>
-        <layout class="QGridLayout" name="gridLayout_15">
-         <property name="leftMargin">
-          <number>0</number>
-         </property>
-         <property name="topMargin">
-          <number>0</number>
-         </property>
-         <property name="rightMargin">
-          <number>0</number>
-         </property>
-         <property name="bottomMargin">
-          <number>0</number>
-         </property>
-         <property name="spacing">
-          <number>0</number>
-         </property>
-         <item row="0" column="0">
-          <widget class="QRadioButton" name="rbLipsNone">
-           <property name="styleSheet">
-            <string notr="true"/>
-           </property>
-           <property name="text">
-            <string>None</string>
-           </property>
-           <property name="checked">
-            <bool>true</bool>
-           </property>
-          </widget>
-         </item>
-         <item row="1" column="0">
-          <widget class="QRadioButton" name="rbRLow">
-           <property name="font">
-            <font>
-             <pointsize>8</pointsize>
-            </font>
-           </property>
-           <property name="styleSheet">
-            <string notr="true">QRadioButton::indicator {
-	color: red;
-}
-
-
-
-</string>
-           </property>
-           <property name="text">
-            <string>RLow</string>
-           </property>
-          </widget>
-         </item>
-         <item row="1" column="1">
-          <widget class="QRadioButton" name="rbRMid">
-           <property name="text">
-            <string>RMid</string>
-           </property>
-          </widget>
-         </item>
-         <item row="1" column="2">
-          <widget class="QRadioButton" name="rbRTop">
-           <property name="text">
-            <string>RTop</string>
-           </property>
-          </widget>
-         </item>
-        </layout>
-       </widget>
-      </item>
-      <item row="3" column="0">
-       <widget class="QLabel" name="lblDTW">
-        <property name="sizePolicy">
-         <sizepolicy hsizetype="Maximum" vsizetype="Maximum">
-          <horstretch>0</horstretch>
-          <verstretch>0</verstretch>
-         </sizepolicy>
-        </property>
-        <property name="minimumSize">
-         <size>
-          <width>200</width>
-          <height>150</height>
-         </size>
-        </property>
-        <property name="maximumSize">
-         <size>
-          <width>200</width>
-          <height>150</height>
-         </size>
-        </property>
-        <property name="text">
-         <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;br/&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
-        </property>
-       </widget>
-      </item>
-      <item row="4" column="0">
-       <widget class="QLabel" name="lblMouthDiff">
-        <property name="sizePolicy">
-         <sizepolicy hsizetype="Maximum" vsizetype="Maximum">
-          <horstretch>0</horstretch>
-          <verstretch>0</verstretch>
-         </sizepolicy>
-        </property>
-        <property name="minimumSize">
-         <size>
-          <width>200</width>
-          <height>150</height>
-         </size>
-        </property>
-        <property name="maximumSize">
-         <size>
-          <width>200</width>
-          <height>150</height>
-         </size>
-        </property>
-        <property name="text">
-         <string/>
-        </property>
-       </widget>
-      </item>
-      <item row="5" column="0">
-       <widget class="QLabel" name="lblMouthDiffSum">
-        <property name="sizePolicy">
-         <sizepolicy hsizetype="Maximum" vsizetype="Maximum">
-          <horstretch>0</horstretch>
-          <verstretch>0</verstretch>
-         </sizepolicy>
-        </property>
-        <property name="minimumSize">
-         <size>
-          <width>200</width>
-          <height>108</height>
-         </size>
-        </property>
-        <property name="maximumSize">
-         <size>
-          <width>200</width>
-          <height>108</height>
-         </size>
-        </property>
-        <property name="text">
-         <string/>
-        </property>
-       </widget>
-      </item>
-     </layout>
-    </widget>
-   </item>
-   <item row="1" column="3" rowspan="2" colspan="2">
+   <item row="1" column="3" rowspan="2">
     <widget class="QFrame" name="frame_3">
      <property name="minimumSize">
       <size>
@@ -1949,80 +1549,253 @@ QPushButton:checked{
      </layout>
     </widget>
    </item>
-   <item row="2" column="0" colspan="2">
-    <widget class="QFrame" name="frame_2">
+   <item row="1" column="2" rowspan="2">
+    <widget class="QFrame" name="frame">
+     <property name="minimumSize">
+      <size>
+       <width>180</width>
+       <height>0</height>
+      </size>
+     </property>
      <property name="maximumSize">
       <size>
-       <width>16777215</width>
-       <height>50</height>
+       <width>180</width>
+       <height>16777215</height>
       </size>
      </property>
      <property name="frameShape">
-      <enum>QFrame::WinPanel</enum>
+      <enum>QFrame::Box</enum>
      </property>
      <property name="frameShadow">
-      <enum>QFrame::Sunken</enum>
+      <enum>QFrame::Raised</enum>
      </property>
-     <layout class="QGridLayout" name="gridLayout_2">
-      <item row="0" column="4">
-       <spacer name="horizontalSpacer">
-        <property name="orientation">
-         <enum>Qt::Horizontal</enum>
+     <layout class="QGridLayout" name="gridLayout">
+      <property name="leftMargin">
+       <number>3</number>
+      </property>
+      <property name="topMargin">
+       <number>0</number>
+      </property>
+      <property name="rightMargin">
+       <number>3</number>
+      </property>
+      <property name="bottomMargin">
+       <number>0</number>
+      </property>
+      <property name="spacing">
+       <number>0</number>
+      </property>
+      <item row="2" column="0">
+       <widget class="QLabel" name="lblMouthFeatureRaw">
+        <property name="sizePolicy">
+         <sizepolicy hsizetype="Maximum" vsizetype="Maximum">
+          <horstretch>0</horstretch>
+          <verstretch>0</verstretch>
+         </sizepolicy>
         </property>
-        <property name="sizeHint" stdset="0">
+        <property name="minimumSize">
          <size>
-          <width>195</width>
-          <height>20</height>
+          <width>200</width>
+          <height>108</height>
          </size>
         </property>
-       </spacer>
-      </item>
-      <item row="0" column="3">
-       <widget class="QCheckBox" name="cbLipSeg">
-        <property name="text">
-         <string>Lips segmentation</string>
+        <property name="maximumSize">
+         <size>
+          <width>200</width>
+          <height>108</height>
+         </size>
         </property>
-        <property name="checked">
-         <bool>true</bool>
+        <property name="text">
+         <string/>
         </property>
        </widget>
       </item>
-      <item row="0" column="2">
-       <widget class="QCheckBox" name="cbLips">
-        <property name="enabled">
-         <bool>true</bool>
+      <item row="1" column="0">
+       <widget class="QLabel" name="lbl_lips">
+        <property name="sizePolicy">
+         <sizepolicy hsizetype="Maximum" vsizetype="Maximum">
+          <horstretch>0</horstretch>
+          <verstretch>0</verstretch>
+         </sizepolicy>
         </property>
-        <property name="acceptDrops">
-         <bool>false</bool>
+        <property name="minimumSize">
+         <size>
+          <width>200</width>
+          <height>108</height>
+         </size>
+        </property>
+        <property name="maximumSize">
+         <size>
+          <width>200</width>
+          <height>108</height>
+         </size>
         </property>
         <property name="text">
-         <string>Lips</string>
-        </property>
-        <property name="checked">
-         <bool>true</bool>
-        </property>
-        <property name="autoRepeat">
-         <bool>false</bool>
-        </property>
-        <property name="tristate">
-         <bool>false</bool>
+         <string/>
         </property>
        </widget>
       </item>
       <item row="0" column="0">
-       <widget class="QCheckBox" name="cbFaceROI">
-        <property name="text">
-         <string>Face ROI</string>
+       <widget class="QFrame" name="frame_9">
+        <property name="maximumSize">
+         <size>
+          <width>16777215</width>
+          <height>40</height>
+         </size>
         </property>
-        <property name="checked">
-         <bool>false</bool>
+        <property name="font">
+         <font>
+          <pointsize>8</pointsize>
+         </font>
+        </property>
+        <property name="frameShape">
+         <enum>QFrame::StyledPanel</enum>
+        </property>
+        <property name="frameShadow">
+         <enum>QFrame::Plain</enum>
+        </property>
+        <property name="lineWidth">
+         <number>1</number>
+        </property>
+        <layout class="QGridLayout" name="gridLayout_15">
+         <property name="leftMargin">
+          <number>0</number>
+         </property>
+         <property name="topMargin">
+          <number>0</number>
+         </property>
+         <property name="rightMargin">
+          <number>0</number>
+         </property>
+         <property name="bottomMargin">
+          <number>0</number>
+         </property>
+         <property name="spacing">
+          <number>0</number>
+         </property>
+         <item row="0" column="0">
+          <widget class="QRadioButton" name="rbLipsNone">
+           <property name="styleSheet">
+            <string notr="true"/>
+           </property>
+           <property name="text">
+            <string>None</string>
+           </property>
+           <property name="checked">
+            <bool>true</bool>
+           </property>
+          </widget>
+         </item>
+         <item row="1" column="0">
+          <widget class="QRadioButton" name="rbRLow">
+           <property name="font">
+            <font>
+             <pointsize>8</pointsize>
+            </font>
+           </property>
+           <property name="styleSheet">
+            <string notr="true">QRadioButton::indicator {
+	color: red;
+}
+
+
+
+</string>
+           </property>
+           <property name="text">
+            <string>RLow</string>
+           </property>
+          </widget>
+         </item>
+         <item row="1" column="1">
+          <widget class="QRadioButton" name="rbRMid">
+           <property name="text">
+            <string>RMid</string>
+           </property>
+          </widget>
+         </item>
+         <item row="1" column="2">
+          <widget class="QRadioButton" name="rbRTop">
+           <property name="text">
+            <string>RTop</string>
+           </property>
+          </widget>
+         </item>
+        </layout>
+       </widget>
+      </item>
+      <item row="3" column="0">
+       <widget class="QLabel" name="lblDTW">
+        <property name="sizePolicy">
+         <sizepolicy hsizetype="Maximum" vsizetype="Maximum">
+          <horstretch>0</horstretch>
+          <verstretch>0</verstretch>
+         </sizepolicy>
+        </property>
+        <property name="minimumSize">
+         <size>
+          <width>200</width>
+          <height>150</height>
+         </size>
+        </property>
+        <property name="maximumSize">
+         <size>
+          <width>200</width>
+          <height>150</height>
+         </size>
+        </property>
+        <property name="text">
+         <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;br/&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
         </property>
        </widget>
       </item>
-      <item row="0" column="1">
-       <widget class="QCheckBox" name="cbMouthROI">
+      <item row="4" column="0">
+       <widget class="QLabel" name="lblMouthDiff">
+        <property name="sizePolicy">
+         <sizepolicy hsizetype="Maximum" vsizetype="Maximum">
+          <horstretch>0</horstretch>
+          <verstretch>0</verstretch>
+         </sizepolicy>
+        </property>
+        <property name="minimumSize">
+         <size>
+          <width>200</width>
+          <height>150</height>
+         </size>
+        </property>
+        <property name="maximumSize">
+         <size>
+          <width>200</width>
+          <height>150</height>
+         </size>
+        </property>
         <property name="text">
-         <string>Mouth ROI</string>
+         <string/>
+        </property>
+       </widget>
+      </item>
+      <item row="5" column="0">
+       <widget class="QLabel" name="lblMouthDiffSum">
+        <property name="sizePolicy">
+         <sizepolicy hsizetype="Maximum" vsizetype="Maximum">
+          <horstretch>0</horstretch>
+          <verstretch>0</verstretch>
+         </sizepolicy>
+        </property>
+        <property name="minimumSize">
+         <size>
+          <width>200</width>
+          <height>108</height>
+         </size>
+        </property>
+        <property name="maximumSize">
+         <size>
+          <width>200</width>
+          <height>108</height>
+         </size>
+        </property>
+        <property name="text">
+         <string/>
         </property>
        </widget>
       </item>
@@ -2033,13 +1806,13 @@ QPushButton:checked{
     <widget class="QTabWidget" name="tabWidget_2">
      <property name="minimumSize">
       <size>
-       <width>1000</width>
+       <width>1016</width>
        <height>0</height>
       </size>
      </property>
      <property name="maximumSize">
       <size>
-       <width>1000</width>
+       <width>1016</width>
        <height>16777215</height>
       </size>
      </property>
@@ -4976,43 +4749,254 @@ QGroupBox::title {
      </widget>
     </widget>
    </item>
-   <item row="3" column="0" colspan="5">
+   <item row="0" column="0" colspan="4">
+    <widget class="QFrame" name="frameTop">
+     <property name="minimumSize">
+      <size>
+       <width>0</width>
+       <height>30</height>
+      </size>
+     </property>
+     <property name="maximumSize">
+      <size>
+       <width>16777215</width>
+       <height>40</height>
+      </size>
+     </property>
+     <property name="frameShape">
+      <enum>QFrame::NoFrame</enum>
+     </property>
+     <property name="frameShadow">
+      <enum>QFrame::Raised</enum>
+     </property>
+     <layout class="QGridLayout" name="gridLayout_7">
+      <property name="leftMargin">
+       <number>0</number>
+      </property>
+      <property name="topMargin">
+       <number>0</number>
+      </property>
+      <property name="rightMargin">
+       <number>0</number>
+      </property>
+      <property name="bottomMargin">
+       <number>0</number>
+      </property>
+      <property name="horizontalSpacing">
+       <number>10</number>
+      </property>
+      <property name="verticalSpacing">
+       <number>0</number>
+      </property>
+      <item row="0" column="5">
+       <widget class="QPushButton" name="pbContinueVideo">
+        <property name="styleSheet">
+         <string notr="true">QPushButton{background:rgba(0,0,0,0);}</string>
+        </property>
+        <property name="text">
+         <string/>
+        </property>
+        <property name="iconSize">
+         <size>
+          <width>0</width>
+          <height>0</height>
+         </size>
+        </property>
+        <property name="shortcut">
+         <string/>
+        </property>
+       </widget>
+      </item>
+      <item row="0" column="1">
+       <widget class="QPushButton" name="pbPrintFeatures">
+        <property name="text">
+         <string>Print Features</string>
+        </property>
+       </widget>
+      </item>
+      <item row="0" column="2">
+       <widget class="QPushButton" name="pbToggleSupportLines">
+        <property name="styleSheet">
+         <string notr="true">QPushButton{background:rgba(0,0,0,0);}</string>
+        </property>
+        <property name="text">
+         <string/>
+        </property>
+        <property name="checkable">
+         <bool>true</bool>
+        </property>
+        <property name="checked">
+         <bool>false</bool>
+        </property>
+       </widget>
+      </item>
+      <item row="0" column="4">
+       <widget class="QPushButton" name="pbRecorderOptions">
+        <property name="styleSheet">
+         <string notr="true">QPushButton{background:rgba(0,0,0,0);}</string>
+        </property>
+        <property name="text">
+         <string/>
+        </property>
+        <property name="iconSize">
+         <size>
+          <width>0</width>
+          <height>0</height>
+         </size>
+        </property>
+        <property name="shortcut">
+         <string/>
+        </property>
+       </widget>
+      </item>
+      <item row="0" column="0">
+       <spacer name="horizontalSpacer_2">
+        <property name="orientation">
+         <enum>Qt::Horizontal</enum>
+        </property>
+        <property name="sizeHint" stdset="0">
+         <size>
+          <width>40</width>
+          <height>20</height>
+         </size>
+        </property>
+       </spacer>
+      </item>
+      <item row="0" column="3">
+       <widget class="QPushButton" name="pbToggleKpLines">
+        <property name="styleSheet">
+         <string notr="true">QPushButton{
+
+}
+
+QPushButton:checked{
+
+}</string>
+        </property>
+        <property name="text">
+         <string/>
+        </property>
+        <property name="checkable">
+         <bool>true</bool>
+        </property>
+        <property name="checked">
+         <bool>false</bool>
+        </property>
+       </widget>
+      </item>
+     </layout>
+    </widget>
+   </item>
+   <item row="2" column="0" colspan="2">
+    <widget class="QFrame" name="frame_2">
+     <property name="minimumSize">
+      <size>
+       <width>1016</width>
+       <height>0</height>
+      </size>
+     </property>
+     <property name="maximumSize">
+      <size>
+       <width>1016</width>
+       <height>50</height>
+      </size>
+     </property>
+     <property name="frameShape">
+      <enum>QFrame::WinPanel</enum>
+     </property>
+     <property name="frameShadow">
+      <enum>QFrame::Sunken</enum>
+     </property>
+     <layout class="QGridLayout" name="gridLayout_2">
+      <item row="0" column="4">
+       <spacer name="horizontalSpacer">
+        <property name="orientation">
+         <enum>Qt::Horizontal</enum>
+        </property>
+        <property name="sizeHint" stdset="0">
+         <size>
+          <width>195</width>
+          <height>20</height>
+         </size>
+        </property>
+       </spacer>
+      </item>
+      <item row="0" column="3">
+       <widget class="QCheckBox" name="cbLipSeg">
+        <property name="text">
+         <string>Lips segmentation</string>
+        </property>
+        <property name="checked">
+         <bool>true</bool>
+        </property>
+       </widget>
+      </item>
+      <item row="0" column="2">
+       <widget class="QCheckBox" name="cbLips">
+        <property name="enabled">
+         <bool>true</bool>
+        </property>
+        <property name="acceptDrops">
+         <bool>false</bool>
+        </property>
+        <property name="text">
+         <string>Lips</string>
+        </property>
+        <property name="checked">
+         <bool>true</bool>
+        </property>
+        <property name="autoRepeat">
+         <bool>false</bool>
+        </property>
+        <property name="tristate">
+         <bool>false</bool>
+        </property>
+       </widget>
+      </item>
+      <item row="0" column="0">
+       <widget class="QCheckBox" name="cbFaceROI">
+        <property name="text">
+         <string>Face ROI</string>
+        </property>
+        <property name="checked">
+         <bool>false</bool>
+        </property>
+       </widget>
+      </item>
+      <item row="0" column="1">
+       <widget class="QCheckBox" name="cbMouthROI">
+        <property name="text">
+         <string>Mouth ROI</string>
+        </property>
+       </widget>
+      </item>
+     </layout>
+    </widget>
+   </item>
+   <item row="3" column="0" colspan="4">
     <widget class="Line" name="line">
      <property name="frameShadow">
       <enum>QFrame::Raised</enum>
      </property>
      <property name="lineWidth">
-      <number>10</number>
+      <number>7</number>
      </property>
      <property name="orientation">
       <enum>Qt::Horizontal</enum>
      </property>
     </widget>
    </item>
-   <item row="4" column="4">
-    <spacer name="horizontalSpacer_14">
-     <property name="orientation">
-      <enum>Qt::Horizontal</enum>
-     </property>
-     <property name="sizeHint" stdset="0">
-      <size>
-       <width>40</width>
-       <height>20</height>
-      </size>
-     </property>
-    </spacer>
-   </item>
-   <item row="4" column="1">
+   <item row="4" column="1" colspan="3">
     <widget class="QGroupBox" name="gbLipRecRecorder">
      <property name="minimumSize">
       <size>
-       <width>50</width>
+       <width>1000</width>
        <height>100</height>
       </size>
      </property>
      <property name="maximumSize">
       <size>
-       <width>600</width>
+       <width>1000</width>
        <height>16777215</height>
       </size>
      </property>
@@ -5034,21 +5018,14 @@ QGroupBox::title {
      <property name="title">
       <string>LipRecRecorder</string>
      </property>
-     <layout class="QGridLayout" name="gridLayout_4">
-      <property name="topMargin">
+     <layout class="QGridLayout" name="gridLayout_43">
+      <property name="horizontalSpacing">
+       <number>9</number>
+      </property>
+      <property name="verticalSpacing">
        <number>0</number>
       </property>
-      <property name="bottomMargin">
-       <number>0</number>
-      </property>
-      <item row="0" column="1" rowspan="3">
-       <widget class="Line" name="line_2">
-        <property name="orientation">
-         <enum>Qt::Vertical</enum>
-        </property>
-       </widget>
-      </item>
-      <item row="0" column="2" rowspan="3">
+      <item row="0" column="2">
        <widget class="QFrame" name="frame_22">
         <property name="minimumSize">
          <size>
@@ -5063,10 +5040,10 @@ QGroupBox::title {
          </size>
         </property>
         <property name="frameShape">
-         <enum>QFrame::StyledPanel</enum>
+         <enum>QFrame::Box</enum>
         </property>
         <property name="frameShadow">
-         <enum>QFrame::Plain</enum>
+         <enum>QFrame::Raised</enum>
         </property>
         <layout class="QGridLayout" name="gridLayout_10">
          <item row="0" column="0">
@@ -5177,7 +5154,79 @@ font: 8pt;
         </layout>
        </widget>
       </item>
-      <item row="0" column="0" rowspan="3">
+      <item row="0" column="1">
+       <widget class="Line" name="line_2">
+        <property name="orientation">
+         <enum>Qt::Vertical</enum>
+        </property>
+       </widget>
+      </item>
+      <item row="0" column="3">
+       <widget class="QFrame" name="frame_24">
+        <property name="minimumSize">
+         <size>
+          <width>350</width>
+          <height>0</height>
+         </size>
+        </property>
+        <property name="maximumSize">
+         <size>
+          <width>350</width>
+          <height>16777215</height>
+         </size>
+        </property>
+        <property name="frameShape">
+         <enum>QFrame::Box</enum>
+        </property>
+        <property name="frameShadow">
+         <enum>QFrame::Raised</enum>
+        </property>
+        <property name="lineWidth">
+         <number>1</number>
+        </property>
+        <property name="midLineWidth">
+         <number>0</number>
+        </property>
+        <layout class="QGridLayout" name="gridLayout_4">
+         <item row="0" column="0">
+          <widget class="QLabel" name="label_12">
+           <property name="maximumSize">
+            <size>
+             <width>121</width>
+             <height>16777215</height>
+            </size>
+           </property>
+           <property name="text">
+            <string>Filename (load):</string>
+           </property>
+          </widget>
+         </item>
+         <item row="0" column="1" colspan="2">
+          <widget class="QLineEdit" name="leFilenameLoadRecord"/>
+         </item>
+         <item row="1" column="0">
+          <widget class="QCheckBox" name="cbLoadUtteranceFile">
+           <property name="font">
+            <font>
+             <pointsize>10</pointsize>
+            </font>
+           </property>
+           <property name="text">
+            <string>Load utterance file</string>
+           </property>
+          </widget>
+         </item>
+         <item row="1" column="2">
+          <widget class="QPushButton" name="pbUtter">
+           <property name="text">
+            <string>Utter</string>
+           </property>
+          </widget>
+         </item>
+        </layout>
+       </widget>
+      </item>
+      <item row="0" column="0">
        <widget class="QFrame" name="frame_23">
         <property name="minimumSize">
          <size>
@@ -5187,7 +5236,7 @@ font: 8pt;
         </property>
         <property name="maximumSize">
          <size>
-          <width>320</width>
+          <width>400</width>
           <height>16777215</height>
          </size>
         </property>
@@ -5198,24 +5247,18 @@ font: 8pt;
          <enum>QFrame::Plain</enum>
         </property>
         <layout class="QGridLayout" name="gridLayout_8">
-         <property name="rightMargin">
+         <property name="topMargin">
           <number>0</number>
          </property>
          <property name="bottomMargin">
           <number>0</number>
          </property>
-         <property name="verticalSpacing">
-          <number>0</number>
-         </property>
          <item row="0" column="0">
           <widget class="QLabel" name="label_11">
            <property name="text">
-            <string>Filename:</string>
+            <string>Filename (save):</string>
            </property>
           </widget>
-         </item>
-         <item row="0" column="1">
-          <widget class="QLineEdit" name="leFilenameRecord"/>
          </item>
          <item row="1" column="0" colspan="2">
           <widget class="QCheckBox" name="cbSOLR">
@@ -5232,7 +5275,19 @@ font: 8pt;
            </property>
           </widget>
          </item>
-         <item row="2" column="0" colspan="2">
+         <item row="1" column="2">
+          <widget class="QCheckBox" name="cbSaveUtterance">
+           <property name="font">
+            <font>
+             <pointsize>10</pointsize>
+            </font>
+           </property>
+           <property name="text">
+            <string>Save utterance </string>
+           </property>
+          </widget>
+         </item>
+         <item row="2" column="0" colspan="3">
           <widget class="QCheckBox" name="cbContinueAppending">
            <property name="font">
             <font>
@@ -5247,11 +5302,34 @@ font: 8pt;
            </property>
           </widget>
          </item>
+         <item row="0" column="1" colspan="2">
+          <widget class="QLineEdit" name="leFilenameRecord">
+           <property name="minimumSize">
+            <size>
+             <width>0</width>
+             <height>23</height>
+            </size>
+           </property>
+          </widget>
+         </item>
         </layout>
        </widget>
       </item>
      </layout>
     </widget>
+   </item>
+   <item row="4" column="0">
+    <spacer name="horizontalSpacer_14">
+     <property name="orientation">
+      <enum>Qt::Horizontal</enum>
+     </property>
+     <property name="sizeHint" stdset="0">
+      <size>
+       <width>40</width>
+       <height>20</height>
+      </size>
+     </property>
+    </spacer>
    </item>
   </layout>
  </widget>

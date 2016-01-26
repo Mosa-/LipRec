@@ -39,12 +39,18 @@ public:
   void writeToTextFile(QString fileName, RecordRecognitionData &recordRecognitionData);
   void writeHeaderToTextFile(QString fileName, RecordRecognitionData &recordRecognitionData);
 
+  void writeUtteranceToTextFile(QString fileName, QMap<QString, QList<double> >& currentUtteranceTrajectories);
+  QMap<QString, QList<double> > readUtteranceFromTextFile(QString fileName);
+
   void sortCommands(RecordRecognitionData& recordRecognitionData, QList<CommandWithCost>& commandFusion, QList<CommandWithCost>& commandArea, QList<CommandWithCost>& commandAspectRatio);
 
   void composeRecords(QString& text, QString postFix, QMap<QString, QList<double> > &records);
   void composeRecords(QString &text, QString postFix, QList<CommandWithCost>& records);
 private:
   QString fileName;
+  QString fileNameUtterance;
+
+  QString postFixFileNameUtterance;
 
 
 };

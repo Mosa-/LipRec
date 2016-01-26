@@ -93,6 +93,8 @@ void LipRec::initPlugin(qt_gui_cpp::PluginContext& context)
   QObject::connect(ui_.pbSaveRecognition, SIGNAL(clicked()), this, SLOT(clickedSaveRecordRecognition()));
   QObject::connect(ui_.pbDeclineRecogntion, SIGNAL(clicked()), this, SLOT(clickedDeclineRecordRecognition()));
 
+  QObject::connect(ui_.pbUtter, SIGNAL(clicked()), this, SLOT(clickedUtter()));
+
 
   drawKeyPointState = 0;
   ui_.pbToggleKpLines->setToolTip("Show keypoint lines.");
@@ -496,7 +498,16 @@ void LipRec::processImage(Mat img)
         //distanceNormalized /= 10; // mm to cm
         //distanceNormalized = (distanceNormalized - 520)/(655-520);
 
-        if(utter == true && stateDetectionStartEndFrame == Idle && recordTrajectoryState != Recording){
+        bool loadUtteranceFile = ui_.leFilenameLoadRecord->text() != "" && ui_.cbLoadUtteranceFile->isChecked();
+
+        if(loadUtteranceFile){
+          currentUtteranceTrajectories.clear();
+          currentUtteranceTrajectories = lipRecRecorder.readUtteranceFromTextFile(ui_.leFilenameLoadRecord->text());
+        }
+
+        bool activateAlgorithmForRecognition = utter && stateDetectionStartEndFrame == Idle && recordTrajectoryState != Recording && !loadUtteranceFile;
+
+        if(activateAlgorithmForRecognition || (loadUtteranceFile && applyUtteranceOfLoadedFile)){
           QList<QList<double> > clusterT;
           QList<QList<double> > clusterT2;
           double bestWarpingCostArea = INT_MAX;
@@ -899,8 +910,11 @@ void LipRec::processImage(Mat img)
             ui_.labelUtteranceLength->setText(QString::number(utteranceLength));
           }
 
-          currentUtteranceTrajectories.clear();
+          if(recordRecognitionState != RRDECISION){
+            currentUtteranceTrajectories.clear();
+          }
           utter = false;
+          applyUtteranceOfLoadedFile = false;
 
         }else if(utter && recordTrajectoryState != Recording){
           currentUtteranceTrajectories[ui_.cbArea->text()].append(relativeArea);
@@ -1664,9 +1678,9 @@ void LipRec::clickedSaveRecordRecognition(){
     ui_.pbRecordRecognition->setText("Record");
     ui_.pbRecordRecognition->setChecked(false);
 
-
-
-
+    if(ui_.cbSaveUtterance->isChecked()){
+      lipRecRecorder.writeUtteranceToTextFile(ui_.leFilenameRecord->text(), currentUtteranceTrajectories);
+    }
 
     if(ui_.cbContinueAppending->isChecked() || currentRecordRecognitionFilename == ui_.leFilenameRecord->text()){
       lipRecRecorder.writeToTextFile(ui_.leFilenameRecord->text(), recordRecognitionData);
@@ -1675,6 +1689,8 @@ void LipRec::clickedSaveRecordRecognition(){
       lipRecRecorder.writeHeaderToTextFile(ui_.leFilenameRecord->text(), recordRecognitionData);
       lipRecRecorder.writeToTextFile(ui_.leFilenameRecord->text(), recordRecognitionData);
     }
+
+    currentUtteranceTrajectories.clear();
 
     recordRecognitionState = RRNONE;
   }
@@ -1700,6 +1716,11 @@ void LipRec::clickedDeclineRecordRecognition(){
 void LipRec::clickedDeclineOrSaveRecordRecognition()
 {
   ui_.lblMsgRecognition->setText("");
+}
+
+void LipRec::clickedUtter()
+{
+  this->applyUtteranceOfLoadedFile = true;
 }
 
 void LipRec::clickedRecordRecognized(bool checked)
