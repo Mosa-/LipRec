@@ -58,6 +58,7 @@ struct RecordRecognitionData{
   QString similarityAlgorithm;
   QString distanceFunction;
 
+  bool weightedDtw;
   QString dtwStepPattern;
   bool dtwWindowActive;
   int dtwWindowSize;

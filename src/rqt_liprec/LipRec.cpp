@@ -1844,6 +1844,7 @@ void LipRec::fillRecordRecognitionData()
     recordRecognitionData.distanceFunction = "SQUARE2";
   }
 
+  recordRecognitionData.weightedDtw = ui_.cbWeightedDTW;
   recordRecognitionData.dtwStepPattern = ui_.cbDTWStepPattern->currentText();
   recordRecognitionData.dtwWindowActive = ui_.cbDtwWindowSizeActivate->isChecked();
   recordRecognitionData.dtwWindowSize = ui_.sbDtwWindowSize->value();

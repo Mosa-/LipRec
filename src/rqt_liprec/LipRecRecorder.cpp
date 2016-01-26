@@ -130,6 +130,10 @@ void LipRecRecorder::writeHeaderToTextFile(QString fileName, RecordRecognitionDa
     for (int i = 0; i < gap; ++i) {
       text += " ";
     }
+    text += QString("%1 %2|\n|").arg("$DTW weighted:", firstGap).arg(recordRecognitionData.weightedDtw, secondGap);
+    for (int i = 0; i < gap; ++i) {
+      text += " ";
+    }
     text += QString("%1 %2|\n|").arg("$DTW step pattern:", firstGap).arg(recordRecognitionData.dtwStepPattern, secondGap);
     for (int i = 0; i < gap; ++i) {
       text += " ";
