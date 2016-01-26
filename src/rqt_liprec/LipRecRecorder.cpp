@@ -33,30 +33,7 @@ void LipRecRecorder::writeToTextFile(QString fileName, RecordRecognitionData& re
     QList<CommandWithCost> tmpCommandAspectRatio;
 
     if(recordRecognitionData.onlyLowestRecognition){
-      CommandWithCost commandWithCost;
-
-      foreach (QString command, recordRecognitionData.commandFusion.keys()) {
-        commandWithCost.command = command;
-        commandWithCost.cost = recordRecognitionData.commandFusion[command].at(0);
-
-        tmpCommandFusion.append(commandWithCost);
-      }
-      foreach (QString command, recordRecognitionData.commandArea.keys()) {
-        commandWithCost.command = command;
-        commandWithCost.cost = recordRecognitionData.commandArea[command].at(0);
-
-        tmpCommandArea.append(commandWithCost);
-      }
-      foreach (QString command, recordRecognitionData.commandAspectRatio.keys()) {
-        commandWithCost.command = command;
-        commandWithCost.cost = recordRecognitionData.commandAspectRatio[command].at(0);
-
-        tmpCommandAspectRatio.append(commandWithCost);
-      }
-
-      qSort(tmpCommandFusion);
-      qSort(tmpCommandArea);
-      qSort(tmpCommandAspectRatio);
+      this->sortCommands(recordRecognitionData, tmpCommandFusion, tmpCommandArea, tmpCommandAspectRatio);
     }
 
     if(recordRecognitionData.featureFusion == "SINGLE"){
@@ -65,7 +42,7 @@ void LipRecRecorder::writeToTextFile(QString fileName, RecordRecognitionData& re
       }else{
         this->composeRecords(text, "_a", recordRecognitionData.commandArea);
       }
-      text += "\n";
+      text += "------------------------------------------------\n";
       if(recordRecognitionData.onlyLowestRecognition){
         this->composeRecords(text, "_ar", tmpCommandAspectRatio);
       }else{
@@ -197,12 +174,41 @@ void LipRecRecorder::writeHeaderToTextFile(QString fileName, RecordRecognitionDa
   }
 }
 
+void LipRecRecorder::sortCommands(RecordRecognitionData &recordRecognitionData, QList<CommandWithCost> &commandFusion, QList<CommandWithCost> &commandArea, QList<CommandWithCost> &commandAspectRatio)
+{
+  CommandWithCost commandWithCost;
+
+  foreach (QString command, recordRecognitionData.commandFusion.keys()) {
+    commandWithCost.command = command;
+    commandWithCost.cost = recordRecognitionData.commandFusion[command].at(0);
+
+    commandFusion.append(commandWithCost);
+  }
+  foreach (QString command, recordRecognitionData.commandArea.keys()) {
+    commandWithCost.command = command;
+    commandWithCost.cost = recordRecognitionData.commandArea[command].at(0);
+
+    commandArea.append(commandWithCost);
+  }
+  foreach (QString command, recordRecognitionData.commandAspectRatio.keys()) {
+    commandWithCost.command = command;
+    commandWithCost.cost = recordRecognitionData.commandAspectRatio[command].at(0);
+
+    commandAspectRatio.append(commandWithCost);
+  }
+
+  qSort(commandFusion);
+  qSort(commandArea);
+  qSort(commandAspectRatio);
+}
+
 void LipRecRecorder::composeRecords(QString &text, QString postFix, QMap<QString, QList<double> >& records)
 {
   foreach (QString command, records.keys()) {
     for (int i = 0; i < records[command].size(); ++i) {
       text += command + postFix + ": " + QString::number(records[command].at(i)) + "\n";
     }
+    text += "-\n";
   }
 }
 

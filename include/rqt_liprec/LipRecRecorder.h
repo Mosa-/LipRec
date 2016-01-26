@@ -39,6 +39,8 @@ public:
   void writeToTextFile(QString fileName, RecordRecognitionData &recordRecognitionData);
   void writeHeaderToTextFile(QString fileName, RecordRecognitionData &recordRecognitionData);
 
+  void sortCommands(RecordRecognitionData& recordRecognitionData, QList<CommandWithCost>& commandFusion, QList<CommandWithCost>& commandArea, QList<CommandWithCost>& commandAspectRatio);
+
   void composeRecords(QString& text, QString postFix, QMap<QString, QList<double> > &records);
   void composeRecords(QString &text, QString postFix, QList<CommandWithCost>& records);
 private:
