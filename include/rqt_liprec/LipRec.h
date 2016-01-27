@@ -76,8 +76,7 @@ enum RecordRecognitionState{
   RRDECLINE
 };
 
-class LipRec
-        : public rqt_gui_cpp::Plugin
+class LipRec : public rqt_gui_cpp::Plugin
 {
     Q_OBJECT
 public:
@@ -161,6 +160,9 @@ private:
 
     bool applyUtteranceOfLoadedFile;
 
+    QMap<QString, double> weightedDtw;
+    bool weightedDtwActive;
+
     KeyPointsDeliverer keyPointsDeliverer;
     ImageProcessing imageProcessing;
     Dtw dtw;
@@ -197,6 +199,8 @@ private:
 
     void applyCluster(QString clusterMethod, DistanceFunction df, QString command, QString feature);
     void printTrajectory(QList<double> trajectory);
+
+    void initWeightsForDTW();
 
     void updateTrajectoriesInfoGUI();
     QPixmap drawDTWPixmap(QString currentCommand, QString feature, int indexOfLowCluster, QString clusterMethod, DistanceFunction df, DtwStepPattern stepPattern);
@@ -245,6 +249,8 @@ private slots:
     void clickedDeclineOrSaveRecordRecognition();
 
     void clickedUtter();
+
+    void clickedWeightedDtw(bool checked);
 };
 } // namespace
 #endif

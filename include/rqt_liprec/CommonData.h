@@ -97,7 +97,4 @@ struct RecordRecognitionData{
   }
 };
 
-
-
-
 #endif /* COMMONENUMS_H_ */

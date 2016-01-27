@@ -193,6 +193,10 @@ void LipRec::initPlugin(qt_gui_cpp::PluginContext& context)
 
   availableTrajectories << "all";
 
+  this->initWeightsForDTW();
+  weightedDtwActive = false;
+  QObject::connect(ui_.gbDynamicTimeWarping, SIGNAL(clicked(bool)), this, SLOT(clickedWeightedDtw(bool)));
+
   tdm.connectToDatabase("localhost", "liprec", ui_.leCollection->text());
   tdm.setCollectionCluster("clustering");
   tdm.setCollection(ui_.leCollection->text());
@@ -558,6 +562,10 @@ void LipRec::processImage(Mat img)
 
                     warpingCostTmpArea = dtw.calcWarpingCost(df, ui_.cbDtwWindowSizeActivate->isChecked(), windowSize, ui_.cbDtwWindowSizeAdaptable->isChecked());
 
+                    if(weightedDtwActive){
+                      warpingCostTmpArea += warpingCostTmpArea * weightedDtw[command];
+                    }
+
                     if(warpingCostTmpArea < localCost){
                       localCost = warpingCostTmpArea;
                       commandWithCost.command = command;
@@ -575,7 +583,6 @@ void LipRec::processImage(Mat img)
                       indexOfLowAreaCluster = i;
                       bestWarpingCostArea = warpingCostTmpArea;
                       currentCommandArea = command;
-
                     }
                   }
 
@@ -597,6 +604,10 @@ void LipRec::processImage(Mat img)
                     dtw.seed(clusterT.at(i), currentUtteranceTrajectories[ui_.cbAspectRatio->text()], stepPattern, ui_.cbDtwSlopeWeights->isChecked());
 
                     warpingCostTmpAspectRatio = dtw.calcWarpingCost(df, ui_.cbDtwWindowSizeActivate->isChecked(), windowSize, ui_.cbDtwWindowSizeAdaptable->isChecked());
+
+                    if(weightedDtwActive){
+                      warpingCostTmpAspectRatio += warpingCostTmpAspectRatio * weightedDtw[command];
+                    }
 
                     if(warpingCostTmpAspectRatio < localCost){
                       localCost = warpingCostTmpArea;
@@ -686,6 +697,10 @@ void LipRec::processImage(Mat img)
 
                     double wpArea = dtw.calcWarpingCost(df, ui_.cbDtwWindowSizeActivate->isChecked(), windowSize, ui_.cbDtwWindowSizeAdaptable->isChecked());
 
+                    if(weightedDtwActive){
+                      wpArea += wpArea * weightedDtw[command];
+                    }
+
                     //                    ROS_INFO("Area Command: %s(%d) ; Utterrance: %d -> %f",
                     //                             command.toStdString().c_str(), clusterT.at(i).size(),
                     //                             currentUtteranceTrajectories[ui_.cbArea->text()].size(), wpArea);
@@ -702,6 +717,10 @@ void LipRec::processImage(Mat img)
                     double wpAspectRatio = 0.0;
 
                     wpAspectRatio = dtw.calcWarpingCost(df, ui_.cbDtwWindowSizeActivate->isChecked(), windowSize, ui_.cbDtwWindowSizeAdaptable->isChecked());
+
+                    if(weightedDtwActive){
+                      wpAspectRatio += wpAspectRatio * weightedDtw[command];
+                    }
 
                     //                    ROS_INFO("Aspect Ratio Command: %s(%d) ; Utterrance: %d -> %f",
                     //                             command.toStdString().c_str(), clusterT2.at(i).size(),
@@ -1723,6 +1742,73 @@ void LipRec::clickedUtter()
   this->applyUtteranceOfLoadedFile = true;
 }
 
+void LipRec::clickedWeightedDtw(bool checked)
+{
+  if(!checked){
+    ui_.gbDynamicTimeWarping->setChecked(true);
+  }
+  if(weightedDtwActive){
+    ui_.gbDynamicTimeWarping->setTitle("Dynamic-time-warping");
+    ui_.gbDynamicTimeWarping->setToolTip("Change to weighted DTW");
+
+    ui_.gbDynamicTimeWarping->setStyleSheet(
+"          QGroupBox#gbDynamicTimeWarping {"
+"              border: 1px solid black;"
+"            font-weight: bold;"
+"           }"
+
+"          QGroupBox::title#gbDynamicTimeWarping{"
+"            background-color: transparent;"
+"              subcontrol-position: top left;"
+"              padding: 1px;"
+"          }"
+"           QGroupBox::indicator#gbDynamicTimeWarping {"
+          "        width: 27px;"
+          "        height: 27px;"
+         " padding-right: 80px;"
+         " padding-left: 13;"
+          "      image: url(noWeightSelect.png)"
+          "    }"
+
+          "    QGroupBox::indicator:checked:hover#gbDynamicTimeWarping {"
+          "      image: url(weight.png)"
+          "    }"
+
+     );
+
+  }else{
+    ui_.gbDynamicTimeWarping->setTitle("Weighted Dynamic-time-warping");
+    ui_.gbDynamicTimeWarping->setToolTip("Change to normal DTW");
+
+    ui_.gbDynamicTimeWarping->setStyleSheet(
+"          QGroupBox#gbDynamicTimeWarping { "
+"              border: 1px solid black; "
+"            font-weight: bold;"
+"           } "
+
+"          QGroupBox::title#gbDynamicTimeWarping{ "
+"            background-color: transparent;"
+"              subcontrol-position: top left;"
+"              padding: 1px;"
+"          } "
+
+          "QGroupBox::indicator#gbDynamicTimeWarping {"
+          "       width: 27px;"
+          "       height: 27px;"
+"          padding-right: 80px;"
+         " padding-left: 13;"
+          "       image: url(weightSelect.png)"
+          "    }"
+
+          "    QGroupBox::indicator:checked:hover#gbDynamicTimeWarping {"
+          "      image: url(noWeight.png)"
+          "    }"
+
+     );
+  }
+  weightedDtwActive = !weightedDtwActive;
+}
+
 void LipRec::clickedRecordRecognized(bool checked)
 {
   if(checked){
@@ -1788,6 +1874,7 @@ void LipRec::applyCluster(QString clusterMethod, DistanceFunction df, QString co
 void LipRec::updateClusterTrajectories(){
   clusterTrajectoriesOfCommand.clear();
   QMap<QString, int> commandsWithCount = tdm.getAllCommandsWithCount();
+  int clusterK = 0;
   foreach (QString command, commandsWithCount.keys()) {
     QStringList strL = tdm.getFeatures(command);
     foreach (QString feature, strL) {
@@ -1797,12 +1884,19 @@ void LipRec::updateClusterTrajectories(){
         this->setClusterTrajectories(clusterT, command, feature, ui_.rbKmedoids->text());
       }
 
+      if(clusterT.size() > clusterK){
+        clusterK = clusterT.size();
+      }
+
       clusterT = tdm.getClusterTrajectories(command, feature, ui_.rbMosaCluster->text());
       if(clusterT.size() > 0){
         this->setClusterTrajectories(clusterT, command, feature, ui_.rbMosaCluster->text());
       }
+
+
     }
   }
+  ui_.sbKMethod->setValue(clusterK);
 }
 
 void LipRec::changeRecordRecognitionStateToDecisionIfPossible()
@@ -1844,7 +1938,7 @@ void LipRec::fillRecordRecognitionData()
     recordRecognitionData.distanceFunction = "SQUARE2";
   }
 
-  recordRecognitionData.weightedDtw = ui_.cbWeightedDTW;
+  recordRecognitionData.weightedDtw = weightedDtwActive;
   recordRecognitionData.dtwStepPattern = ui_.cbDTWStepPattern->currentText();
   recordRecognitionData.dtwWindowActive = ui_.cbDtwWindowSizeActivate->isChecked();
   recordRecognitionData.dtwWindowSize = ui_.sbDtwWindowSize->value();
@@ -1879,6 +1973,27 @@ void LipRec::printTrajectory(QList<double> trajectory)
   ROS_INFO(">>>End printTrajectory");
 }
 
+void LipRec::initWeightsForDTW()
+{
+  weightedDtw.insert("grasp close", 0.28);
+  weightedDtw.insert("grasp open", 0.25);
+  weightedDtw.insert("look backward", 0.165);
+  weightedDtw.insert("look forward", 0.165);
+  weightedDtw.insert("look left", 0.3);
+  weightedDtw.insert("look right", 0.28);
+  weightedDtw.insert("move backward", 0.16);
+  weightedDtw.insert("move fast", 0.28);
+  weightedDtw.insert("move forward", 0.165);
+  weightedDtw.insert("move slow", 0.28);
+  weightedDtw.insert("robo go", 0.18);
+  weightedDtw.insert("robo off", 0.18);
+  weightedDtw.insert("robo start", 0.17);
+  weightedDtw.insert("robo stop", 0.17);
+  weightedDtw.insert("turn backward", 0.165);
+  weightedDtw.insert("turn left", 0.28);
+  weightedDtw.insert("turn right", 0.3);
+}
+
 void LipRec::updateTrajectoriesInfoGUI()
 {
   QMap<QString, int> commandsWithCount = tdm.getAllCommandsWithCount();
@@ -1887,10 +2002,31 @@ void LipRec::updateTrajectoriesInfoGUI()
   QString featuresForCmd = "";
 
   ui_.lwTrajectoriesInfo->clear();
+  ui_.lwDTWWeights->clear();
 
   int i = 1;
   foreach (QString command, commandsWithCount.keys()) {
     featuresForCmd.clear();
+
+    QListWidgetItem* item = new QListWidgetItem();
+
+    QDoubleSpinBox* dsb = new QDoubleSpinBox();
+    QLabel* lbl = new QLabel(command);
+
+    dsb->setValue(weightedDtw[command]);
+
+    QHBoxLayout *layout = new QHBoxLayout;
+    layout->addWidget(dsb);
+    layout->addWidget(lbl);
+
+    QWidget* widget = new QWidget;
+    widget->setLayout(layout);
+
+    ui_.lwDTWWeights->addItem(item);
+    ui_.lwDTWWeights->setItemWidget(item, widget);
+    item->setSizeHint(QSize(item->sizeHint().width(), 50));
+
+
     QStringList strL = tdm.getFeatures(command);
     foreach (QString feature, strL) {
       featuresForCmd = featuresForCmd + feature + ", ";
