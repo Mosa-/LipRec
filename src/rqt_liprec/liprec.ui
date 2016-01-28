@@ -1350,8 +1350,74 @@
           <string>DTW Weights</string>
          </attribute>
          <layout class="QGridLayout" name="gridLayout_44">
+          <item row="0" column="2">
+           <widget class="QSpinBox" name="sbDTWMaxWeightCoefficient">
+            <property name="minimumSize">
+             <size>
+              <width>68</width>
+              <height>0</height>
+             </size>
+            </property>
+            <property name="maximumSize">
+             <size>
+              <width>68</width>
+              <height>16777215</height>
+             </size>
+            </property>
+            <property name="wrapping">
+             <bool>false</bool>
+            </property>
+            <property name="alignment">
+             <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
+            </property>
+            <property name="buttonSymbols">
+             <enum>QAbstractSpinBox::PlusMinus</enum>
+            </property>
+            <property name="accelerated">
+             <bool>false</bool>
+            </property>
+            <property name="suffix">
+             <string>%</string>
+            </property>
+            <property name="prefix">
+             <string/>
+            </property>
+            <property name="maximum">
+             <number>100</number>
+            </property>
+            <property name="value">
+             <number>30</number>
+            </property>
+           </widget>
+          </item>
+          <item row="0" column="1">
+           <widget class="QLabel" name="label_35">
+            <property name="text">
+             <string>DTW max weight coefficient:</string>
+            </property>
+           </widget>
+          </item>
           <item row="0" column="0">
-           <widget class="QListWidget" name="lwDTWWeights"/>
+           <spacer name="horizontalSpacer_10">
+            <property name="orientation">
+             <enum>Qt::Horizontal</enum>
+            </property>
+            <property name="sizeHint" stdset="0">
+             <size>
+              <width>40</width>
+              <height>20</height>
+             </size>
+            </property>
+           </spacer>
+          </item>
+          <item row="1" column="0" colspan="4">
+           <widget class="QListWidget" name="lwDTWWeights">
+            <property name="font">
+             <font>
+              <pointsize>10</pointsize>
+             </font>
+            </property>
+           </widget>
           </item>
          </layout>
         </widget>
@@ -1951,7 +2017,7 @@ QGroupBox::title{
              <item row="0" column="0" colspan="2">
               <widget class="QListWidget" name="lwTrajectoriesInfo">
                <property name="styleSheet">
-                <string notr="true">font: 9pt &quot;Courier&quot;;</string>
+                <string notr="true"/>
                </property>
                <property name="frameShape">
                 <enum>QFrame::NoFrame</enum>
@@ -2804,8 +2870,8 @@ QGroupBox::title#gbDynamicTimeWarping{
 QGroupBox::indicator#gbDynamicTimeWarping {
     width: 27px;
     height: 27px;
-	padding-right: 80px;
-	padding-left: 13;
+	padding-right: 50px;
+	padding-left: 55;
 	image: url(noWeightSelect.png)
 }
  

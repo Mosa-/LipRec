@@ -193,9 +193,6 @@ void LipRec::initPlugin(qt_gui_cpp::PluginContext& context)
 
   availableTrajectories << "all";
 
-  this->initWeightsForDTW();
-  weightedDtwActive = false;
-  QObject::connect(ui_.gbDynamicTimeWarping, SIGNAL(clicked(bool)), this, SLOT(clickedWeightedDtw(bool)));
 
   tdm.connectToDatabase("localhost", "liprec", ui_.leCollection->text());
   tdm.setCollectionCluster("clustering");
@@ -203,11 +200,36 @@ void LipRec::initPlugin(qt_gui_cpp::PluginContext& context)
 
   connect(ui_.leCollection, SIGNAL(textEdited(const QString&)), this, SLOT(lineEditChanged(const QString&)));
 
+  ui_.lwTrajectoriesInfo->setStyleSheet("QListWidget::item {"
+                                        "border-bottom: 1px solid black;"
+                                        "padding-bottom: 2px;"
+                                        "padding-top: 2px;"
+                                         "}"
+                                        "QListWidget:item:selected { background: #3555FF; }");
+  font = QFont ("Courier");
+  font.setStyleHint (QFont::Monospace);
+  font.setPointSize (9);
+  font.setFixedPitch (true);
+  ui_.lwTrajectoriesInfo->setFont(font);
   ui_.lwTrajectoriesInfo->setWordWrap(true);
 
   this->updateClusterTrajectories();
 
-  this->updateTrajectoriesInfoGUI();
+  this->calculateAndInitWeightsForDTW();
+  weightedDtwActive = false;
+  ui_.lwDTWWeights->setStyleSheet(   "QListWidget::item {"
+                                     "border-bottom: 6px solid black;"
+                                     "border-color: black;"
+                                     "margin-bottom: -5px;"
+                                     "margin-top: -5px;"
+                                  "}"
+                                  "QListWidget::item:selected {"
+                                     "background-color: #3555FF;"
+                                  "}");
+  QObject::connect(ui_.gbDynamicTimeWarping, SIGNAL(clicked(bool)), this, SLOT(clickedWeightedDtw(bool)));
+  QObject::connect(ui_.sbDTWMaxWeightCoefficient, SIGNAL(valueChanged(int)), this, SLOT(spinBoxChanged(int)));
+
+  this->updateTrajectoriesInfoGUIAndSetWeightsForDTW();
 
   QObject::connect(this, SIGNAL(updateCam(Mat)), this, SLOT(getCamPic(Mat)));
   QObject::connect(this, SIGNAL(updateDepthCam(Mat)), this, SLOT(getDepthCamPic(Mat)));
@@ -1125,7 +1147,17 @@ void LipRec::lineEditChanged(const QString &str)
   availableTrajectories.clear();
   availableTrajectories << "all";
   this->updateClusterTrajectories();
-  this->updateTrajectoriesInfoGUI();
+  this->updateTrajectoriesInfoGUIAndSetWeightsForDTW();
+}
+
+void LipRec::spinBoxChanged(int value)
+{
+  tdm.setCollection(ui_.leCollection->text());
+  availableTrajectories.clear();
+  availableTrajectories << "all";
+  this->updateClusterTrajectories();
+  this->calculateAndInitWeightsForDTW();
+  this->updateTrajectoriesInfoGUIAndSetWeightsForDTW();
 }
 
 void LipRec::drawFaceMouthROI(Mat& img){
@@ -1973,7 +2005,39 @@ void LipRec::printTrajectory(QList<double> trajectory)
   ROS_INFO(">>>End printTrajectory");
 }
 
-void LipRec::initWeightsForDTW()
+
+void LipRec::updateTrajectoriesInfoGUIAndSetWeightsForDTW()
+{
+  QMap<QString, int> commandsWithCount = tdm.getAllCommandsWithCount();
+
+  QString commands = "";
+  QString featuresForCmd = "";
+
+  ui_.lwTrajectoriesInfo->clear();
+  ui_.lwDTWWeights->clear();
+
+  int i = 1;
+  foreach (QString command, commandsWithCount.keys()) {
+    featuresForCmd.clear();
+
+    this->setWeightsForDTW(command);
+
+    QStringList strL = tdm.getFeatures(command);
+    foreach (QString feature, strL) {
+      featuresForCmd = featuresForCmd + feature + ", ";
+    }
+
+    ui_.lwTrajectoriesInfo->addItem(QString::number(i++)+ ") " + command + " (" + QString::number(commandsWithCount[command]) +")" + "\n" +featuresForCmd);
+
+    if(!availableTrajectories.contains(command)){
+      availableTrajectories << command;
+      ui_.cbTrajectory->clear();
+      ui_.cbTrajectory->addItems(availableTrajectories);
+    }
+  }
+}
+
+void LipRec::calculateAndInitWeightsForDTW()
 {
   weightedDtw.insert("grasp close", 0.28);
   weightedDtw.insert("grasp open", 0.25);
@@ -1992,57 +2056,66 @@ void LipRec::initWeightsForDTW()
   weightedDtw.insert("turn backward", 0.165);
   weightedDtw.insert("turn left", 0.28);
   weightedDtw.insert("turn right", 0.3);
-}
 
-void LipRec::updateTrajectoriesInfoGUI()
-{
+  weightedDtw.clear();
+
+  int maxTrajectoryLength = 0;
+  int minTrajectoryLength = INT_MAX;
+  QMap<QString, int> meanLengthForCommand;
+
   QMap<QString, int> commandsWithCount = tdm.getAllCommandsWithCount();
-
-  QString commands = "";
-  QString featuresForCmd = "";
-
-  ui_.lwTrajectoriesInfo->clear();
-  ui_.lwDTWWeights->clear();
-
-  int i = 1;
   foreach (QString command, commandsWithCount.keys()) {
-    featuresForCmd.clear();
+    QList<QList<double> > clusterTrajectories = this->getClusterTrajectories(command, ui_.cbArea->text(), ui_.rbKmedoids->text());
 
-    QListWidgetItem* item = new QListWidgetItem();
+    int currentTrajectoryLengthMean = 0;
 
-    QDoubleSpinBox* dsb = new QDoubleSpinBox();
-    QLabel* lbl = new QLabel(command);
-
-    dsb->setValue(weightedDtw[command]);
-
-    QHBoxLayout *layout = new QHBoxLayout;
-    layout->addWidget(dsb);
-    layout->addWidget(lbl);
-
-    QWidget* widget = new QWidget;
-    widget->setLayout(layout);
-
-    ui_.lwDTWWeights->addItem(item);
-    ui_.lwDTWWeights->setItemWidget(item, widget);
-    item->setSizeHint(QSize(item->sizeHint().width(), 50));
-
-
-    QStringList strL = tdm.getFeatures(command);
-    foreach (QString feature, strL) {
-      featuresForCmd = featuresForCmd + feature + ", ";
+    for (int i = 0; i < clusterTrajectories.size(); ++i) {
+      currentTrajectoryLengthMean += clusterTrajectories.at(i).size();
     }
-    //commands = commands + QString::number(i++)+ ") " + command + " (" + QString::number(commandsWithCount[command]) +")" + " :\n" +featuresForCmd + "\n";
-    ui_.lwTrajectoriesInfo->addItem(QString::number(i++)+ ") " + command + " (" + QString::number(commandsWithCount[command]) +")" + "\n" +featuresForCmd);
+    currentTrajectoryLengthMean /= clusterTrajectories.size();
 
-    if(!availableTrajectories.contains(command)){
-      availableTrajectories << command;
-      ui_.cbTrajectory->clear();
-      ui_.cbTrajectory->addItems(availableTrajectories);
+    meanLengthForCommand[command] = currentTrajectoryLengthMean;
+
+    if(currentTrajectoryLengthMean > maxTrajectoryLength){
+      maxTrajectoryLength = currentTrajectoryLengthMean;
+    }
+    if(currentTrajectoryLengthMean < minTrajectoryLength){
+      minTrajectoryLength = currentTrajectoryLengthMean;
     }
   }
 
-  //ui_.lblTrajectoriesInfo->setText(commands);
-  //ui_.lblTrajectoriesInfo->setFont(QFont("Times New Roman", 11, QFont::Normal));
+  int differenceMaxMin = 0;
+  double dtwWeightCoefficient = 0.0;
+
+  differenceMaxMin = maxTrajectoryLength - minTrajectoryLength;
+
+  foreach (QString command, meanLengthForCommand.keys()) {
+    dtwWeightCoefficient = (((double) maxTrajectoryLength - meanLengthForCommand[command]) * ui_.sbDTWMaxWeightCoefficient->value())/differenceMaxMin;
+    weightedDtw.insert(command, dtwWeightCoefficient/100.0);
+  }
+
+}
+
+void LipRec::setWeightsForDTW(QString command)
+{
+  int listWidgetItemHeight = 34;
+  QListWidgetItem* item = new QListWidgetItem();
+
+  QDoubleSpinBox* dsb = new QDoubleSpinBox();
+  QLabel* lbl = new QLabel(command);
+
+  dsb->setValue(weightedDtw[command]);
+
+  QHBoxLayout *layout = new QHBoxLayout;
+  layout->addWidget(dsb);
+  layout->addWidget(lbl);
+
+  QWidget* widget = new QWidget;
+  widget->setLayout(layout);
+
+  ui_.lwDTWWeights->addItem(item);
+  ui_.lwDTWWeights->setItemWidget(item, widget);
+  item->setSizeHint(QSize(item->sizeHint().width(), listWidgetItemHeight));
 }
 
 void LipRec::lipsActivation(int currentFrame)

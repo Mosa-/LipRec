@@ -200,9 +200,10 @@ private:
     void applyCluster(QString clusterMethod, DistanceFunction df, QString command, QString feature);
     void printTrajectory(QList<double> trajectory);
 
-    void initWeightsForDTW();
+    void calculateAndInitWeightsForDTW();
+    void setWeightsForDTW(QString command);
 
-    void updateTrajectoriesInfoGUI();
+    void updateTrajectoriesInfoGUIAndSetWeightsForDTW();
     QPixmap drawDTWPixmap(QString currentCommand, QString feature, int indexOfLowCluster, QString clusterMethod, DistanceFunction df, DtwStepPattern stepPattern);
     void lipsActivation(int currentFrame);
     Mat drawMouthFeaturesOnGUI(Mat& mouthImg, Mat& rLowFinal, Mat& rMidFinal, Mat& rTopFinal,
@@ -220,6 +221,7 @@ public slots:
 
     void triggedAction(QAction* action);
     void lineEditChanged(const QString& str);
+    void spinBoxChanged(int value);
 
 signals:
     void updateCam(Mat img);
