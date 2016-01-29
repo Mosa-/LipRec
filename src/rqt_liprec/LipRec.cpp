@@ -785,7 +785,7 @@ void LipRec::processImage(Mat img)
                 if(updateRecognizedText){
                   ui_.lwArea->clear();
                   ui_.lwAspectRatio->clear();
-                  ui_.labelArea->setText("Fusion");
+                  ui_.labelArea->setText("Fusion (Area + Aspect ratio)");
                   ui_.labelAspectRatio->setText("");
 
                   qSort(commandsWithCost);

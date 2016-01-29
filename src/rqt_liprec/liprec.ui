@@ -2485,213 +2485,336 @@ QGroupBox::title{
              <item row="0" column="0">
               <widget class="QGroupBox" name="groupBox">
                <property name="title">
-                <string>Add Trajectory</string>
+                <string>Trajectory management</string>
                </property>
                <layout class="QGridLayout" name="gridLayout_24">
-                <item row="4" column="1" colspan="2">
-                 <widget class="QPushButton" name="pbSaveTrajectory">
-                  <property name="enabled">
-                   <bool>false</bool>
-                  </property>
-                  <property name="text">
-                   <string>Save</string>
-                  </property>
-                 </widget>
-                </item>
-                <item row="1" column="2" colspan="5">
-                 <widget class="QFrame" name="frame_15">
+                <property name="leftMargin">
+                 <number>0</number>
+                </property>
+                <property name="topMargin">
+                 <number>6</number>
+                </property>
+                <property name="rightMargin">
+                 <number>6</number>
+                </property>
+                <property name="bottomMargin">
+                 <number>2</number>
+                </property>
+                <property name="horizontalSpacing">
+                 <number>6</number>
+                </property>
+                <property name="verticalSpacing">
+                 <number>0</number>
+                </property>
+                <item row="0" column="0">
+                 <widget class="QFrame" name="frame_25">
                   <property name="frameShape">
-                   <enum>QFrame::StyledPanel</enum>
+                   <enum>QFrame::Box</enum>
                   </property>
                   <property name="frameShadow">
-                   <enum>QFrame::Sunken</enum>
+                   <enum>QFrame::Raised</enum>
                   </property>
-                  <layout class="QGridLayout" name="gridLayout_23">
-                   <property name="leftMargin">
-                    <number>0</number>
-                   </property>
-                   <property name="topMargin">
-                    <number>0</number>
-                   </property>
-                   <property name="rightMargin">
-                    <number>0</number>
-                   </property>
-                   <property name="bottomMargin">
-                    <number>0</number>
-                   </property>
-                   <property name="spacing">
-                    <number>0</number>
-                   </property>
-                   <item row="0" column="0">
-                    <widget class="QCheckBox" name="cbArea">
-                     <property name="text">
-                      <string>area</string>
+                  <layout class="QGridLayout" name="gridLayout_45">
+                   <item row="1" column="2" colspan="5">
+                    <widget class="QFrame" name="frame_15">
+                     <property name="frameShape">
+                      <enum>QFrame::StyledPanel</enum>
                      </property>
-                     <property name="checked">
-                      <bool>true</bool>
+                     <property name="frameShadow">
+                      <enum>QFrame::Sunken</enum>
+                     </property>
+                     <layout class="QGridLayout" name="gridLayout_23">
+                      <property name="leftMargin">
+                       <number>0</number>
+                      </property>
+                      <property name="topMargin">
+                       <number>0</number>
+                      </property>
+                      <property name="rightMargin">
+                       <number>0</number>
+                      </property>
+                      <property name="bottomMargin">
+                       <number>0</number>
+                      </property>
+                      <property name="spacing">
+                       <number>0</number>
+                      </property>
+                      <item row="0" column="0">
+                       <widget class="QCheckBox" name="cbArea">
+                        <property name="text">
+                         <string>area</string>
+                        </property>
+                        <property name="checked">
+                         <bool>true</bool>
+                        </property>
+                       </widget>
+                      </item>
+                      <item row="0" column="1">
+                       <widget class="QCheckBox" name="cbAspectRatio">
+                        <property name="text">
+                         <string>aspect ratio</string>
+                        </property>
+                        <property name="checked">
+                         <bool>true</bool>
+                        </property>
+                       </widget>
+                      </item>
+                     </layout>
+                    </widget>
+                   </item>
+                   <item row="2" column="4">
+                    <spacer name="verticalSpacer_3">
+                     <property name="orientation">
+                      <enum>Qt::Vertical</enum>
+                     </property>
+                     <property name="sizeHint" stdset="0">
+                      <size>
+                       <width>20</width>
+                       <height>28</height>
+                      </size>
+                     </property>
+                    </spacer>
+                   </item>
+                   <item row="3" column="0" colspan="2">
+                    <spacer name="horizontalSpacer_5">
+                     <property name="orientation">
+                      <enum>Qt::Horizontal</enum>
+                     </property>
+                     <property name="sizeType">
+                      <enum>QSizePolicy::Expanding</enum>
+                     </property>
+                     <property name="sizeHint" stdset="0">
+                      <size>
+                       <width>205</width>
+                       <height>20</height>
+                      </size>
+                     </property>
+                    </spacer>
+                   </item>
+                   <item row="3" column="2" colspan="3">
+                    <widget class="QPushButton" name="pbRecordStopTrajectory">
+                     <property name="minimumSize">
+                      <size>
+                       <width>143</width>
+                       <height>0</height>
+                      </size>
+                     </property>
+                     <property name="maximumSize">
+                      <size>
+                       <width>143</width>
+                       <height>16777215</height>
+                      </size>
+                     </property>
+                     <property name="text">
+                      <string>Record Trajectory</string>
                      </property>
                     </widget>
                    </item>
-                   <item row="0" column="1">
-                    <widget class="QCheckBox" name="cbAspectRatio">
+                   <item row="3" column="5" colspan="2">
+                    <spacer name="horizontalSpacer_6">
+                     <property name="orientation">
+                      <enum>Qt::Horizontal</enum>
+                     </property>
+                     <property name="sizeType">
+                      <enum>QSizePolicy::Expanding</enum>
+                     </property>
+                     <property name="sizeHint" stdset="0">
+                      <size>
+                       <width>200</width>
+                       <height>20</height>
+                      </size>
+                     </property>
+                    </spacer>
+                   </item>
+                   <item row="4" column="0">
+                    <spacer name="horizontalSpacer_7">
+                     <property name="orientation">
+                      <enum>Qt::Horizontal</enum>
+                     </property>
+                     <property name="sizeHint" stdset="0">
+                      <size>
+                       <width>159</width>
+                       <height>20</height>
+                      </size>
+                     </property>
+                    </spacer>
+                   </item>
+                   <item row="4" column="1" colspan="2">
+                    <widget class="QPushButton" name="pbSaveTrajectory">
+                     <property name="enabled">
+                      <bool>false</bool>
+                     </property>
                      <property name="text">
-                      <string>aspect ratio</string>
+                      <string>Save</string>
+                     </property>
+                    </widget>
+                   </item>
+                   <item row="4" column="3">
+                    <widget class="QLabel" name="lblMsg">
+                     <property name="styleSheet">
+                      <string notr="true">QLabel{ 
+rgb(255, 0, 0);
+font: 8pt;
+}</string>
+                     </property>
+                     <property name="text">
+                      <string/>
+                     </property>
+                     <property name="alignment">
+                      <set>Qt::AlignCenter</set>
+                     </property>
+                    </widget>
+                   </item>
+                   <item row="4" column="4" colspan="2">
+                    <widget class="QPushButton" name="pbAbortTrajectory">
+                     <property name="enabled">
+                      <bool>false</bool>
+                     </property>
+                     <property name="text">
+                      <string>Abort</string>
+                     </property>
+                     <property name="checkable">
+                      <bool>false</bool>
                      </property>
                      <property name="checked">
-                      <bool>true</bool>
+                      <bool>false</bool>
+                     </property>
+                     <property name="autoDefault">
+                      <bool>false</bool>
+                     </property>
+                     <property name="default">
+                      <bool>false</bool>
+                     </property>
+                     <property name="flat">
+                      <bool>false</bool>
+                     </property>
+                    </widget>
+                   </item>
+                   <item row="4" column="6">
+                    <spacer name="horizontalSpacer_8">
+                     <property name="orientation">
+                      <enum>Qt::Horizontal</enum>
+                     </property>
+                     <property name="sizeHint" stdset="0">
+                      <size>
+                       <width>159</width>
+                       <height>20</height>
+                      </size>
+                     </property>
+                    </spacer>
+                   </item>
+                   <item row="1" column="0" colspan="2">
+                    <widget class="QLabel" name="label_23">
+                     <property name="text">
+                      <string>Features</string>
+                     </property>
+                    </widget>
+                   </item>
+                   <item row="0" column="0" colspan="7">
+                    <widget class="QLineEdit" name="leCommand">
+                     <property name="minimumSize">
+                      <size>
+                       <width>0</width>
+                       <height>24</height>
+                      </size>
+                     </property>
+                     <property name="maximumSize">
+                      <size>
+                       <width>16777215</width>
+                       <height>24</height>
+                      </size>
+                     </property>
+                     <property name="placeholderText">
+                      <string>Command </string>
                      </property>
                     </widget>
                    </item>
                   </layout>
                  </widget>
                 </item>
-                <item row="1" column="0">
-                 <widget class="QLabel" name="label_23">
-                  <property name="text">
-                   <string>Features</string>
-                  </property>
-                 </widget>
-                </item>
-                <item row="0" column="0" colspan="2">
-                 <widget class="QLabel" name="label_22">
-                  <property name="text">
-                   <string>Command</string>
-                  </property>
-                 </widget>
-                </item>
-                <item row="4" column="0">
-                 <spacer name="horizontalSpacer_7">
-                  <property name="orientation">
-                   <enum>Qt::Horizontal</enum>
-                  </property>
-                  <property name="sizeHint" stdset="0">
-                   <size>
-                    <width>159</width>
-                    <height>20</height>
-                   </size>
-                  </property>
-                 </spacer>
-                </item>
-                <item row="4" column="6">
-                 <spacer name="horizontalSpacer_8">
-                  <property name="orientation">
-                   <enum>Qt::Horizontal</enum>
-                  </property>
-                  <property name="sizeHint" stdset="0">
-                   <size>
-                    <width>159</width>
-                    <height>20</height>
-                   </size>
-                  </property>
-                 </spacer>
-                </item>
-                <item row="3" column="2" colspan="3">
-                 <widget class="QPushButton" name="pbRecordStopTrajectory">
+                <item row="0" column="1">
+                 <widget class="QFrame" name="frame_24">
                   <property name="minimumSize">
                    <size>
-                    <width>143</width>
+                    <width>250</width>
                     <height>0</height>
                    </size>
                   </property>
                   <property name="maximumSize">
                    <size>
-                    <width>143</width>
+                    <width>350</width>
                     <height>16777215</height>
                    </size>
                   </property>
-                  <property name="text">
-                   <string>Record Trajectory</string>
+                  <property name="frameShape">
+                   <enum>QFrame::Box</enum>
                   </property>
+                  <property name="frameShadow">
+                   <enum>QFrame::Raised</enum>
+                  </property>
+                  <property name="lineWidth">
+                   <number>1</number>
+                  </property>
+                  <property name="midLineWidth">
+                   <number>0</number>
+                  </property>
+                  <layout class="QGridLayout" name="gridLayout_4">
+                   <property name="horizontalSpacing">
+                    <number>0</number>
+                   </property>
+                   <item row="1" column="0">
+                    <widget class="QCheckBox" name="cbLoadUtteranceFile">
+                     <property name="font">
+                      <font>
+                       <pointsize>10</pointsize>
+                      </font>
+                     </property>
+                     <property name="text">
+                      <string>Load utterance file</string>
+                     </property>
+                    </widget>
+                   </item>
+                   <item row="0" column="0">
+                    <widget class="QLineEdit" name="leFilenameLoadRecord">
+                     <property name="minimumSize">
+                      <size>
+                       <width>0</width>
+                       <height>24</height>
+                      </size>
+                     </property>
+                     <property name="maximumSize">
+                      <size>
+                       <width>16777215</width>
+                       <height>24</height>
+                      </size>
+                     </property>
+                     <property name="placeholderText">
+                      <string>Filename (load)</string>
+                     </property>
+                    </widget>
+                   </item>
+                   <item row="2" column="0" colspan="2">
+                    <widget class="QPushButton" name="pbUtter">
+                     <property name="text">
+                      <string>Utter</string>
+                     </property>
+                    </widget>
+                   </item>
+                   <item row="3" column="0">
+                    <spacer name="verticalSpacer_2">
+                     <property name="orientation">
+                      <enum>Qt::Vertical</enum>
+                     </property>
+                     <property name="sizeHint" stdset="0">
+                      <size>
+                       <width>20</width>
+                       <height>40</height>
+                      </size>
+                     </property>
+                    </spacer>
+                   </item>
+                  </layout>
                  </widget>
-                </item>
-                <item row="4" column="4" colspan="2">
-                 <widget class="QPushButton" name="pbAbortTrajectory">
-                  <property name="enabled">
-                   <bool>false</bool>
-                  </property>
-                  <property name="text">
-                   <string>Abort</string>
-                  </property>
-                  <property name="checkable">
-                   <bool>false</bool>
-                  </property>
-                  <property name="checked">
-                   <bool>false</bool>
-                  </property>
-                  <property name="autoDefault">
-                   <bool>false</bool>
-                  </property>
-                  <property name="default">
-                   <bool>false</bool>
-                  </property>
-                  <property name="flat">
-                   <bool>false</bool>
-                  </property>
-                 </widget>
-                </item>
-                <item row="3" column="0" colspan="2">
-                 <spacer name="horizontalSpacer_5">
-                  <property name="orientation">
-                   <enum>Qt::Horizontal</enum>
-                  </property>
-                  <property name="sizeType">
-                   <enum>QSizePolicy::Expanding</enum>
-                  </property>
-                  <property name="sizeHint" stdset="0">
-                   <size>
-                    <width>205</width>
-                    <height>20</height>
-                   </size>
-                  </property>
-                 </spacer>
-                </item>
-                <item row="0" column="2" colspan="5">
-                 <widget class="QLineEdit" name="leCommand"/>
-                </item>
-                <item row="4" column="3">
-                 <widget class="QLabel" name="lblMsg">
-                  <property name="styleSheet">
-                   <string notr="true">QLabel{ 
-rgb(255, 0, 0);
-font: 8pt;
-}</string>
-                  </property>
-                  <property name="text">
-                   <string/>
-                  </property>
-                  <property name="alignment">
-                   <set>Qt::AlignCenter</set>
-                  </property>
-                 </widget>
-                </item>
-                <item row="2" column="4">
-                 <spacer name="verticalSpacer_3">
-                  <property name="orientation">
-                   <enum>Qt::Vertical</enum>
-                  </property>
-                  <property name="sizeHint" stdset="0">
-                   <size>
-                    <width>20</width>
-                    <height>28</height>
-                   </size>
-                  </property>
-                 </spacer>
-                </item>
-                <item row="3" column="5" colspan="2">
-                 <spacer name="horizontalSpacer_6">
-                  <property name="orientation">
-                   <enum>Qt::Horizontal</enum>
-                  </property>
-                  <property name="sizeType">
-                   <enum>QSizePolicy::Expanding</enum>
-                  </property>
-                  <property name="sizeHint" stdset="0">
-                   <size>
-                    <width>200</width>
-                    <height>20</height>
-                   </size>
-                  </property>
-                 </spacer>
                 </item>
                </layout>
               </widget>
@@ -2927,6 +3050,15 @@ QGroupBox::title {
                   </property>
                   <property name="title">
                    <string>DTW Step Pattern</string>
+                  </property>
+                  <property name="alignment">
+                   <set>Qt::AlignLeading|Qt::AlignLeft|Qt::AlignVCenter</set>
+                  </property>
+                  <property name="flat">
+                   <bool>false</bool>
+                  </property>
+                  <property name="checkable">
+                   <bool>false</bool>
                   </property>
                   <layout class="QGridLayout" name="gridLayout_37">
                    <property name="leftMargin">
@@ -5081,7 +5213,7 @@ QPushButton:checked{
     <widget class="QGroupBox" name="gbLipRecRecorder">
      <property name="minimumSize">
       <size>
-       <width>1000</width>
+       <width>700</width>
        <height>100</height>
       </size>
      </property>
@@ -5252,71 +5384,6 @@ font: 8pt;
         </property>
        </widget>
       </item>
-      <item row="0" column="3">
-       <widget class="QFrame" name="frame_24">
-        <property name="minimumSize">
-         <size>
-          <width>350</width>
-          <height>0</height>
-         </size>
-        </property>
-        <property name="maximumSize">
-         <size>
-          <width>350</width>
-          <height>16777215</height>
-         </size>
-        </property>
-        <property name="frameShape">
-         <enum>QFrame::Box</enum>
-        </property>
-        <property name="frameShadow">
-         <enum>QFrame::Raised</enum>
-        </property>
-        <property name="lineWidth">
-         <number>1</number>
-        </property>
-        <property name="midLineWidth">
-         <number>0</number>
-        </property>
-        <layout class="QGridLayout" name="gridLayout_4">
-         <item row="0" column="0">
-          <widget class="QLabel" name="label_12">
-           <property name="maximumSize">
-            <size>
-             <width>121</width>
-             <height>16777215</height>
-            </size>
-           </property>
-           <property name="text">
-            <string>Filename (load):</string>
-           </property>
-          </widget>
-         </item>
-         <item row="0" column="1" colspan="2">
-          <widget class="QLineEdit" name="leFilenameLoadRecord"/>
-         </item>
-         <item row="1" column="0">
-          <widget class="QCheckBox" name="cbLoadUtteranceFile">
-           <property name="font">
-            <font>
-             <pointsize>10</pointsize>
-            </font>
-           </property>
-           <property name="text">
-            <string>Load utterance file</string>
-           </property>
-          </widget>
-         </item>
-         <item row="1" column="2">
-          <widget class="QPushButton" name="pbUtter">
-           <property name="text">
-            <string>Utter</string>
-           </property>
-          </widget>
-         </item>
-        </layout>
-       </widget>
-      </item>
       <item row="0" column="0">
        <widget class="QFrame" name="frame_23">
         <property name="minimumSize">
@@ -5344,13 +5411,6 @@ font: 8pt;
          <property name="bottomMargin">
           <number>0</number>
          </property>
-         <item row="0" column="0">
-          <widget class="QLabel" name="label_11">
-           <property name="text">
-            <string>Filename (save):</string>
-           </property>
-          </widget>
-         </item>
          <item row="1" column="0" colspan="2">
           <widget class="QCheckBox" name="cbSOLR">
            <property name="font">
@@ -5393,13 +5453,16 @@ font: 8pt;
            </property>
           </widget>
          </item>
-         <item row="0" column="1" colspan="2">
+         <item row="0" column="0" colspan="3">
           <widget class="QLineEdit" name="leFilenameRecord">
            <property name="minimumSize">
             <size>
              <width>0</width>
              <height>23</height>
             </size>
+           </property>
+           <property name="placeholderText">
+            <string>Filename (save)</string>
            </property>
           </widget>
          </item>
