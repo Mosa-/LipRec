@@ -5421,6 +5421,9 @@ font: 8pt;
            <property name="text">
             <string>Save only lowest recognition</string>
            </property>
+           <property name="checked">
+            <bool>true</bool>
+           </property>
            <property name="tristate">
             <bool>false</bool>
            </property>
