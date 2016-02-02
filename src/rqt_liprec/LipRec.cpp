@@ -62,11 +62,11 @@ void LipRec::initPlugin(qt_gui_cpp::PluginContext& context)
   }
   this->imageProcessing.setUseMonoImage(useMonoImage);
 
-  camImage = getNodeHandle().subscribe(kinectTopic, 100, &LipRec::imageCallback, this);
+//  camImage = getNodeHandle().subscribe(kinectTopic, 100, &LipRec::imageCallback, this);
   //camImageDepth = getNodeHandle().subscribe("/kinect2/qhd/image_depth_rect", 100, &LipRec::imageDepthCallback, this);
 
-  faceROISub = getNodeHandle().subscribe("/face_detection/faceROI", 10, &LipRec::faceROICallback, this);
-  mouthROISub = getNodeHandle().subscribe("/face_detection/mouthROI", 10, &LipRec::mouthROICallback, this);
+//  faceROISub = getNodeHandle().subscribe("/face_detection/faceROI", 10, &LipRec::faceROICallback, this);
+//  mouthROISub = getNodeHandle().subscribe("/face_detection/mouthROI", 10, &LipRec::mouthROICallback, this);
 
   NO_CYCLIC_FRAME = ui_.sbNOCF->value();
 
@@ -1711,9 +1711,13 @@ void LipRec::clickedCluster()
 
 void LipRec::clickedClusterAll()
 {
-  ui_.leClusterCollection->setText("cluster2");
-  ui_.cbDTWStepPattern->setCurrentIndex(2);
-  this->clickedCluster();
+  ROS_INFO("Begin Cluster 14");
+  ui_.leClusterCollection->setText("cluster14");
+  ui_.sbKMethod->setValue(1);
+  ui_.cbDTWStepPattern->setCurrentIndex(0);
+  ui_.cbDtwWindowSizeActivate->setChecked(true);
+  ui_.sbDtwWindowSize->setValue(3);
+  ROS_INFO("End Cluster 14");
 }
 
 void LipRec::clickedUpdateRecognizedText(bool checked)

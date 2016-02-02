@@ -2175,15 +2175,27 @@ QGroupBox::title{
                 <string>Clustering</string>
                </property>
                <layout class="QGridLayout" name="gridLayout_30">
-                <item row="1" column="0">
-                 <widget class="QLabel" name="label_28">
+                <item row="2" column="3">
+                 <widget class="QPushButton" name="pbCluster">
+                  <property name="minimumSize">
+                   <size>
+                    <width>143</width>
+                    <height>0</height>
+                   </size>
+                  </property>
+                  <property name="maximumSize">
+                   <size>
+                    <width>143</width>
+                    <height>16777215</height>
+                   </size>
+                  </property>
                   <property name="text">
-                   <string>Method</string>
+                   <string>Cluster</string>
                   </property>
                  </widget>
                 </item>
-                <item row="2" column="5">
-                 <spacer name="horizontalSpacer_11">
+                <item row="2" column="0" colspan="3">
+                 <spacer name="horizontalSpacer_12">
                   <property name="orientation">
                    <enum>Qt::Horizontal</enum>
                   </property>
@@ -2192,11 +2204,27 @@ QGroupBox::title{
                   </property>
                   <property name="sizeHint" stdset="0">
                    <size>
-                    <width>200</width>
+                    <width>205</width>
                     <height>20</height>
                    </size>
                   </property>
                  </spacer>
+                </item>
+                <item row="0" column="3" colspan="3">
+                 <widget class="QComboBox" name="cbTrajectory">
+                  <item>
+                   <property name="text">
+                    <string>all</string>
+                   </property>
+                  </item>
+                 </widget>
+                </item>
+                <item row="0" column="0">
+                 <widget class="QLabel" name="label_29">
+                  <property name="text">
+                   <string>Trajectory set</string>
+                  </property>
+                 </widget>
                 </item>
                 <item row="1" column="2">
                  <widget class="QSpinBox" name="sbKMethod">
@@ -2211,13 +2239,11 @@ QGroupBox::title{
                   </property>
                  </widget>
                 </item>
-                <item row="0" column="3" colspan="3">
-                 <widget class="QComboBox" name="cbTrajectory">
-                  <item>
-                   <property name="text">
-                    <string>all</string>
-                   </property>
-                  </item>
+                <item row="1" column="0">
+                 <widget class="QLabel" name="label_28">
+                  <property name="text">
+                   <string>Method</string>
+                  </property>
                  </widget>
                 </item>
                 <item row="1" column="3" colspan="3">
@@ -2286,8 +2312,24 @@ QGroupBox::title{
                   </layout>
                  </widget>
                 </item>
-                <item row="2" column="3">
-                 <widget class="QPushButton" name="pbCluster">
+                <item row="2" column="5">
+                 <spacer name="horizontalSpacer_11">
+                  <property name="orientation">
+                   <enum>Qt::Horizontal</enum>
+                  </property>
+                  <property name="sizeType">
+                   <enum>QSizePolicy::Expanding</enum>
+                  </property>
+                  <property name="sizeHint" stdset="0">
+                   <size>
+                    <width>200</width>
+                    <height>20</height>
+                   </size>
+                  </property>
+                 </spacer>
+                </item>
+                <item row="2" column="4">
+                 <widget class="QPushButton" name="pbClusterAll">
                   <property name="minimumSize">
                    <size>
                     <width>143</width>
@@ -2300,36 +2342,6 @@ QGroupBox::title{
                     <height>16777215</height>
                    </size>
                   </property>
-                  <property name="text">
-                   <string>Cluster</string>
-                  </property>
-                 </widget>
-                </item>
-                <item row="0" column="0">
-                 <widget class="QLabel" name="label_29">
-                  <property name="text">
-                   <string>Trajectory set</string>
-                  </property>
-                 </widget>
-                </item>
-                <item row="2" column="0" colspan="3">
-                 <spacer name="horizontalSpacer_12">
-                  <property name="orientation">
-                   <enum>Qt::Horizontal</enum>
-                  </property>
-                  <property name="sizeType">
-                   <enum>QSizePolicy::Expanding</enum>
-                  </property>
-                  <property name="sizeHint" stdset="0">
-                   <size>
-                    <width>205</width>
-                    <height>20</height>
-                   </size>
-                  </property>
-                 </spacer>
-                </item>
-                <item row="2" column="4">
-                 <widget class="QPushButton" name="pbClusterAll">
                   <property name="text">
                    <string>ClusterAll</string>
                   </property>

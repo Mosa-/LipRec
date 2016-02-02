@@ -166,11 +166,11 @@ QList<Point> Dtw::calculateGreedyWarpingPath()
 
   }else if(stepPattern == TYPE2){
 
-    while(i>1 && j>1){
-      if(j==1){
-        i--;
-      }else if(i==1){
-        j--;
+    while(i>2 && j>2){
+      if(j==2){
+        i-=2;
+      }else if(i==2){
+        j-=2;
       }else{
         insertion = dtwDistanceMatrix.at<double>(j-1, i-2);
         deletion = dtwDistanceMatrix.at<double>(j-1, i-1);
@@ -195,7 +195,7 @@ QList<Point> Dtw::calculateGreedyWarpingPath()
           j--;
         }else if(insertion == minimum(insertion, deletion, match)){
           j--;
-          i -=2;
+          i-=2;
         }else{
           j-=2;
           i--;
@@ -206,11 +206,11 @@ QList<Point> Dtw::calculateGreedyWarpingPath()
 
   }else if(stepPattern == TYPE3){
 
-    while(i>1 && j>1){
-      if(j==1){
-        i--;
-      }else if(i==1){
-        j--;
+    while(i>2 && j>2){
+      if(j==2){
+        i-=2;
+      }else if(i==2){
+        j-=2;
       }else{
         insertion = dtwDistanceMatrix.at<double>(j-1, i-1);
         deletion = dtwDistanceMatrix.at<double>(j-2, i-1);
@@ -238,11 +238,11 @@ QList<Point> Dtw::calculateGreedyWarpingPath()
 
   }else if(stepPattern == TYPE4){
 
-    while(i>1 && j>1){
-      if(j==1){
-        i--;
-      }else if(i==1){
-        j--;
+    while(i>2 && j>2){
+      if(j==2){
+        i-=2;
+      }else if(i==2){
+        j-=2;
       }else{
         insertion = dtwDistanceMatrix.at<double>(j-1, i-2);
         deletion = dtwDistanceMatrix.at<double>(j-2, i-2);
@@ -280,11 +280,11 @@ QList<Point> Dtw::calculateGreedyWarpingPath()
 
   }else if(stepPattern == TYPE5){
 
-    while(i>1 && j>1){
-      if(j==1){
-        i--;
-      }else if(i==1){
-        j--;
+    while(i>3 && j>3){
+      if(j==3){
+        i-=3;
+      }else if(i==3){
+        j-=3;
       }else{
         insertion = dtwDistanceMatrix.at<double>(j-1, i-3);
         deletion = dtwDistanceMatrix.at<double>(j-1, i-2);
@@ -330,11 +330,11 @@ QList<Point> Dtw::calculateGreedyWarpingPath()
 
   }else{
 
-    while(i>1 && j>1){
-      if(j==1){
-        i--;
-      }else if(i==1){
-        j--;
+    while(i>2 && j>2){
+      if(j==2){
+        i-=2;
+      }else if(i==2){
+        j-=2;
       }else{
         insertion = dtwDistanceMatrix.at<double>(j, i-1);
         deletion = dtwDistanceMatrix.at<double>(j-1, i-1);
