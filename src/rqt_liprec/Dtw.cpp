@@ -376,17 +376,17 @@ void Dtw::applyStepPatternType1(bool activeWindowSize, int windowSize, bool wind
     currentWindowSize = max(windowSize, abs(dtwDistanceMatrix.cols - dtwDistanceMatrix.rows));
   }
 
-  int newI = 1;
+  int newJ = 1;
   int newCondition = dtwDistanceMatrix.rows;
 
   for (int i = 1; i < dtwDistanceMatrix.cols; ++i) {
 
     if(activeWindowSize){
-      newI =  max(1, i-currentWindowSize);
+      newJ =  max(1, i-currentWindowSize);
       newCondition = min(dtwDistanceMatrix.rows,i+currentWindowSize);
     }
 
-    for (int j = newI; j < newCondition; ++j) {
+    for (int j = newJ; j < newCondition; ++j) {
       insertion = dtwDistanceMatrix.at<double>(j, i-1);
       deletion = dtwDistanceMatrix.at<double>(j-1, i);
       match = dtwDistanceMatrix.at<double>(j-1, i-1);
@@ -425,17 +425,17 @@ void Dtw::applyStepPatternType2(bool activeWindowSize, int windowSize, bool wind
     currentWindowSize = max(windowSize, abs(dtwDistanceMatrix.cols - dtwDistanceMatrix.rows));
   }
 
-  int newI = 1;
+  int newJ = 2;
   int newCondition = dtwDistanceMatrix.rows;
 
   for (int i = 1; i < dtwDistanceMatrix.cols; ++i) {
 
     if(activeWindowSize){
-      newI =  max(1, i-currentWindowSize);
+      newJ =  max(2, i-currentWindowSize);
       newCondition = min(dtwDistanceMatrix.rows,i+currentWindowSize);
     }
 
-    for (int j = newI; j < newCondition; ++j) {
+    for (int j = newJ; j < newCondition; ++j) {
       insertion = dtwDistanceMatrix.at<double>(j-1, i-2);
       deletion = dtwDistanceMatrix.at<double>(j-1, i-1);
       match = dtwDistanceMatrix.at<double>(j-2, i-1);
@@ -474,17 +474,17 @@ void Dtw::applyStepPatternType3(bool activeWindowSize, int windowSize, bool wind
     currentWindowSize = max(windowSize, abs(dtwDistanceMatrix.cols - dtwDistanceMatrix.rows));
   }
 
-  int newI = 1;
+  int newJ = 2;
   int newCondition = dtwDistanceMatrix.rows;
 
   for (int i = 1; i < dtwDistanceMatrix.cols; ++i) {
 
     if(activeWindowSize){
-      newI =  max(1, i-currentWindowSize);
+      newJ =  max(2, i-currentWindowSize);
       newCondition = min(dtwDistanceMatrix.rows,i+currentWindowSize);
     }
 
-    for (int j = newI; j < newCondition; ++j) {
+    for (int j = newJ; j < newCondition; ++j) {
       insertion = dtwDistanceMatrix.at<double>(j-1, i-1);
       deletion = dtwDistanceMatrix.at<double>(j-2, i-1);
       match = dtwDistanceMatrix.at<double>(j-1, i-2);
@@ -523,17 +523,17 @@ void Dtw::applyStepPatternType4(bool activeWindowSize, int windowSize, bool wind
     currentWindowSize = max(windowSize, abs(dtwDistanceMatrix.cols - dtwDistanceMatrix.rows));
   }
 
-  int newI = 1;
+  int newJ = 2;
   int newCondition = dtwDistanceMatrix.rows;
 
   for (int i = 1; i < dtwDistanceMatrix.cols; ++i) {
 
     if(activeWindowSize){
-      newI =  max(1, i-currentWindowSize);
+      newJ =  max(2, i-currentWindowSize);
       newCondition = min(dtwDistanceMatrix.rows,i+currentWindowSize);
     }
 
-    for (int j = newI; j < newCondition; ++j) {
+    for (int j = newJ; j < newCondition; ++j) {
       insertion = dtwDistanceMatrix.at<double>(j-1, i-2);
       deletion = dtwDistanceMatrix.at<double>(j-2, i-2);
       match = dtwDistanceMatrix.at<double>(j-1, i-1);
@@ -574,17 +574,17 @@ void Dtw::applyStepPatternType5(bool activeWindowSize, int windowSize, bool wind
     currentWindowSize = max(windowSize, abs(dtwDistanceMatrix.cols - dtwDistanceMatrix.rows));
   }
 
-  int newI = 1;
+  int newJ = 3;
   int newCondition = dtwDistanceMatrix.rows;
 
   for (int i = 1; i < dtwDistanceMatrix.cols; ++i) {
 
     if(activeWindowSize){
-      newI =  max(1, i-currentWindowSize);
+      newJ =  max(3, i-currentWindowSize);
       newCondition = min(dtwDistanceMatrix.rows,i+currentWindowSize);
     }
 
-    for (int j = newI; j < newCondition; ++j) {
+    for (int j = newJ; j < newCondition; ++j) {
       insertion = dtwDistanceMatrix.at<double>(j-1, i-3);
       deletion = dtwDistanceMatrix.at<double>(j-1, i-2);
       match = dtwDistanceMatrix.at<double>(j-1, i-1);
@@ -626,17 +626,17 @@ void Dtw::applyStepPatternItakura(bool activeWindowSize, int windowSize, bool wi
     currentWindowSize = max(windowSize, abs(dtwDistanceMatrix.cols - dtwDistanceMatrix.rows));
   }
 
-  int newI = 1;
+  int newJ = 2;
   int newCondition = dtwDistanceMatrix.rows;
 
   for (int i = 1; i < dtwDistanceMatrix.cols; ++i) {
 
     if(activeWindowSize){
-      newI =  max(1, i-currentWindowSize);
+      newJ =  max(2, i-currentWindowSize);
       newCondition = min(dtwDistanceMatrix.rows,i+currentWindowSize);
     }
 
-    for (int j = newI; j < newCondition; ++j) {
+    for (int j = newJ; j < newCondition; ++j) {
       insertion = dtwDistanceMatrix.at<double>(j, i-1);
       deletion = dtwDistanceMatrix.at<double>(j-1, i-1);
       match = dtwDistanceMatrix.at<double>(j-2, i-2);

@@ -242,6 +242,7 @@ private slots:
     void clickedAbortOrSaveTrajectory();
 
     void clickedCluster();
+    void clickedClusterAll();
 
     void clickedUpdateRecognizedText(bool checked);
     void clickedRecordRecognized(bool checked);

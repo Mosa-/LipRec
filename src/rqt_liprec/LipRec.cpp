@@ -86,6 +86,7 @@ void LipRec::initPlugin(qt_gui_cpp::PluginContext& context)
   QObject::connect(ui_.pbAbortTrajectory, SIGNAL(clicked()), this, SLOT(clickedAbortTrajectory()));
 
   QObject::connect(ui_.pbCluster, SIGNAL(clicked()), this, SLOT(clickedCluster()));
+  QObject::connect(ui_.pbClusterAll, SIGNAL(clicked()), this, SLOT(clickedClusterAll()));
 
   QObject::connect(ui_.pbUpdateRecognizedText, SIGNAL(clicked(bool)), this, SLOT(clickedUpdateRecognizedText(bool)));
 
@@ -195,10 +196,11 @@ void LipRec::initPlugin(qt_gui_cpp::PluginContext& context)
 
 
   tdm.connectToDatabase("localhost", "liprec", ui_.leCollection->text());
-  tdm.setCollectionCluster("clustering");
+  tdm.setCollectionCluster(ui_.leClusterCollection->text());
   tdm.setCollection(ui_.leCollection->text());
 
   connect(ui_.leCollection, SIGNAL(textEdited(const QString&)), this, SLOT(lineEditChanged(const QString&)));
+  connect(ui_.leClusterCollection, SIGNAL(textEdited(const QString&)), this, SLOT(lineEditChanged(const QString&)));
 
   ui_.lwTrajectoriesInfo->setStyleSheet("QListWidget::item {"
                                         "border-bottom: 1px solid black;"
@@ -355,6 +357,7 @@ void LipRec::processImage(Mat img)
     imageProcessing.closeVideoWriter();
   }
 
+  tdm.setCollectionCluster(ui_.leClusterCollection->text());
   tdm.setCollection(ui_.leCollection->text());
 
   NO_CYCLIC_FRAME = ui_.sbNOCF->value();
@@ -1143,6 +1146,7 @@ void LipRec::triggedAction(QAction *action)
 
 void LipRec::lineEditChanged(const QString &str)
 {
+  tdm.setCollectionCluster(ui_.leClusterCollection->text());
   tdm.setCollection(ui_.leCollection->text());
   availableTrajectories.clear();
   availableTrajectories << "all";
@@ -1152,6 +1156,7 @@ void LipRec::lineEditChanged(const QString &str)
 
 void LipRec::spinBoxChanged(int value)
 {
+  tdm.setCollectionCluster(ui_.leClusterCollection->text());
   tdm.setCollection(ui_.leCollection->text());
   availableTrajectories.clear();
   availableTrajectories << "all";
@@ -1704,6 +1709,13 @@ void LipRec::clickedCluster()
   }
 }
 
+void LipRec::clickedClusterAll()
+{
+  ui_.leClusterCollection->setText("cluster2");
+  ui_.cbDTWStepPattern->setCurrentIndex(2);
+  this->clickedCluster();
+}
+
 void LipRec::clickedUpdateRecognizedText(bool checked)
 {
   if(checked){
@@ -2067,20 +2079,22 @@ void LipRec::calculateAndInitWeightsForDTW()
   foreach (QString command, commandsWithCount.keys()) {
     QList<QList<double> > clusterTrajectories = this->getClusterTrajectories(command, ui_.cbArea->text(), ui_.rbKmedoids->text());
 
-    int currentTrajectoryLengthMean = 0;
+    if(clusterTrajectories.size() > 0){
+      int currentTrajectoryLengthMean = 0;
 
-    for (int i = 0; i < clusterTrajectories.size(); ++i) {
-      currentTrajectoryLengthMean += clusterTrajectories.at(i).size();
-    }
-    currentTrajectoryLengthMean /= clusterTrajectories.size();
+      for (int i = 0; i < clusterTrajectories.size(); ++i) {
+        currentTrajectoryLengthMean += clusterTrajectories.at(i).size();
+      }
+      currentTrajectoryLengthMean /= clusterTrajectories.size();
 
-    meanLengthForCommand[command] = currentTrajectoryLengthMean;
+      meanLengthForCommand[command] = currentTrajectoryLengthMean;
 
-    if(currentTrajectoryLengthMean > maxTrajectoryLength){
-      maxTrajectoryLength = currentTrajectoryLengthMean;
-    }
-    if(currentTrajectoryLengthMean < minTrajectoryLength){
-      minTrajectoryLength = currentTrajectoryLengthMean;
+      if(currentTrajectoryLengthMean > maxTrajectoryLength){
+        maxTrajectoryLength = currentTrajectoryLengthMean;
+      }
+      if(currentTrajectoryLengthMean < minTrajectoryLength){
+        minTrajectoryLength = currentTrajectoryLengthMean;
+      }
     }
   }
 

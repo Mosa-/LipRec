@@ -1983,14 +1983,14 @@ QGroupBox::title{
             </property>
            </widget>
           </item>
-          <item row="2" column="0" colspan="2">
+          <item row="4" column="0" colspan="2">
            <widget class="QLabel" name="label_2">
             <property name="text">
              <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:10pt; font-weight:600;&quot;&gt;Trajectories&lt;/span&gt;&lt;/p&gt;&lt;p&gt;&lt;span style=&quot; font-size:7pt;&quot;&gt;Command (counts) with features&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
             </property>
            </widget>
           </item>
-          <item row="3" column="0" colspan="2">
+          <item row="5" column="0" colspan="2">
            <widget class="QFrame" name="frame_10">
             <property name="frameShape">
              <enum>QFrame::StyledPanel</enum>
@@ -2062,6 +2062,32 @@ QGroupBox::title{
             </property>
             <property name="text">
              <string>liprecAll</string>
+            </property>
+           </widget>
+          </item>
+          <item row="2" column="1">
+           <widget class="QLineEdit" name="leClusterCollection">
+            <property name="maximumSize">
+             <size>
+              <width>100</width>
+              <height>16777215</height>
+             </size>
+            </property>
+            <property name="text">
+             <string>cluster1</string>
+            </property>
+           </widget>
+          </item>
+          <item row="2" column="0">
+           <widget class="QLabel" name="label_22">
+            <property name="maximumSize">
+             <size>
+              <width>80</width>
+              <height>16777215</height>
+             </size>
+            </property>
+            <property name="text">
+             <string>Cluster:</string>
             </property>
            </widget>
           </item>
@@ -2156,7 +2182,7 @@ QGroupBox::title{
                   </property>
                  </widget>
                 </item>
-                <item row="2" column="4">
+                <item row="2" column="5">
                  <spacer name="horizontalSpacer_11">
                   <property name="orientation">
                    <enum>Qt::Horizontal</enum>
@@ -2185,7 +2211,7 @@ QGroupBox::title{
                   </property>
                  </widget>
                 </item>
-                <item row="0" column="3" colspan="2">
+                <item row="0" column="3" colspan="3">
                  <widget class="QComboBox" name="cbTrajectory">
                   <item>
                    <property name="text">
@@ -2194,7 +2220,7 @@ QGroupBox::title{
                   </item>
                  </widget>
                 </item>
-                <item row="1" column="3" colspan="2">
+                <item row="1" column="3" colspan="3">
                  <widget class="QFrame" name="frame_17">
                   <property name="maximumSize">
                    <size>
@@ -2301,6 +2327,13 @@ QGroupBox::title{
                    </size>
                   </property>
                  </spacer>
+                </item>
+                <item row="2" column="4">
+                 <widget class="QPushButton" name="pbClusterAll">
+                  <property name="text">
+                   <string>ClusterAll</string>
+                  </property>
+                 </widget>
                 </item>
                </layout>
               </widget>
