@@ -1983,13 +1983,6 @@ QGroupBox::title{
             </property>
            </widget>
           </item>
-          <item row="4" column="0" colspan="2">
-           <widget class="QLabel" name="label_2">
-            <property name="text">
-             <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:10pt; font-weight:600;&quot;&gt;Trajectories&lt;/span&gt;&lt;/p&gt;&lt;p&gt;&lt;span style=&quot; font-size:7pt;&quot;&gt;Command (counts) with features&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
-            </property>
-           </widget>
-          </item>
           <item row="5" column="0" colspan="2">
            <widget class="QFrame" name="frame_10">
             <property name="frameShape">
@@ -2088,6 +2081,13 @@ QGroupBox::title{
             </property>
             <property name="text">
              <string>Cluster:</string>
+            </property>
+           </widget>
+          </item>
+          <item row="4" column="0" colspan="2">
+           <widget class="QLabel" name="label_2">
+            <property name="text">
+             <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:7pt;&quot;&gt;Command (counts) with features&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
             </property>
            </widget>
           </item>
@@ -2954,7 +2954,7 @@ QGroupBox::title {
                    <string>Single</string>
                   </property>
                   <property name="checked">
-                   <bool>true</bool>
+                   <bool>false</bool>
                   </property>
                  </widget>
                 </item>
@@ -2967,6 +2967,9 @@ QGroupBox::title {
                   </property>
                   <property name="text">
                    <string>Both</string>
+                  </property>
+                  <property name="checked">
+                   <bool>true</bool>
                   </property>
                  </widget>
                 </item>
@@ -3458,8 +3461,17 @@ QGroupBox::title{
             <property name="title">
              <string>Recognized</string>
             </property>
+            <property name="alignment">
+             <set>Qt::AlignRight|Qt::AlignTop|Qt::AlignTrailing</set>
+            </property>
             <layout class="QGridLayout" name="gridLayout_42">
-             <item row="0" column="1">
+             <property name="leftMargin">
+              <number>0</number>
+             </property>
+             <property name="rightMargin">
+              <number>0</number>
+             </property>
+             <item row="0" column="2">
               <widget class="QLabel" name="labelArea">
                <property name="font">
                 <font>
@@ -3475,7 +3487,7 @@ QGroupBox::title{
                </property>
               </widget>
              </item>
-             <item row="0" column="2">
+             <item row="0" column="3">
               <widget class="QLabel" name="labelAspectRatio">
                <property name="font">
                 <font>
@@ -3491,18 +3503,107 @@ QGroupBox::title{
                </property>
               </widget>
              </item>
-             <item row="0" column="3" rowspan="2">
+             <item row="0" column="4" rowspan="2">
               <widget class="Line" name="line_5">
                <property name="orientation">
                 <enum>Qt::Vertical</enum>
                </property>
               </widget>
              </item>
-             <item row="0" column="4" rowspan="2">
+             <item row="1" column="0">
+              <spacer name="horizontalSpacer_9">
+               <property name="orientation">
+                <enum>Qt::Horizontal</enum>
+               </property>
+               <property name="sizeHint" stdset="0">
+                <size>
+                 <width>40</width>
+                 <height>20</height>
+                </size>
+               </property>
+              </spacer>
+             </item>
+             <item row="1" column="2">
+              <widget class="QListWidget" name="lwArea">
+               <property name="minimumSize">
+                <size>
+                 <width>221</width>
+                 <height>0</height>
+                </size>
+               </property>
+               <property name="font">
+                <font>
+                 <family>DejaVu Sans Mono</family>
+                 <pointsize>10</pointsize>
+                </font>
+               </property>
+              </widget>
+             </item>
+             <item row="1" column="3">
+              <widget class="QListWidget" name="lwAspectRatio">
+               <property name="minimumSize">
+                <size>
+                 <width>221</width>
+                 <height>0</height>
+                </size>
+               </property>
+               <property name="font">
+                <font>
+                 <family>DejaVu Sans Mono</family>
+                 <pointsize>10</pointsize>
+                </font>
+               </property>
+               <property name="frameShape">
+                <enum>QFrame::StyledPanel</enum>
+               </property>
+               <property name="frameShadow">
+                <enum>QFrame::Sunken</enum>
+               </property>
+               <property name="tabKeyNavigation">
+                <bool>false</bool>
+               </property>
+               <property name="dragEnabled">
+                <bool>false</bool>
+               </property>
+              </widget>
+             </item>
+             <item row="1" column="1">
+              <widget class="QListWidget" name="lwFusion">
+               <property name="minimumSize">
+                <size>
+                 <width>221</width>
+                 <height>0</height>
+                </size>
+               </property>
+               <property name="font">
+                <font>
+                 <family>DejaVu Sans Mono</family>
+                 <pointsize>10</pointsize>
+                </font>
+               </property>
+              </widget>
+             </item>
+             <item row="0" column="1">
+              <widget class="QLabel" name="labelArea_2">
+               <property name="font">
+                <font>
+                 <weight>75</weight>
+                 <bold>true</bold>
+                </font>
+               </property>
+               <property name="text">
+                <string>Fusion (Area+Aspect ratio)</string>
+               </property>
+               <property name="alignment">
+                <set>Qt::AlignCenter</set>
+               </property>
+              </widget>
+             </item>
+             <item row="1" column="5">
               <widget class="QFrame" name="frame_21">
                <property name="minimumSize">
                 <size>
-                 <width>115</width>
+                 <width>100</width>
                  <height>0</height>
                 </size>
                </property>
@@ -3513,6 +3614,15 @@ QGroupBox::title{
                 <enum>QFrame::Sunken</enum>
                </property>
                <layout class="QGridLayout" name="gridLayout_41">
+                <property name="leftMargin">
+                 <number>2</number>
+                </property>
+                <property name="rightMargin">
+                 <number>2</number>
+                </property>
+                <property name="horizontalSpacing">
+                 <number>0</number>
+                </property>
                 <item row="0" column="0">
                  <widget class="QLabel" name="label_21">
                   <property name="font">
@@ -3564,51 +3674,6 @@ QGroupBox::title{
                  </widget>
                 </item>
                </layout>
-              </widget>
-             </item>
-             <item row="1" column="0">
-              <spacer name="horizontalSpacer_9">
-               <property name="orientation">
-                <enum>Qt::Horizontal</enum>
-               </property>
-               <property name="sizeHint" stdset="0">
-                <size>
-                 <width>40</width>
-                 <height>20</height>
-                </size>
-               </property>
-              </spacer>
-             </item>
-             <item row="1" column="1">
-              <widget class="QListWidget" name="lwArea">
-               <property name="font">
-                <font>
-                 <family>DejaVu Sans Mono</family>
-                 <pointsize>11</pointsize>
-                </font>
-               </property>
-              </widget>
-             </item>
-             <item row="1" column="2">
-              <widget class="QListWidget" name="lwAspectRatio">
-               <property name="font">
-                <font>
-                 <family>DejaVu Sans Mono</family>
-                 <pointsize>11</pointsize>
-                </font>
-               </property>
-               <property name="frameShape">
-                <enum>QFrame::StyledPanel</enum>
-               </property>
-               <property name="frameShadow">
-                <enum>QFrame::Sunken</enum>
-               </property>
-               <property name="tabKeyNavigation">
-                <bool>false</bool>
-               </property>
-               <property name="dragEnabled">
-                <bool>false</bool>
-               </property>
               </widget>
              </item>
             </layout>

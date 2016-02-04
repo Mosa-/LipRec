@@ -205,7 +205,7 @@ void LipRec::initPlugin(qt_gui_cpp::PluginContext& context)
                                         "border-bottom: 1px solid black;"
                                         "padding-bottom: 2px;"
                                         "padding-top: 2px;"
-                                         "}"
+                                        "}"
                                         "QListWidget:item:selected { background: #3555FF; }");
   font = QFont ("Courier");
   font.setStyleHint (QFont::Monospace);
@@ -223,10 +223,10 @@ void LipRec::initPlugin(qt_gui_cpp::PluginContext& context)
                                      "border-color: black;"
                                      "margin-bottom: -5px;"
                                      "margin-top: -5px;"
-                                  "}"
-                                  "QListWidget::item:selected {"
+                                     "}"
+                                     "QListWidget::item:selected {"
                                      "background-color: #3555FF;"
-                                  "}");
+                                     "}");
   QObject::connect(ui_.gbDynamicTimeWarping, SIGNAL(clicked(bool)), this, SLOT(clickedWeightedDtw(bool)));
   QObject::connect(ui_.sbDTWMaxWeightCoefficient, SIGNAL(valueChanged(int)), this, SLOT(spinBoxChanged(int)));
 
@@ -570,238 +570,227 @@ void LipRec::processImage(Mat img)
             CommandWithCost commandWithCost;
 
             if(ui_.rbDTWSA->isChecked()){
-              if(ui_.rbSingleFF->isChecked()){
+              QList<CommandWithCost> areaCommandsWithCost;
+              QList<CommandWithCost> aspectRatioCommandsWithCost;
 
-                QList<CommandWithCost> areaCommandsWithCost;
-                QList<CommandWithCost> aspectRatioCommandsWithCost;
+              foreach (QString command, availableTrajectories) {
+                clusterT = this->getClusterTrajectories(command, ui_.cbArea->text(), ui_.rbKmedoids->text());
+                double localCost = INT_MAX;
 
-                foreach (QString command, availableTrajectories) {
-                  clusterT = this->getClusterTrajectories(command, ui_.cbArea->text(), ui_.rbKmedoids->text());
-                  double localCost = INT_MAX;
+                double warpingCostTmpArea = 0.0;
+                for (int i = 0; i < clusterT.size(); i++) {
 
-                  double warpingCostTmpArea = 0.0;
-                  for (int i = 0; i < clusterT.size(); i++) {
+                  dtw.seed(clusterT.at(i), currentUtteranceTrajectories[ui_.cbArea->text()], stepPattern, ui_.cbDtwSlopeWeights->isChecked());
 
-                    dtw.seed(clusterT.at(i), currentUtteranceTrajectories[ui_.cbArea->text()], stepPattern, ui_.cbDtwSlopeWeights->isChecked());
+                  warpingCostTmpArea = dtw.calcWarpingCost(df, ui_.cbDtwWindowSizeActivate->isChecked(), windowSize, ui_.cbDtwWindowSizeAdaptable->isChecked());
 
-                    warpingCostTmpArea = dtw.calcWarpingCost(df, ui_.cbDtwWindowSizeActivate->isChecked(), windowSize, ui_.cbDtwWindowSizeAdaptable->isChecked());
-
-                    if(weightedDtwActive){
-                      warpingCostTmpArea += warpingCostTmpArea * weightedDtw[command];
-                    }
-
-                    if(warpingCostTmpArea < localCost){
-                      localCost = warpingCostTmpArea;
-                      commandWithCost.command = command;
-                      commandWithCost.cost = warpingCostTmpArea;
-                    }
-
-                    if(!ui_.cbSOLR->isChecked()){
-                      recordRecognitionData.commandArea[command].append(warpingCostTmpArea);
-                    }
-
-                    //                    ROS_INFO("Area Command: %s(%d) ; Utterrance: %d -> %f",
-                    //                             command.toStdString().c_str(), clusterT.at(i).size(), currentUtteranceTrajectories[ui_.cbArea->text()].size(), warpingCostTmpArea);
-
-                    if(warpingCostTmpArea < bestWarpingCostArea){
-                      indexOfLowAreaCluster = i;
-                      bestWarpingCostArea = warpingCostTmpArea;
-                      currentCommandArea = command;
-                    }
+                  if(weightedDtwActive){
+                    warpingCostTmpArea += warpingCostTmpArea * weightedDtw[command];
                   }
 
-                  if(commandWithCost.command != ""){
-                    areaCommandsWithCost.append(commandWithCost);
-
-                    if(ui_.cbSOLR->isChecked()){
-                      recordRecognitionData.commandArea[commandWithCost.command].append(commandWithCost.cost);
-                    }
-                    commandWithCost.command = "";
+                  if(warpingCostTmpArea < localCost){
+                    localCost = warpingCostTmpArea;
+                    commandWithCost.command = command;
+                    commandWithCost.cost = warpingCostTmpArea;
                   }
 
-                  localCost = INT_MAX;
-
-                  clusterT = this->getClusterTrajectories(command, ui_.cbAspectRatio->text(), ui_.rbKmedoids->text());
-
-                  double warpingCostTmpAspectRatio = 0.0;
-                  for (int i = 0; i < clusterT.size(); i++) {
-                    dtw.seed(clusterT.at(i), currentUtteranceTrajectories[ui_.cbAspectRatio->text()], stepPattern, ui_.cbDtwSlopeWeights->isChecked());
-
-                    warpingCostTmpAspectRatio = dtw.calcWarpingCost(df, ui_.cbDtwWindowSizeActivate->isChecked(), windowSize, ui_.cbDtwWindowSizeAdaptable->isChecked());
-
-                    if(weightedDtwActive){
-                      warpingCostTmpAspectRatio += warpingCostTmpAspectRatio * weightedDtw[command];
-                    }
-
-                    if(warpingCostTmpAspectRatio < localCost){
-                      localCost = warpingCostTmpArea;
-                      commandWithCost.command = command;
-                      commandWithCost.cost = warpingCostTmpAspectRatio;
-                    }
-
-                    if(!ui_.cbSOLR->isChecked()){
-                      recordRecognitionData.commandAspectRatio[command].append(warpingCostTmpAspectRatio);
-                    }
-
-                    //                    ROS_INFO("AspectRatio Command: %s(%d) ; Utterrance: %d -> %f",
-                    //                             command.toStdString().c_str(), clusterT.at(i).size(), currentUtteranceTrajectories[ui_.cbAspectRatio->text()].size(), warpingCostTmpAspectRatio);
-
-                    if(warpingCostTmpAspectRatio < bestWarpingCostAspectRatio){
-                      indexOfLowAspectRatioCluster = i;
-                      bestWarpingCostAspectRatio = warpingCostTmpAspectRatio;
-                      currentCommandAspectRatio = command;
-                    }
+                  if(!ui_.cbSOLR->isChecked()){
+                    recordRecognitionData.commandArea[command].append(warpingCostTmpArea);
                   }
 
-                  if(commandWithCost.command != ""){
-                    aspectRatioCommandsWithCost.append(commandWithCost);
+                  //                    ROS_INFO("Area Command: %s(%d) ; Utterrance: %d -> %f",
+                  //                             command.toStdString().c_str(), clusterT.at(i).size(), currentUtteranceTrajectories[ui_.cbArea->text()].size(), warpingCostTmpArea);
 
-                    if(ui_.cbSOLR->isChecked()){
-                      recordRecognitionData.commandAspectRatio[commandWithCost.command].append(commandWithCost.cost);
-                    }
-                    commandWithCost.command = "";
+                  if(warpingCostTmpArea < bestWarpingCostArea){
+                    indexOfLowAreaCluster = i;
+                    bestWarpingCostArea = warpingCostTmpArea;
+                    currentCommandArea = command;
                   }
                 }
 
-                QPixmap dtwPixMap = this->drawDTWPixmap(currentCommandArea, ui_.cbArea->text(), indexOfLowAreaCluster, ui_.rbKmedoids->text(), df, stepPattern);
-                dtwPixMap = dtwPixMap.scaled(ui_.lblDTW->maximumWidth(), ui_.lblDTW->maximumHeight(), Qt::KeepAspectRatio, Qt::SmoothTransformation);
+                if(commandWithCost.command != ""){
+                  areaCommandsWithCost.append(commandWithCost);
 
-                ui_.lblDTW->setPixmap(dtwPixMap);
+                  if(ui_.cbSOLR->isChecked()){
+                    recordRecognitionData.commandArea[commandWithCost.command].append(commandWithCost.cost);
+                  }
+                  commandWithCost.command = "";
+                }
 
-                dtwPixMap = this->drawDTWPixmap(currentCommandAspectRatio, ui_.cbAspectRatio->text(), indexOfLowAspectRatioCluster, ui_.rbKmedoids->text(), df, stepPattern);
-                dtwPixMap = dtwPixMap.scaled(ui_.lblMouthDiff->maximumWidth(), ui_.lblMouthDiff->maximumHeight(), Qt::KeepAspectRatio, Qt::SmoothTransformation);
+                localCost = INT_MAX;
 
-                ui_.lblMouthDiff->setPixmap(dtwPixMap);
+                clusterT = this->getClusterTrajectories(command, ui_.cbAspectRatio->text(), ui_.rbKmedoids->text());
 
-                if(updateRecognizedText){
-                  ui_.lwArea->clear();
-                  ui_.lwAspectRatio->clear();
-                  ui_.labelArea->setText("Area");
-                  ui_.labelAspectRatio->setText("Aspect ratio");
+                double warpingCostTmpAspectRatio = 0.0;
+                for (int i = 0; i < clusterT.size(); i++) {
+                  dtw.seed(clusterT.at(i), currentUtteranceTrajectories[ui_.cbAspectRatio->text()], stepPattern, ui_.cbDtwSlopeWeights->isChecked());
 
-                  qSort(areaCommandsWithCost);
-                  qSort(aspectRatioCommandsWithCost);
+                  warpingCostTmpAspectRatio = dtw.calcWarpingCost(df, ui_.cbDtwWindowSizeActivate->isChecked(), windowSize, ui_.cbDtwWindowSizeAdaptable->isChecked());
 
-                  for (int i = 0; i < areaCommandsWithCost.size(); ++i) {
-                    commandWithCost.command = areaCommandsWithCost.at(i).command;
-                    commandWithCost.cost = areaCommandsWithCost.at(i).cost;
-                    ui_.lwArea->addItem(QString("%1: %2").arg(commandWithCost.command, -14).arg(commandWithCost.cost, 8));
+                  if(weightedDtwActive){
+                    warpingCostTmpAspectRatio += warpingCostTmpAspectRatio * weightedDtw[command];
                   }
 
-                  for (int i = 0; i < aspectRatioCommandsWithCost.size(); ++i) {
-                    commandWithCost.command = aspectRatioCommandsWithCost.at(i).command;
-                    commandWithCost.cost = aspectRatioCommandsWithCost.at(i).cost;
-                    ui_.lwAspectRatio->addItem(QString("%1 : %2").arg(commandWithCost.command, -14).arg(commandWithCost.cost, 8));
+                  if(warpingCostTmpAspectRatio < localCost){
+                    localCost = warpingCostTmpArea;
+                    commandWithCost.command = command;
+                    commandWithCost.cost = warpingCostTmpAspectRatio;
+                  }
+
+                  if(!ui_.cbSOLR->isChecked()){
+                    recordRecognitionData.commandAspectRatio[command].append(warpingCostTmpAspectRatio);
+                  }
+
+                  //                    ROS_INFO("AspectRatio Command: %s(%d) ; Utterrance: %d -> %f",
+                  //                             command.toStdString().c_str(), clusterT.at(i).size(), currentUtteranceTrajectories[ui_.cbAspectRatio->text()].size(), warpingCostTmpAspectRatio);
+
+                  if(warpingCostTmpAspectRatio < bestWarpingCostAspectRatio){
+                    indexOfLowAspectRatioCluster = i;
+                    bestWarpingCostAspectRatio = warpingCostTmpAspectRatio;
+                    currentCommandAspectRatio = command;
                   }
                 }
 
-                this->changeRecordRecognitionStateToDecisionIfPossible();
+                if(commandWithCost.command != ""){
+                  aspectRatioCommandsWithCost.append(commandWithCost);
 
-                //                ROS_INFO("Recognize Area: %s", currentCommandArea.toStdString().c_str());
-                //                ROS_INFO("Recognize AspectRatio: %s", currentCommandAspectRatio.toStdString().c_str());
+                  if(ui_.cbSOLR->isChecked()){
+                    recordRecognitionData.commandAspectRatio[commandWithCost.command].append(commandWithCost.cost);
+                  }
+                  commandWithCost.command = "";
+                }
+              }
+
+              //fusion
+              int fusionAreaIndex = 0;
+              int fusionAspectRatioIndex = 0;
+
+              QList<CommandWithCost> fusionCommandsWithCost;
+
+              foreach (QString command, availableTrajectories) {
+
+                clusterT = this->getClusterTrajectories(command, ui_.cbArea->text(), ui_.rbKmedoids->text());
+                clusterT2 = this->getClusterTrajectories(command, ui_.cbAspectRatio->text(), ui_.rbKmedoids->text());
+
+                double warpingCostTmpArea = INT_MAX;
+                double warpingCostTmpAspectRatio = INT_MAX;
+                double warpingCostFusionTmp = 0.0;
+
+                for (int i = 0; i < clusterT.size(); ++i) {
+                  dtw.seed(clusterT.at(i), currentUtteranceTrajectories[ui_.cbArea->text()], stepPattern, ui_.cbDtwSlopeWeights->isChecked());
+
+                  double wpArea = dtw.calcWarpingCost(df, ui_.cbDtwWindowSizeActivate->isChecked(), windowSize, ui_.cbDtwWindowSizeAdaptable->isChecked());
+
+                  if(weightedDtwActive){
+                    wpArea += wpArea * weightedDtw[command];
+                  }
+
+                  //                    ROS_INFO("Area Command: %s(%d) ; Utterrance: %d -> %f",
+                  //                             command.toStdString().c_str(), clusterT.at(i).size(),
+                  //                             currentUtteranceTrajectories[ui_.cbArea->text()].size(), wpArea);
+
+                  if(wpArea < warpingCostTmpArea){
+                    indexOfLowAreaCluster = i;
+                    warpingCostTmpArea = wpArea;
+                  }
+                }
+
+                for (int i = 0; i < clusterT2.size(); ++i) {
+                  dtw.seed(clusterT2.at(i), currentUtteranceTrajectories[ui_.cbAspectRatio->text()], stepPattern, ui_.cbDtwSlopeWeights->isChecked());
+
+                  double wpAspectRatio = 0.0;
+
+                  wpAspectRatio = dtw.calcWarpingCost(df, ui_.cbDtwWindowSizeActivate->isChecked(), windowSize, ui_.cbDtwWindowSizeAdaptable->isChecked());
+
+                  if(weightedDtwActive){
+                    wpAspectRatio += wpAspectRatio * weightedDtw[command];
+                  }
+
+                  //                    ROS_INFO("Aspect Ratio Command: %s(%d) ; Utterrance: %d -> %f",
+                  //                             command.toStdString().c_str(), clusterT2.at(i).size(),
+                  //                             currentUtteranceTrajectories[ui_.cbAspectRatio->text()].size(), wpAspectRatio);
+
+                  if(wpAspectRatio < warpingCostTmpAspectRatio){
+                    indexOfLowAspectRatioCluster = i;
+                    warpingCostTmpAspectRatio = wpAspectRatio;
+                  }
+                }
+
+                warpingCostFusionTmp = warpingCostTmpArea + warpingCostTmpAspectRatio;
+
+                if(command != "all"){
+                  commandWithCost.command = command;
+                  commandWithCost.cost = warpingCostFusionTmp;
+                  fusionCommandsWithCost.append(commandWithCost);
+                }
+
+                if(commandWithCost.command != ""){
+                  recordRecognitionData.commandFusion[commandWithCost.command].append(commandWithCost.cost);
+                }
+
+                if(warpingCostFusionTmp < bestWarpingCostFusion){
+                  bestWarpingCostFusion = warpingCostFusionTmp;
+                  fusionAreaIndex = indexOfLowAreaCluster;
+                  fusionAspectRatioIndex = indexOfLowAspectRatioCluster;
+                  currentCommandFusion = command;
+                }
+              }
+
+
+              if(updateRecognizedText){
+
+                ui_.lwArea->clear();
+                ui_.lwAspectRatio->clear();
+                ui_.lwFusion->clear();
+
+                qSort(areaCommandsWithCost);
+                qSort(aspectRatioCommandsWithCost);
+                qSort(fusionCommandsWithCost);
+
+                for (int i = 0; i < areaCommandsWithCost.size(); ++i) {
+                  commandWithCost.command = areaCommandsWithCost.at(i).command;
+                  commandWithCost.cost = areaCommandsWithCost.at(i).cost;
+                  ui_.lwArea->addItem(QString("%1: %2").arg(commandWithCost.command, -14).arg(commandWithCost.cost, 7));
+                }
+
+                for (int i = 0; i < aspectRatioCommandsWithCost.size(); ++i) {
+                  commandWithCost.command = aspectRatioCommandsWithCost.at(i).command;
+                  commandWithCost.cost = aspectRatioCommandsWithCost.at(i).cost;
+                  ui_.lwAspectRatio->addItem(QString("%1 : %2").arg(commandWithCost.command, -14).arg(commandWithCost.cost, 7));
+                }
+
+                for (int i = 0; i < fusionCommandsWithCost.size(); ++i) {
+                  commandWithCost.command = fusionCommandsWithCost.at(i).command;
+                  commandWithCost.cost = fusionCommandsWithCost.at(i).cost;
+                  ui_.lwFusion->addItem(QString("%1: %2").arg(commandWithCost.command, -14).arg(commandWithCost.cost, 7));
+                }
+              }
+
+              this->changeRecordRecognitionStateToDecisionIfPossible();
+
+              QPixmap dtwPixMapArea;
+              QPixmap dtwPixMapAspectRatio;
+
+              if(ui_.rbSingleFF->isChecked() || ui_.rbBothFF->isChecked()){
+                dtwPixMapArea = this->drawDTWPixmap(currentCommandArea, ui_.cbArea->text(), indexOfLowAreaCluster, ui_.rbKmedoids->text(), df, stepPattern);
+                dtwPixMapArea = dtwPixMapArea.scaled(ui_.lblDTW->maximumWidth(), ui_.lblDTW->maximumHeight(), Qt::KeepAspectRatio, Qt::SmoothTransformation);
+
+                dtwPixMapAspectRatio = this->drawDTWPixmap(currentCommandAspectRatio, ui_.cbAspectRatio->text(), indexOfLowAspectRatioCluster, ui_.rbKmedoids->text(), df, stepPattern);
+                dtwPixMapAspectRatio = dtwPixMapAspectRatio.scaled(ui_.lblMouthDiff->maximumWidth(), ui_.lblMouthDiff->maximumHeight(), Qt::KeepAspectRatio, Qt::SmoothTransformation);
 
               }else if(ui_.rbFusionFF->isChecked()){
+                dtwPixMapArea = this->drawDTWPixmap(currentCommandFusion, ui_.cbArea->text(), fusionAreaIndex, ui_.rbKmedoids->text(), df, stepPattern);
+                dtwPixMapArea = dtwPixMapArea.scaled(ui_.lblDTW->maximumWidth(), ui_.lblDTW->maximumHeight(), Qt::KeepAspectRatio, Qt::SmoothTransformation);
 
-                int fusionAreaIndex = 0;
-                int fusionAspectRatioIndex = 0;
-
-                QList<CommandWithCost> commandsWithCost;
-
-                foreach (QString command, availableTrajectories) {
-
-                  clusterT = this->getClusterTrajectories(command, ui_.cbArea->text(), ui_.rbKmedoids->text());
-                  clusterT2 = this->getClusterTrajectories(command, ui_.cbAspectRatio->text(), ui_.rbKmedoids->text());
-
-                  double warpingCostTmpArea = INT_MAX;
-                  double warpingCostTmpAspectRatio = INT_MAX;
-                  double warpingCostFusionTmp = 0.0;
-
-                  for (int i = 0; i < clusterT.size(); ++i) {
-                    dtw.seed(clusterT.at(i), currentUtteranceTrajectories[ui_.cbArea->text()], stepPattern, ui_.cbDtwSlopeWeights->isChecked());
-
-                    double wpArea = dtw.calcWarpingCost(df, ui_.cbDtwWindowSizeActivate->isChecked(), windowSize, ui_.cbDtwWindowSizeAdaptable->isChecked());
-
-                    if(weightedDtwActive){
-                      wpArea += wpArea * weightedDtw[command];
-                    }
-
-                    //                    ROS_INFO("Area Command: %s(%d) ; Utterrance: %d -> %f",
-                    //                             command.toStdString().c_str(), clusterT.at(i).size(),
-                    //                             currentUtteranceTrajectories[ui_.cbArea->text()].size(), wpArea);
-
-                    if(wpArea < warpingCostTmpArea){
-                      indexOfLowAreaCluster = i;
-                      warpingCostTmpArea = wpArea;
-                    }
-                  }
-
-                  for (int i = 0; i < clusterT2.size(); ++i) {
-                    dtw.seed(clusterT2.at(i), currentUtteranceTrajectories[ui_.cbAspectRatio->text()], stepPattern, ui_.cbDtwSlopeWeights->isChecked());
-
-                    double wpAspectRatio = 0.0;
-
-                    wpAspectRatio = dtw.calcWarpingCost(df, ui_.cbDtwWindowSizeActivate->isChecked(), windowSize, ui_.cbDtwWindowSizeAdaptable->isChecked());
-
-                    if(weightedDtwActive){
-                      wpAspectRatio += wpAspectRatio * weightedDtw[command];
-                    }
-
-                    //                    ROS_INFO("Aspect Ratio Command: %s(%d) ; Utterrance: %d -> %f",
-                    //                             command.toStdString().c_str(), clusterT2.at(i).size(),
-                    //                             currentUtteranceTrajectories[ui_.cbAspectRatio->text()].size(), wpAspectRatio);
-
-                    if(wpAspectRatio < warpingCostTmpAspectRatio){
-                      indexOfLowAspectRatioCluster = i;
-                      warpingCostTmpAspectRatio = wpAspectRatio;
-                    }
-                  }
-
-                  warpingCostFusionTmp = warpingCostTmpArea + warpingCostTmpAspectRatio;
-
-                  if(command != "all"){
-                    commandWithCost.command = command;
-                    commandWithCost.cost = warpingCostFusionTmp;
-                    commandsWithCost.append(commandWithCost);
-                  }
-
-                  recordRecognitionData.commandFusion[commandWithCost.command].append(commandWithCost.cost);
-
-                  if(warpingCostFusionTmp < bestWarpingCostFusion){
-                    bestWarpingCostFusion = warpingCostFusionTmp;
-                    fusionAreaIndex = indexOfLowAreaCluster;
-                    fusionAspectRatioIndex = indexOfLowAspectRatioCluster;
-                    currentCommandFusion = command;
-                  }
-                }
-
-                QPixmap dtwPixMap = this->drawDTWPixmap(currentCommandFusion, ui_.cbArea->text(), fusionAreaIndex, ui_.rbKmedoids->text(), df, stepPattern);
-                dtwPixMap = dtwPixMap.scaled(ui_.lblDTW->maximumWidth(), ui_.lblDTW->maximumHeight(), Qt::KeepAspectRatio, Qt::SmoothTransformation);
-
-                ui_.lblDTW->setPixmap(dtwPixMap);
-
-                dtwPixMap = this->drawDTWPixmap(currentCommandFusion, ui_.cbAspectRatio->text(), fusionAspectRatioIndex, ui_.rbKmedoids->text(), df, stepPattern);
-                dtwPixMap = dtwPixMap.scaled(ui_.lblMouthDiff->maximumWidth(), ui_.lblMouthDiff->maximumHeight(), Qt::KeepAspectRatio, Qt::SmoothTransformation);
-
-                ui_.lblMouthDiff->setPixmap(dtwPixMap);
-
-                if(updateRecognizedText){
-                  ui_.lwArea->clear();
-                  ui_.lwAspectRatio->clear();
-                  ui_.labelArea->setText("Fusion (Area + Aspect ratio)");
-                  ui_.labelAspectRatio->setText("");
-
-                  qSort(commandsWithCost);
-                  for (int i = 0; i < commandsWithCost.size(); ++i) {
-                    commandWithCost.command = commandsWithCost.at(i).command;
-                    commandWithCost.cost = commandsWithCost.at(i).cost;
-                    ui_.lwArea->addItem(QString("%1: %2").arg(commandWithCost.command, -14).arg(commandWithCost.cost, 8));
-                  }
-                }
-
-                this->changeRecordRecognitionStateToDecisionIfPossible();
-
-                //                ROS_INFO("Recognize Fusion: %s", currentCommandFusion.toStdString().c_str());
+                dtwPixMapAspectRatio = this->drawDTWPixmap(currentCommandFusion, ui_.cbAspectRatio->text(), fusionAspectRatioIndex, ui_.rbKmedoids->text(), df, stepPattern);
+                dtwPixMapAspectRatio = dtwPixMapAspectRatio.scaled(ui_.lblMouthDiff->maximumWidth(), ui_.lblMouthDiff->maximumHeight(), Qt::KeepAspectRatio, Qt::SmoothTransformation);
               }
+              ui_.lblDTW->setPixmap(dtwPixMapArea);
+              ui_.lblMouthDiff->setPixmap(dtwPixMapAspectRatio);
+
+              //                ROS_INFO("Recognize Fusion: %s", currentCommandFusion.toStdString().c_str());
+              //                ROS_INFO("Recognize Area: %s", currentCommandArea.toStdString().c_str());
+              //                ROS_INFO("Recognize AspectRatio: %s", currentCommandAspectRatio.toStdString().c_str());
 
             }else if(ui_.rbEuclideanDistSA->isChecked()){
 
@@ -1788,21 +1777,21 @@ void LipRec::clickedWeightedDtw(bool checked)
     ui_.gbDynamicTimeWarping->setToolTip("Change to weighted DTW");
 
     ui_.gbDynamicTimeWarping->setStyleSheet(
-"          QGroupBox#gbDynamicTimeWarping {"
-"              border: 1px solid black;"
-"            font-weight: bold;"
-"           }"
+          "          QGroupBox#gbDynamicTimeWarping {"
+          "              border: 1px solid black;"
+          "            font-weight: bold;"
+          "           }"
 
-"          QGroupBox::title#gbDynamicTimeWarping{"
-"            background-color: transparent;"
-"              subcontrol-position: top left;"
-"              padding: 1px;"
-"          }"
-"           QGroupBox::indicator#gbDynamicTimeWarping {"
+          "          QGroupBox::title#gbDynamicTimeWarping{"
+          "            background-color: transparent;"
+          "              subcontrol-position: top left;"
+          "              padding: 1px;"
+          "          }"
+          "           QGroupBox::indicator#gbDynamicTimeWarping {"
           "        width: 27px;"
           "        height: 27px;"
-         " padding-right: 80px;"
-         " padding-left: 13;"
+          " padding-right: 80px;"
+          " padding-left: 13;"
           "      image: url(noWeightSelect.png)"
           "    }"
 
@@ -1810,29 +1799,29 @@ void LipRec::clickedWeightedDtw(bool checked)
           "      image: url(weight.png)"
           "    }"
 
-     );
+          );
 
   }else{
     ui_.gbDynamicTimeWarping->setTitle("Weighted Dynamic-time-warping");
     ui_.gbDynamicTimeWarping->setToolTip("Change to normal DTW");
 
     ui_.gbDynamicTimeWarping->setStyleSheet(
-"          QGroupBox#gbDynamicTimeWarping { "
-"              border: 1px solid black; "
-"            font-weight: bold;"
-"           } "
+          "          QGroupBox#gbDynamicTimeWarping { "
+          "              border: 1px solid black; "
+          "            font-weight: bold;"
+          "           } "
 
-"          QGroupBox::title#gbDynamicTimeWarping{ "
-"            background-color: transparent;"
-"              subcontrol-position: top left;"
-"              padding: 1px;"
-"          } "
+          "          QGroupBox::title#gbDynamicTimeWarping{ "
+          "            background-color: transparent;"
+          "              subcontrol-position: top left;"
+          "              padding: 1px;"
+          "          } "
 
           "QGroupBox::indicator#gbDynamicTimeWarping {"
           "       width: 27px;"
           "       height: 27px;"
-"          padding-right: 80px;"
-         " padding-left: 13;"
+          "          padding-right: 80px;"
+          " padding-left: 13;"
           "       image: url(weightSelect.png)"
           "    }"
 
@@ -1840,7 +1829,7 @@ void LipRec::clickedWeightedDtw(bool checked)
           "      image: url(noWeight.png)"
           "    }"
 
-     );
+          );
   }
   weightedDtwActive = !weightedDtwActive;
 }

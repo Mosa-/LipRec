@@ -57,6 +57,12 @@ void LipRecRecorder::writeToTextFile(QString fileName, RecordRecognitionData& re
       }
     }else{
       if(recordRecognitionData.onlyLowestRecognition){
+        this->composeRecords(text, "_f", tmpCommandFusion);
+      }else{
+        this->composeRecords(text, "_f", recordRecognitionData.commandFusion);
+      }
+      text += "\n";
+      if(recordRecognitionData.onlyLowestRecognition){
         this->composeRecords(text, "_a", tmpCommandArea);
       }else{
         this->composeRecords(text, "_a", recordRecognitionData.commandArea);
@@ -66,12 +72,6 @@ void LipRecRecorder::writeToTextFile(QString fileName, RecordRecognitionData& re
         this->composeRecords(text, "_ar", tmpCommandAspectRatio);
       }else{
         this->composeRecords(text, "_ar", recordRecognitionData.commandAspectRatio);
-      }
-      text += "\n";
-      if(recordRecognitionData.onlyLowestRecognition){
-        this->composeRecords(text, "_f", tmpCommandFusion);
-      }else{
-        this->composeRecords(text, "_f", recordRecognitionData.commandFusion);
       }
     }
 
