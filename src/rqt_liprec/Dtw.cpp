@@ -227,10 +227,10 @@ QList<Point> Dtw::calculateGreedyWarpingPath()
           i--;
         }else if(insertion == minimum(insertion, deletion, match)){
           j--;
-          i --;
+          i--;
         }else{
           j--;
-          i=-2;
+          i-=2;
         }
         warpingPath.append(Point(i,j));
       }
