@@ -536,16 +536,6 @@ void LipRec::processImage(Mat img)
         bool activateAlgorithmForRecognition = utter && stateDetectionStartEndFrame == Idle && recordTrajectoryState != Recording && !loadUtteranceFile;
 
         if(activateAlgorithmForRecognition || (loadUtteranceFile && applyUtteranceOfLoadedFile)){
-          QList<QList<double> > clusterT;
-          QList<QList<double> > clusterT2;
-          double bestWarpingCostArea = INT_MAX;
-          double bestWarpingCostAspectRatio = INT_MAX;
-          double bestWarpingCostFusion = INT_MAX;
-          QString currentCommandArea = "";
-          QString currentCommandAspectRatio = "";
-          QString currentCommandFusion = "";
-          int indexOfLowAreaCluster = 0;
-          int indexOfLowAspectRatioCluster = 0;
 
           DtwStepPattern stepPattern = TYPE1;
           QString currentStepPattern = ui_.cbDTWStepPattern->currentText();
@@ -572,170 +562,23 @@ void LipRec::processImage(Mat img)
             if(ui_.rbDTWSA->isChecked()){
               QList<CommandWithCost> areaCommandsWithCost;
               QList<CommandWithCost> aspectRatioCommandsWithCost;
+              int indexOfLowAreaCluster = 0;
+              int indexOfLowAspectRatioCluster = 0;
+              QString currentCommandArea = "";
+              QString currentCommandAspectRatio = "";
 
-              foreach (QString command, availableTrajectories) {
-                clusterT = this->getClusterTrajectories(command, ui_.cbArea->text(), ui_.rbKmedoids->text());
-                double localCost = INT_MAX;
+              this->calculateDTWCostSingle(areaCommandsWithCost, aspectRatioCommandsWithCost, stepPattern, df, windowSize,
+                                           commandWithCost, indexOfLowAreaCluster, indexOfLowAspectRatioCluster,
+                                           currentCommandArea, currentCommandAspectRatio);
 
-                double warpingCostTmpArea = 0.0;
-                for (int i = 0; i < clusterT.size(); i++) {
-
-                  dtw.seed(clusterT.at(i), currentUtteranceTrajectories[ui_.cbArea->text()], stepPattern, ui_.cbDtwSlopeWeights->isChecked());
-
-                  warpingCostTmpArea = dtw.calcWarpingCost(df, ui_.cbDtwWindowSizeActivate->isChecked(), windowSize, ui_.cbDtwWindowSizeAdaptable->isChecked());
-
-                  if(weightedDtwActive){
-                    warpingCostTmpArea += warpingCostTmpArea * weightedDtw[command];
-                  }
-
-                  if(warpingCostTmpArea < localCost){
-                    localCost = warpingCostTmpArea;
-                    commandWithCost.command = command;
-                    commandWithCost.cost = warpingCostTmpArea;
-                  }
-
-                  if(!ui_.cbSOLR->isChecked()){
-                    recordRecognitionData.commandArea[command].append(warpingCostTmpArea);
-                  }
-
-                  //                    ROS_INFO("Area Command: %s(%d) ; Utterrance: %d -> %f",
-                  //                             command.toStdString().c_str(), clusterT.at(i).size(), currentUtteranceTrajectories[ui_.cbArea->text()].size(), warpingCostTmpArea);
-
-                  if(warpingCostTmpArea < bestWarpingCostArea){
-                    indexOfLowAreaCluster = i;
-                    bestWarpingCostArea = warpingCostTmpArea;
-                    currentCommandArea = command;
-                  }
-                }
-
-                if(commandWithCost.command != ""){
-                  areaCommandsWithCost.append(commandWithCost);
-
-                  if(ui_.cbSOLR->isChecked()){
-                    recordRecognitionData.commandArea[commandWithCost.command].append(commandWithCost.cost);
-                  }
-                  commandWithCost.command = "";
-                }
-
-                localCost = INT_MAX;
-
-                clusterT = this->getClusterTrajectories(command, ui_.cbAspectRatio->text(), ui_.rbKmedoids->text());
-
-                double warpingCostTmpAspectRatio = 0.0;
-                for (int i = 0; i < clusterT.size(); i++) {
-                  dtw.seed(clusterT.at(i), currentUtteranceTrajectories[ui_.cbAspectRatio->text()], stepPattern, ui_.cbDtwSlopeWeights->isChecked());
-
-                  warpingCostTmpAspectRatio = dtw.calcWarpingCost(df, ui_.cbDtwWindowSizeActivate->isChecked(), windowSize, ui_.cbDtwWindowSizeAdaptable->isChecked());
-
-                  if(weightedDtwActive){
-                    warpingCostTmpAspectRatio += warpingCostTmpAspectRatio * weightedDtw[command];
-                  }
-
-                  if(warpingCostTmpAspectRatio < localCost){
-                    localCost = warpingCostTmpArea;
-                    commandWithCost.command = command;
-                    commandWithCost.cost = warpingCostTmpAspectRatio;
-                  }
-
-                  if(!ui_.cbSOLR->isChecked()){
-                    recordRecognitionData.commandAspectRatio[command].append(warpingCostTmpAspectRatio);
-                  }
-
-                  //                    ROS_INFO("AspectRatio Command: %s(%d) ; Utterrance: %d -> %f",
-                  //                             command.toStdString().c_str(), clusterT.at(i).size(), currentUtteranceTrajectories[ui_.cbAspectRatio->text()].size(), warpingCostTmpAspectRatio);
-
-                  if(warpingCostTmpAspectRatio < bestWarpingCostAspectRatio){
-                    indexOfLowAspectRatioCluster = i;
-                    bestWarpingCostAspectRatio = warpingCostTmpAspectRatio;
-                    currentCommandAspectRatio = command;
-                  }
-                }
-
-                if(commandWithCost.command != ""){
-                  aspectRatioCommandsWithCost.append(commandWithCost);
-
-                  if(ui_.cbSOLR->isChecked()){
-                    recordRecognitionData.commandAspectRatio[commandWithCost.command].append(commandWithCost.cost);
-                  }
-                  commandWithCost.command = "";
-                }
-              }
-
-              //fusion
-              int fusionAreaIndex = 0;
-              int fusionAspectRatioIndex = 0;
 
               QList<CommandWithCost> fusionCommandsWithCost;
+              int fusionAreaIndex = 0;
+              int fusionAspectRatioIndex = 0;
+              QString currentCommandFusion = "";
 
-              foreach (QString command, availableTrajectories) {
-
-                clusterT = this->getClusterTrajectories(command, ui_.cbArea->text(), ui_.rbKmedoids->text());
-                clusterT2 = this->getClusterTrajectories(command, ui_.cbAspectRatio->text(), ui_.rbKmedoids->text());
-
-                double warpingCostTmpArea = INT_MAX;
-                double warpingCostTmpAspectRatio = INT_MAX;
-                double warpingCostFusionTmp = 0.0;
-
-                for (int i = 0; i < clusterT.size(); ++i) {
-                  dtw.seed(clusterT.at(i), currentUtteranceTrajectories[ui_.cbArea->text()], stepPattern, ui_.cbDtwSlopeWeights->isChecked());
-
-                  double wpArea = dtw.calcWarpingCost(df, ui_.cbDtwWindowSizeActivate->isChecked(), windowSize, ui_.cbDtwWindowSizeAdaptable->isChecked());
-
-                  if(weightedDtwActive){
-                    wpArea += wpArea * weightedDtw[command];
-                  }
-
-                  //                    ROS_INFO("Area Command: %s(%d) ; Utterrance: %d -> %f",
-                  //                             command.toStdString().c_str(), clusterT.at(i).size(),
-                  //                             currentUtteranceTrajectories[ui_.cbArea->text()].size(), wpArea);
-
-                  if(wpArea < warpingCostTmpArea){
-                    indexOfLowAreaCluster = i;
-                    warpingCostTmpArea = wpArea;
-                  }
-                }
-
-                for (int i = 0; i < clusterT2.size(); ++i) {
-                  dtw.seed(clusterT2.at(i), currentUtteranceTrajectories[ui_.cbAspectRatio->text()], stepPattern, ui_.cbDtwSlopeWeights->isChecked());
-
-                  double wpAspectRatio = 0.0;
-
-                  wpAspectRatio = dtw.calcWarpingCost(df, ui_.cbDtwWindowSizeActivate->isChecked(), windowSize, ui_.cbDtwWindowSizeAdaptable->isChecked());
-
-                  if(weightedDtwActive){
-                    wpAspectRatio += wpAspectRatio * weightedDtw[command];
-                  }
-
-                  //                    ROS_INFO("Aspect Ratio Command: %s(%d) ; Utterrance: %d -> %f",
-                  //                             command.toStdString().c_str(), clusterT2.at(i).size(),
-                  //                             currentUtteranceTrajectories[ui_.cbAspectRatio->text()].size(), wpAspectRatio);
-
-                  if(wpAspectRatio < warpingCostTmpAspectRatio){
-                    indexOfLowAspectRatioCluster = i;
-                    warpingCostTmpAspectRatio = wpAspectRatio;
-                  }
-                }
-
-                warpingCostFusionTmp = warpingCostTmpArea + warpingCostTmpAspectRatio;
-
-                if(command != "all"){
-                  commandWithCost.command = command;
-                  commandWithCost.cost = warpingCostFusionTmp;
-                  fusionCommandsWithCost.append(commandWithCost);
-                }
-
-                if(commandWithCost.command != ""){
-                  recordRecognitionData.commandFusion[commandWithCost.command].append(commandWithCost.cost);
-                }
-
-                if(warpingCostFusionTmp < bestWarpingCostFusion){
-                  bestWarpingCostFusion = warpingCostFusionTmp;
-                  fusionAreaIndex = indexOfLowAreaCluster;
-                  fusionAspectRatioIndex = indexOfLowAspectRatioCluster;
-                  currentCommandFusion = command;
-                }
-              }
-
+              this->calculateDTWCostFusion(fusionCommandsWithCost, fusionAreaIndex, fusionAspectRatioIndex, stepPattern, df, windowSize,
+                                           indexOfLowAreaCluster, indexOfLowAspectRatioCluster, commandWithCost, currentCommandFusion);
 
               if(updateRecognizedText){
 
@@ -768,144 +611,17 @@ void LipRec::processImage(Mat img)
 
               this->changeRecordRecognitionStateToDecisionIfPossible();
 
-              QPixmap dtwPixMapArea;
-              QPixmap dtwPixMapAspectRatio;
-
-              if(ui_.rbSingleFF->isChecked() || ui_.rbBothFF->isChecked()){
-                dtwPixMapArea = this->drawDTWPixmap(currentCommandArea, ui_.cbArea->text(), indexOfLowAreaCluster, ui_.rbKmedoids->text(), df, stepPattern);
-                dtwPixMapArea = dtwPixMapArea.scaled(ui_.lblDTW->maximumWidth(), ui_.lblDTW->maximumHeight(), Qt::KeepAspectRatio, Qt::SmoothTransformation);
-
-                dtwPixMapAspectRatio = this->drawDTWPixmap(currentCommandAspectRatio, ui_.cbAspectRatio->text(), indexOfLowAspectRatioCluster, ui_.rbKmedoids->text(), df, stepPattern);
-                dtwPixMapAspectRatio = dtwPixMapAspectRatio.scaled(ui_.lblMouthDiff->maximumWidth(), ui_.lblMouthDiff->maximumHeight(), Qt::KeepAspectRatio, Qt::SmoothTransformation);
-
-              }else if(ui_.rbFusionFF->isChecked()){
-                dtwPixMapArea = this->drawDTWPixmap(currentCommandFusion, ui_.cbArea->text(), fusionAreaIndex, ui_.rbKmedoids->text(), df, stepPattern);
-                dtwPixMapArea = dtwPixMapArea.scaled(ui_.lblDTW->maximumWidth(), ui_.lblDTW->maximumHeight(), Qt::KeepAspectRatio, Qt::SmoothTransformation);
-
-                dtwPixMapAspectRatio = this->drawDTWPixmap(currentCommandFusion, ui_.cbAspectRatio->text(), fusionAspectRatioIndex, ui_.rbKmedoids->text(), df, stepPattern);
-                dtwPixMapAspectRatio = dtwPixMapAspectRatio.scaled(ui_.lblMouthDiff->maximumWidth(), ui_.lblMouthDiff->maximumHeight(), Qt::KeepAspectRatio, Qt::SmoothTransformation);
-              }
-              ui_.lblDTW->setPixmap(dtwPixMapArea);
-              ui_.lblMouthDiff->setPixmap(dtwPixMapAspectRatio);
-
-              //                ROS_INFO("Recognize Fusion: %s", currentCommandFusion.toStdString().c_str());
-              //                ROS_INFO("Recognize Area: %s", currentCommandArea.toStdString().c_str());
-              //                ROS_INFO("Recognize AspectRatio: %s", currentCommandAspectRatio.toStdString().c_str());
+              this->showDTWwithPathOnGUI(currentCommandArea, indexOfLowAreaCluster,
+                                         currentCommandAspectRatio, indexOfLowAspectRatioCluster,
+                                         currentCommandFusion, fusionAreaIndex, fusionAspectRatioIndex,
+                                         df, stepPattern);
 
             }else if(ui_.rbEuclideanDistSA->isChecked()){
-
-              double bestEuclideanDistanceArea = INT_MAX;
-              double bestEuclideanDistanceAspectRatio = INT_MAX;
 
               QList<CommandWithCost> areaCommandsWithCost;
               QList<CommandWithCost> aspectRatioCommandsWithCost;
 
-              foreach (QString command, availableTrajectories) {
-                double localCost = INT_MAX;
-                clusterT = this->getClusterTrajectories(command, ui_.cbArea->text(), ui_.rbKmedoids->text());
-
-                double euclideanDistanceTmpArea = 0.0;
-                for (int i = 0; i < clusterT.size(); i++) {
-                  QList<double> shortenTrajectory;
-                  QList<double> keptTrajectory;
-                  if(currentUtteranceTrajectories[ui_.cbArea->text()].size() > clusterT.at(i).size()){
-                    keptTrajectory = clusterT.at(i);
-                    shortenTrajectory = currentUtteranceTrajectories[ui_.cbArea->text()].mid(0, clusterT.at(i).size());
-                    //                    shortenTrajectory = currentUtteranceTrajectories[ui_.cbArea->text()].mid(
-                    //                          currentUtteranceTrajectories[ui_.cbArea->text()].size()-clusterT.at(i).size(), clusterT.at(i).size());
-                  }else if(currentUtteranceTrajectories[ui_.cbArea->text()].size() < clusterT.at(i).size()){
-                    keptTrajectory = currentUtteranceTrajectories[ui_.cbArea->text()];
-                    shortenTrajectory = clusterT.at(i).mid(0, currentUtteranceTrajectories[ui_.cbArea->text()].size());
-                    //                    shortenTrajectory = clusterT.at(i).mid(
-                    //                          clusterT.at(i).size()-currentUtteranceTrajectories[ui_.cbArea->text()].size(), currentUtteranceTrajectories[ui_.cbArea->text()].size());
-                  }else{
-                    shortenTrajectory = currentUtteranceTrajectories[ui_.cbArea->text()];
-                    keptTrajectory = clusterT.at(i);
-                  }
-
-                  euclideanDistanceTmpArea = calculateEuclideanDistance(keptTrajectory, shortenTrajectory);
-
-                  if(euclideanDistanceTmpArea < localCost){
-                    localCost = euclideanDistanceTmpArea;
-                    commandWithCost.command = command;
-                    commandWithCost.cost = euclideanDistanceTmpArea;
-                  }
-
-                  if(!ui_.cbSOLR->isChecked()){
-                    recordRecognitionData.commandArea[command].append(euclideanDistanceTmpArea);
-                  }
-
-                  //                  ROS_INFO("Area Command: %s(%d) ; Utterrance: %d -> %f",
-                  //                           command.toStdString().c_str(), clusterT.at(i).size(), currentUtteranceTrajectories[ui_.cbArea->text()].size(), euclideanDistanceTmpArea);
-
-                  if(euclideanDistanceTmpArea < bestEuclideanDistanceArea){
-                    indexOfLowAreaCluster = i;
-                    bestEuclideanDistanceArea = euclideanDistanceTmpArea;
-                    currentCommandArea = command;
-                  }
-                }
-
-                if(commandWithCost.command != ""){
-                  areaCommandsWithCost.append(commandWithCost);
-                  if(ui_.cbSOLR->isChecked()){
-                    recordRecognitionData.commandArea[commandWithCost.command].append(commandWithCost.cost);
-                  }
-                  commandWithCost.command = "";
-                }
-
-                clusterT = this->getClusterTrajectories(command, ui_.cbAspectRatio->text(), ui_.rbKmedoids->text());
-                localCost = INT_MAX;
-
-                double euclideanDistanceTmpAspectRatio = 0.0;
-                for (int i = 0; i < clusterT.size(); i++) {
-                  QList<double> shortenTrajectory;
-                  QList<double> keptTrajectory;
-                  if(currentUtteranceTrajectories[ui_.cbAspectRatio->text()].size() > clusterT.at(i).size()){
-                    keptTrajectory = clusterT.at(i);
-                    shortenTrajectory = currentUtteranceTrajectories[ui_.cbAspectRatio->text()].mid(0, clusterT.at(i).size());
-                    //                    shortenTrajectory = currentUtteranceTrajectories[ui_.cbAspectRatio->text()].mid(
-                    //                          currentUtteranceTrajectories[ui_.cbAspectRatio->text()].size()-clusterT.at(i).size(), clusterT.at(i).size());
-                  }else if(currentUtteranceTrajectories[ui_.cbAspectRatio->text()].size() < clusterT.at(i).size()){
-                    keptTrajectory = currentUtteranceTrajectories[ui_.cbAspectRatio->text()];
-                    shortenTrajectory = clusterT.at(i).mid(0, currentUtteranceTrajectories[ui_.cbAspectRatio->text()].size());
-                    //                    shortenTrajectory = clusterT.at(i).mid(
-                    //                          clusterT.at(i).size()-currentUtteranceTrajectories[ui_.cbAspectRatio->text()].size(), currentUtteranceTrajectories[ui_.cbAspectRatio->text()].size());
-                  }else{
-                    shortenTrajectory = currentUtteranceTrajectories[ui_.cbAspectRatio->text()];
-                    keptTrajectory = clusterT.at(i);
-                  }
-
-                  euclideanDistanceTmpAspectRatio = calculateEuclideanDistance(keptTrajectory, shortenTrajectory);
-
-                  if(euclideanDistanceTmpAspectRatio < localCost){
-                    localCost = euclideanDistanceTmpAspectRatio;
-                    commandWithCost.command = command;
-                    commandWithCost.cost = euclideanDistanceTmpAspectRatio;
-                  }
-
-                  if(!ui_.cbSOLR->isChecked()){
-                    recordRecognitionData.commandAspectRatio[command].append(euclideanDistanceTmpAspectRatio);
-                  }
-
-                  //                  ROS_INFO("Aspect Ratio Command: %s(%d) ; Utterrance: %d -> %f",
-                  //                           command.toStdString().c_str(), clusterT.at(i).size(), currentUtteranceTrajectories[ui_.cbAspectRatio->text()].size(), euclideanDistanceTmpAspectRatio);
-
-                  if(euclideanDistanceTmpAspectRatio < bestEuclideanDistanceAspectRatio){
-                    indexOfLowAreaCluster = i;
-                    bestEuclideanDistanceAspectRatio = euclideanDistanceTmpAspectRatio;
-                    currentCommandAspectRatio = command;
-                  }
-                }
-
-                if(commandWithCost.command != ""){
-                  aspectRatioCommandsWithCost.append(commandWithCost);
-                  if(ui_.cbSOLR->isChecked()){
-                    recordRecognitionData.commandAspectRatio[commandWithCost.command].append(commandWithCost.cost);
-                  }
-                  commandWithCost.command = "";
-                }
-
-              }
+              this->calculateEuclideanCost(commandWithCost, areaCommandsWithCost, aspectRatioCommandsWithCost);
 
               if(updateRecognizedText){
                 ui_.lwArea->clear();
@@ -930,9 +646,6 @@ void LipRec::processImage(Mat img)
               }
 
               this->changeRecordRecognitionStateToDecisionIfPossible();
-
-              //              ROS_INFO("Recognize Area: %s", currentCommandArea.toStdString().c_str());
-              //              ROS_INFO("Recognize AspectRatio: %s", currentCommandAspectRatio.toStdString().c_str());
             }
           }
 
@@ -1035,6 +748,326 @@ void LipRec::processImage(Mat img)
   this->showLips(showMouthImg);
 
   last = currentFrame;
+}
+
+void LipRec::calculateDTWCostSingle(QList<CommandWithCost>& areaCommandsWithCost, QList<CommandWithCost>& aspectRatioCommandsWithCost, DtwStepPattern stepPattern,
+                                    DistanceFunction df, int windowSize, CommandWithCost& commandWithCost, int& indexOfLowAreaCluster, int& indexOfLowAspectRatioCluster,
+                                    QString& currentCommandArea, QString& currentCommandAspectRatio)
+{
+  double bestWarpingCostArea = INT_MAX;
+  double bestWarpingCostAspectRatio = INT_MAX;
+
+  QList<QList<double> > clusterT;
+
+  foreach (QString command, availableTrajectories) {
+    clusterT = this->getClusterTrajectories(command, ui_.cbArea->text(), ui_.rbKmedoids->text());
+    double localCost = INT_MAX;
+
+    double warpingCostTmpArea = 0.0;
+    for (int i = 0; i < clusterT.size(); i++) {
+
+      dtw.seed(clusterT.at(i), currentUtteranceTrajectories[ui_.cbArea->text()], stepPattern, ui_.cbDtwSlopeWeights->isChecked());
+
+      warpingCostTmpArea = dtw.calcWarpingCost(df, ui_.cbDtwWindowSizeActivate->isChecked(), windowSize, ui_.cbDtwWindowSizeAdaptable->isChecked());
+
+      if(weightedDtwActive){
+        warpingCostTmpArea += warpingCostTmpArea * weightedDtw[command];
+      }
+
+      if(warpingCostTmpArea < localCost){
+        localCost = warpingCostTmpArea;
+        commandWithCost.command = command;
+        commandWithCost.cost = warpingCostTmpArea;
+      }
+
+      if(!ui_.cbSOLR->isChecked()){
+        recordRecognitionData.commandArea[command].append(warpingCostTmpArea);
+      }
+
+      //                    ROS_INFO("Area Command: %s(%d) ; Utterrance: %d -> %f",
+      //                             command.toStdString().c_str(), clusterT.at(i).size(), currentUtteranceTrajectories[ui_.cbArea->text()].size(), warpingCostTmpArea);
+
+      if(warpingCostTmpArea < bestWarpingCostArea){
+        indexOfLowAreaCluster = i;
+        bestWarpingCostArea = warpingCostTmpArea;
+        currentCommandArea = command;
+      }
+    }
+
+    if(commandWithCost.command != ""){
+      areaCommandsWithCost.append(commandWithCost);
+
+      if(ui_.cbSOLR->isChecked()){
+        recordRecognitionData.commandArea[commandWithCost.command].append(commandWithCost.cost);
+      }
+      commandWithCost.command = "";
+    }
+
+    localCost = INT_MAX;
+
+    clusterT = this->getClusterTrajectories(command, ui_.cbAspectRatio->text(), ui_.rbKmedoids->text());
+
+    double warpingCostTmpAspectRatio = 0.0;
+    for (int i = 0; i < clusterT.size(); i++) {
+      dtw.seed(clusterT.at(i), currentUtteranceTrajectories[ui_.cbAspectRatio->text()], stepPattern, ui_.cbDtwSlopeWeights->isChecked());
+
+      warpingCostTmpAspectRatio = dtw.calcWarpingCost(df, ui_.cbDtwWindowSizeActivate->isChecked(), windowSize, ui_.cbDtwWindowSizeAdaptable->isChecked());
+
+      if(weightedDtwActive){
+        warpingCostTmpAspectRatio += warpingCostTmpAspectRatio * weightedDtw[command];
+      }
+
+      if(warpingCostTmpAspectRatio < localCost){
+        localCost = warpingCostTmpArea;
+        commandWithCost.command = command;
+        commandWithCost.cost = warpingCostTmpAspectRatio;
+      }
+
+      if(!ui_.cbSOLR->isChecked()){
+        recordRecognitionData.commandAspectRatio[command].append(warpingCostTmpAspectRatio);
+      }
+
+      //                    ROS_INFO("AspectRatio Command: %s(%d) ; Utterrance: %d -> %f",
+      //                             command.toStdString().c_str(), clusterT.at(i).size(), currentUtteranceTrajectories[ui_.cbAspectRatio->text()].size(), warpingCostTmpAspectRatio);
+
+      if(warpingCostTmpAspectRatio < bestWarpingCostAspectRatio){
+        indexOfLowAspectRatioCluster = i;
+        bestWarpingCostAspectRatio = warpingCostTmpAspectRatio;
+        currentCommandAspectRatio = command;
+      }
+    }
+
+    if(commandWithCost.command != ""){
+      aspectRatioCommandsWithCost.append(commandWithCost);
+
+      if(ui_.cbSOLR->isChecked()){
+        recordRecognitionData.commandAspectRatio[commandWithCost.command].append(commandWithCost.cost);
+      }
+      commandWithCost.command = "";
+    }
+  }
+}
+
+void LipRec::calculateDTWCostFusion(QList<CommandWithCost>& fusionCommandsWithCost, int& fusionAreaIndex, int& fusionAspectRatioIndex,
+                                    DtwStepPattern stepPattern, DistanceFunction df, int windowSize, int &indexOfLowAreaCluster, int &indexOfLowAspectRatioCluster,
+                                    CommandWithCost& commandWithCost, QString& currentCommandFusion){
+
+  double bestWarpingCostFusion = INT_MAX;
+  QList<QList<double> > clusterT;
+  QList<QList<double> > clusterT2;
+
+  foreach (QString command, availableTrajectories) {
+
+    clusterT = this->getClusterTrajectories(command, ui_.cbArea->text(), ui_.rbKmedoids->text());
+    clusterT2 = this->getClusterTrajectories(command, ui_.cbAspectRatio->text(), ui_.rbKmedoids->text());
+
+    double warpingCostTmpArea = INT_MAX;
+    double warpingCostTmpAspectRatio = INT_MAX;
+    double warpingCostFusionTmp = 0.0;
+
+    for (int i = 0; i < clusterT.size(); ++i) {
+      dtw.seed(clusterT.at(i), currentUtteranceTrajectories[ui_.cbArea->text()], stepPattern, ui_.cbDtwSlopeWeights->isChecked());
+
+      double wpArea = dtw.calcWarpingCost(df, ui_.cbDtwWindowSizeActivate->isChecked(), windowSize, ui_.cbDtwWindowSizeAdaptable->isChecked());
+
+      if(weightedDtwActive){
+        wpArea += wpArea * weightedDtw[command];
+      }
+
+      //                    ROS_INFO("Area Command: %s(%d) ; Utterrance: %d -> %f",
+      //                             command.toStdString().c_str(), clusterT.at(i).size(),
+      //                             currentUtteranceTrajectories[ui_.cbArea->text()].size(), wpArea);
+
+      if(wpArea < warpingCostTmpArea){
+        indexOfLowAreaCluster = i;
+        warpingCostTmpArea = wpArea;
+      }
+    }
+
+    for (int i = 0; i < clusterT2.size(); ++i) {
+      dtw.seed(clusterT2.at(i), currentUtteranceTrajectories[ui_.cbAspectRatio->text()], stepPattern, ui_.cbDtwSlopeWeights->isChecked());
+
+      double wpAspectRatio = 0.0;
+
+      wpAspectRatio = dtw.calcWarpingCost(df, ui_.cbDtwWindowSizeActivate->isChecked(), windowSize, ui_.cbDtwWindowSizeAdaptable->isChecked());
+
+      if(weightedDtwActive){
+        wpAspectRatio += wpAspectRatio * weightedDtw[command];
+      }
+
+      //                    ROS_INFO("Aspect Ratio Command: %s(%d) ; Utterrance: %d -> %f",
+      //                             command.toStdString().c_str(), clusterT2.at(i).size(),
+      //                             currentUtteranceTrajectories[ui_.cbAspectRatio->text()].size(), wpAspectRatio);
+
+      if(wpAspectRatio < warpingCostTmpAspectRatio){
+        indexOfLowAspectRatioCluster = i;
+        warpingCostTmpAspectRatio = wpAspectRatio;
+      }
+    }
+
+    warpingCostFusionTmp = warpingCostTmpArea + warpingCostTmpAspectRatio;
+
+    if(command != "all"){
+      commandWithCost.command = command;
+      commandWithCost.cost = warpingCostFusionTmp;
+      fusionCommandsWithCost.append(commandWithCost);
+    }
+
+    if(commandWithCost.command != ""){
+      recordRecognitionData.commandFusion[commandWithCost.command].append(commandWithCost.cost);
+    }
+
+    if(warpingCostFusionTmp < bestWarpingCostFusion){
+      bestWarpingCostFusion = warpingCostFusionTmp;
+      fusionAreaIndex = indexOfLowAreaCluster;
+      fusionAspectRatioIndex = indexOfLowAspectRatioCluster;
+      currentCommandFusion = command;
+    }
+  }
+}
+
+void LipRec::calculateEuclideanCost(CommandWithCost& commandWithCost, QList<CommandWithCost>& areaCommandsWithCost, QList<CommandWithCost>& aspectRatioCommandsWithCost)
+{
+  double bestEuclideanDistanceArea = INT_MAX;
+  double bestEuclideanDistanceAspectRatio = INT_MAX;
+  QList<QList<double> > clusterT;
+
+//  int indexOfLowAreaCluster = 0;
+//  int indexOfLowAspectRatioCluster = 0;
+
+  QString currentCommandArea = "";
+  QString currentCommandAspectRatio = "";
+
+  foreach (QString command, availableTrajectories) {
+    double localCost = INT_MAX;
+    clusterT = this->getClusterTrajectories(command, ui_.cbArea->text(), ui_.rbKmedoids->text());
+
+    double euclideanDistanceTmpArea = 0.0;
+    for (int i = 0; i < clusterT.size(); i++) {
+      QList<double> shortenTrajectory;
+      QList<double> keptTrajectory;
+      if(currentUtteranceTrajectories[ui_.cbArea->text()].size() > clusterT.at(i).size()){
+        keptTrajectory = clusterT.at(i);
+        shortenTrajectory = currentUtteranceTrajectories[ui_.cbArea->text()].mid(0, clusterT.at(i).size());
+        //                    shortenTrajectory = currentUtteranceTrajectories[ui_.cbArea->text()].mid(
+        //                          currentUtteranceTrajectories[ui_.cbArea->text()].size()-clusterT.at(i).size(), clusterT.at(i).size());
+      }else if(currentUtteranceTrajectories[ui_.cbArea->text()].size() < clusterT.at(i).size()){
+        keptTrajectory = currentUtteranceTrajectories[ui_.cbArea->text()];
+        shortenTrajectory = clusterT.at(i).mid(0, currentUtteranceTrajectories[ui_.cbArea->text()].size());
+        //                    shortenTrajectory = clusterT.at(i).mid(
+        //                          clusterT.at(i).size()-currentUtteranceTrajectories[ui_.cbArea->text()].size(), currentUtteranceTrajectories[ui_.cbArea->text()].size());
+      }else{
+        shortenTrajectory = currentUtteranceTrajectories[ui_.cbArea->text()];
+        keptTrajectory = clusterT.at(i);
+      }
+
+      euclideanDistanceTmpArea = calculateEuclideanDistance(keptTrajectory, shortenTrajectory);
+
+      if(euclideanDistanceTmpArea < localCost){
+        localCost = euclideanDistanceTmpArea;
+        commandWithCost.command = command;
+        commandWithCost.cost = euclideanDistanceTmpArea;
+      }
+
+      if(!ui_.cbSOLR->isChecked()){
+        recordRecognitionData.commandArea[command].append(euclideanDistanceTmpArea);
+      }
+
+      //                  ROS_INFO("Area Command: %s(%d) ; Utterrance: %d -> %f",
+      //                           command.toStdString().c_str(), clusterT.at(i).size(), currentUtteranceTrajectories[ui_.cbArea->text()].size(), euclideanDistanceTmpArea);
+
+      if(euclideanDistanceTmpArea < bestEuclideanDistanceArea){
+        //indexOfLowAreaCluster = i;
+        bestEuclideanDistanceArea = euclideanDistanceTmpArea;
+        currentCommandArea = command;
+      }
+    }
+
+    if(commandWithCost.command != ""){
+      areaCommandsWithCost.append(commandWithCost);
+      if(ui_.cbSOLR->isChecked()){
+        recordRecognitionData.commandArea[commandWithCost.command].append(commandWithCost.cost);
+      }
+      commandWithCost.command = "";
+    }
+
+    clusterT = this->getClusterTrajectories(command, ui_.cbAspectRatio->text(), ui_.rbKmedoids->text());
+    localCost = INT_MAX;
+
+    double euclideanDistanceTmpAspectRatio = 0.0;
+    for (int i = 0; i < clusterT.size(); i++) {
+      QList<double> shortenTrajectory;
+      QList<double> keptTrajectory;
+      if(currentUtteranceTrajectories[ui_.cbAspectRatio->text()].size() > clusterT.at(i).size()){
+        keptTrajectory = clusterT.at(i);
+        shortenTrajectory = currentUtteranceTrajectories[ui_.cbAspectRatio->text()].mid(0, clusterT.at(i).size());
+        //                    shortenTrajectory = currentUtteranceTrajectories[ui_.cbAspectRatio->text()].mid(
+        //                          currentUtteranceTrajectories[ui_.cbAspectRatio->text()].size()-clusterT.at(i).size(), clusterT.at(i).size());
+      }else if(currentUtteranceTrajectories[ui_.cbAspectRatio->text()].size() < clusterT.at(i).size()){
+        keptTrajectory = currentUtteranceTrajectories[ui_.cbAspectRatio->text()];
+        shortenTrajectory = clusterT.at(i).mid(0, currentUtteranceTrajectories[ui_.cbAspectRatio->text()].size());
+        //                    shortenTrajectory = clusterT.at(i).mid(
+        //                          clusterT.at(i).size()-currentUtteranceTrajectories[ui_.cbAspectRatio->text()].size(), currentUtteranceTrajectories[ui_.cbAspectRatio->text()].size());
+      }else{
+        shortenTrajectory = currentUtteranceTrajectories[ui_.cbAspectRatio->text()];
+        keptTrajectory = clusterT.at(i);
+      }
+
+      euclideanDistanceTmpAspectRatio = calculateEuclideanDistance(keptTrajectory, shortenTrajectory);
+
+      if(euclideanDistanceTmpAspectRatio < localCost){
+        localCost = euclideanDistanceTmpAspectRatio;
+        commandWithCost.command = command;
+        commandWithCost.cost = euclideanDistanceTmpAspectRatio;
+      }
+
+      if(!ui_.cbSOLR->isChecked()){
+        recordRecognitionData.commandAspectRatio[command].append(euclideanDistanceTmpAspectRatio);
+      }
+
+      //                  ROS_INFO("Aspect Ratio Command: %s(%d) ; Utterrance: %d -> %f",
+      //                           command.toStdString().c_str(), clusterT.at(i).size(), currentUtteranceTrajectories[ui_.cbAspectRatio->text()].size(), euclideanDistanceTmpAspectRatio);
+
+      if(euclideanDistanceTmpAspectRatio < bestEuclideanDistanceAspectRatio){
+        //indexOfLowAspectRatioCluster = i;
+        bestEuclideanDistanceAspectRatio = euclideanDistanceTmpAspectRatio;
+        currentCommandAspectRatio = command;
+      }
+    }
+
+    if(commandWithCost.command != ""){
+      aspectRatioCommandsWithCost.append(commandWithCost);
+      if(ui_.cbSOLR->isChecked()){
+        recordRecognitionData.commandAspectRatio[commandWithCost.command].append(commandWithCost.cost);
+      }
+      commandWithCost.command = "";
+    }
+  }
+}
+
+void LipRec::showDTWwithPathOnGUI(QString currentCommandArea, int indexOfLowAreaCluster, QString currentCommandAspectRatio, int indexOfLowAspectRatioCluster,
+                                  QString currentCommandFusion, int fusionAreaIndex, int fusionAspectRatioIndex, DistanceFunction df, DtwStepPattern stepPattern)
+{
+  QPixmap dtwPixMapArea;
+  QPixmap dtwPixMapAspectRatio;
+
+
+  if(ui_.rbSingleFF->isChecked() || ui_.rbBothFF->isChecked()){
+    dtwPixMapArea = this->drawDTWPixmap(currentCommandArea, ui_.cbArea->text(), indexOfLowAreaCluster, ui_.rbKmedoids->text(), df, stepPattern);
+    dtwPixMapArea = dtwPixMapArea.scaled(ui_.lblDTW->maximumWidth(), ui_.lblDTW->maximumHeight(), Qt::KeepAspectRatio, Qt::SmoothTransformation);
+
+    dtwPixMapAspectRatio = this->drawDTWPixmap(currentCommandAspectRatio, ui_.cbAspectRatio->text(), indexOfLowAspectRatioCluster, ui_.rbKmedoids->text(), df, stepPattern);
+    dtwPixMapAspectRatio = dtwPixMapAspectRatio.scaled(ui_.lblMouthDiff->maximumWidth(), ui_.lblMouthDiff->maximumHeight(), Qt::KeepAspectRatio, Qt::SmoothTransformation);
+
+  }else if(ui_.rbFusionFF->isChecked()){
+    dtwPixMapArea = this->drawDTWPixmap(currentCommandFusion, ui_.cbArea->text(), fusionAreaIndex, ui_.rbKmedoids->text(), df, stepPattern);
+    dtwPixMapArea = dtwPixMapArea.scaled(ui_.lblDTW->maximumWidth(), ui_.lblDTW->maximumHeight(), Qt::KeepAspectRatio, Qt::SmoothTransformation);
+
+    dtwPixMapAspectRatio = this->drawDTWPixmap(currentCommandFusion, ui_.cbAspectRatio->text(), fusionAspectRatioIndex, ui_.rbKmedoids->text(), df, stepPattern);
+    dtwPixMapAspectRatio = dtwPixMapAspectRatio.scaled(ui_.lblMouthDiff->maximumWidth(), ui_.lblMouthDiff->maximumHeight(), Qt::KeepAspectRatio, Qt::SmoothTransformation);
+  }
+  ui_.lblDTW->setPixmap(dtwPixMapArea);
+  ui_.lblMouthDiff->setPixmap(dtwPixMapAspectRatio);
 }
 
 QPixmap LipRec::drawDTWPixmap(QString currentCommand, QString feature, int indexOfLowCluster, QString clusterMethod, DistanceFunction df, DtwStepPattern stepPattern){

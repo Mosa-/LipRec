@@ -172,6 +172,18 @@ private:
 
     void processImage(Mat img);
 
+    void calculateDTWCostSingle(QList<CommandWithCost> &areaCommandsWithCost, QList<CommandWithCost> &aspectRatioCommandsWithCost, DtwStepPattern stepPattern,
+                                DistanceFunction df, int windowSize, CommandWithCost &commandWithCost, int &indexOfLowAreaCluster, int &indexOfLowAspectRatioCluster,
+                                QString &currentCommandArea, QString &currentCommandAspectRatio);
+    void calculateDTWCostFusion(QList<CommandWithCost>& fusionCommandsWithCost, int &fusionAreaIndex, int &fusionAspectRatioIndex,
+                                DtwStepPattern stepPattern, DistanceFunction df, int windowSize, int& indexOfLowAreaCluster, int& indexOfLowAspectRatioCluster,
+                                CommandWithCost &commandWithCost, QString &currentCommandFusion);
+    void calculateEuclideanCost(CommandWithCost &commandWithCost, QList<CommandWithCost> &areaCommandsWithCost, QList<CommandWithCost> &aspectRatioCommandsWithCost);
+    void showDTWwithPathOnGUI(QString currentCommandArea, int indexOfLowAreaCluster,
+                               QString currentCommandAspectRatio, int indexOfLowAspectRatioCluster,
+                               QString currentCommandFusion, int fusionAreaIndex, int fusionAspectRatioIndex,
+                               DistanceFunction df, DtwStepPattern stepPattern);
+
     void drawFaceMouthROI(Mat& img);
 
     void showLips(Mat& mouthImg, bool useMonoImage = false);
