@@ -86,7 +86,6 @@ void LipRec::initPlugin(qt_gui_cpp::PluginContext& context)
   QObject::connect(ui_.pbAbortTrajectory, SIGNAL(clicked()), this, SLOT(clickedAbortTrajectory()));
 
   QObject::connect(ui_.pbCluster, SIGNAL(clicked()), this, SLOT(clickedCluster()));
-  QObject::connect(ui_.pbClusterAll, SIGNAL(clicked()), this, SLOT(clickedClusterAll()));
 
   QObject::connect(ui_.pbUpdateRecognizedText, SIGNAL(clicked(bool)), this, SLOT(clickedUpdateRecognizedText(bool)));
 
@@ -1707,17 +1706,6 @@ void LipRec::clickedCluster()
     clustering.clearTrajectoriesSet();
 
   }
-}
-
-void LipRec::clickedClusterAll()
-{
-  ROS_INFO("Begin Cluster 14");
-  ui_.leClusterCollection->setText("cluster14");
-  ui_.sbKMethod->setValue(1);
-  ui_.cbDTWStepPattern->setCurrentIndex(0);
-  ui_.cbDtwWindowSizeActivate->setChecked(true);
-  ui_.sbDtwWindowSize->setValue(3);
-  ROS_INFO("End Cluster 14");
 }
 
 void LipRec::clickedUpdateRecognizedText(bool checked)

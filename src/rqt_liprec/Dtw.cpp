@@ -160,7 +160,7 @@ QList<Point> Dtw::calculateGreedyWarpingPath()
           i--;
           j--;
         }
-        warpingPath.append(Point(j,i));
+        warpingPath.append(Point(i,j));
       }
     }
 
@@ -200,7 +200,7 @@ QList<Point> Dtw::calculateGreedyWarpingPath()
           j-=2;
           i--;
         }
-        warpingPath.append(Point(j,i));
+        warpingPath.append(Point(i,j));
       }
     }
 
@@ -232,7 +232,7 @@ QList<Point> Dtw::calculateGreedyWarpingPath()
           j--;
           i=-2;
         }
-        warpingPath.append(Point(j,i));
+        warpingPath.append(Point(i,j));
       }
     }
 
@@ -274,7 +274,7 @@ QList<Point> Dtw::calculateGreedyWarpingPath()
           j-=2;
           i--;
         }
-        warpingPath.append(Point(j,i));
+        warpingPath.append(Point(i,j));
       }
     }
 
@@ -324,7 +324,7 @@ QList<Point> Dtw::calculateGreedyWarpingPath()
           j-=3;
           i--;
         }
-        warpingPath.append(Point(j,i));
+        warpingPath.append(Point(i,j));
       }
     }
 
@@ -353,7 +353,7 @@ QList<Point> Dtw::calculateGreedyWarpingPath()
           i-=2;
           j-=2;
         }
-        warpingPath.append(Point(j,i));
+        warpingPath.append(Point(i,j));
       }
     }
   }
@@ -656,10 +656,10 @@ double Dtw::getWarpingPathCost()
 {
   double cost = 0.0;
 
-//  for (int i = 0; i < this->warpingPath.size(); ++i) {
-//    cost += dtwDistanceMatrix.at<double>(warpingPath.at(i).y,warpingPath.at(i).x);
-//  }
-  cost = dtwDistanceMatrix.at<double>(dtwDistanceMatrix.rows-1, dtwDistanceMatrix.cols-1);
+  for (int i = 0; i < this->warpingPath.size(); ++i) {
+    cost += dtwDistanceMatrix.at<double>(warpingPath.at(i));
+  }
+  //cost = dtwDistanceMatrix.at<double>(dtwDistanceMatrix.rows-1, dtwDistanceMatrix.cols-1);
 
   return cost;
 }

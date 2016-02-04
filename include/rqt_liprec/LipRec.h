@@ -198,6 +198,7 @@ private:
     void setupModel();
 
     void applyCluster(QString clusterMethod, DistanceFunction df, QString command, QString feature);
+
     void printTrajectory(QList<double> trajectory);
 
     void calculateAndInitWeightsForDTW();
@@ -242,7 +243,6 @@ private slots:
     void clickedAbortOrSaveTrajectory();
 
     void clickedCluster();
-    void clickedClusterAll();
 
     void clickedUpdateRecognizedText(bool checked);
     void clickedRecordRecognized(bool checked);
