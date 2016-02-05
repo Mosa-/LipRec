@@ -529,8 +529,10 @@ void LipRec::processImage(Mat img)
         bool loadUtteranceFile = ui_.leFilenameLoadRecord->text() != "" && ui_.cbLoadUtteranceFile->isChecked();
 
         if(loadUtteranceFile){
+          utteranceMtx.lock();
           currentUtteranceTrajectories.clear();
           currentUtteranceTrajectories = lipRecRecorder.readUtteranceFromTextFile(ui_.leFilenameLoadRecord->text());
+          utteranceMtx.unlock();
         }
 
         bool activateAlgorithmForRecognition = utter && stateDetectionStartEndFrame == Idle && recordTrajectoryState != Recording && !loadUtteranceFile;
@@ -553,7 +555,11 @@ void LipRec::processImage(Mat img)
             stepPattern = ITAKURA;
           }
 
-          if(currentUtteranceTrajectories.size() > 0){
+          utteranceMtx.lock();
+          int currentUtteranceSize = currentUtteranceTrajectories.size();
+          utteranceMtx.unlock();
+
+          if(currentUtteranceSize > 0){
 
             recordRecognitionData.clear();
 
@@ -611,10 +617,14 @@ void LipRec::processImage(Mat img)
 
               this->changeRecordRecognitionStateToDecisionIfPossible();
 
-              this->showDTWwithPathOnGUI(currentCommandArea, indexOfLowAreaCluster,
+              QPixmap dtwPixMapArea;
+              QPixmap dtwPixMapAspectRatio;
+              this->showDTWwithPathOnGUI(dtwPixMapArea, dtwPixMapAspectRatio, currentCommandArea, indexOfLowAreaCluster,
                                          currentCommandAspectRatio, indexOfLowAspectRatioCluster,
                                          currentCommandFusion, fusionAreaIndex, fusionAspectRatioIndex,
                                          df, stepPattern);
+              ui_.lblDTW->setPixmap(dtwPixMapArea);
+              ui_.lblMouthDiff->setPixmap(dtwPixMapAspectRatio);
 
             }else if(ui_.rbEuclideanDistSA->isChecked()){
 
@@ -659,7 +669,9 @@ void LipRec::processImage(Mat img)
           }
 
           if(recordRecognitionState != RRDECISION){
+            utteranceMtx.lock();
             currentUtteranceTrajectories.clear();
+            utteranceMtx.unlock();
           }
           utter = false;
           applyUtteranceOfLoadedFile = false;
@@ -764,6 +776,11 @@ void LipRec::calculateDTWCostSingle(QList<CommandWithCost>& areaCommandsWithCost
 
   QList<QList<double> > clusterT;
 
+  utteranceMtx.lock();
+  QList<double> currentUtteranceTrajArea = currentUtteranceTrajectories[ui_.cbArea->text()];
+  QList<double> currentUtteranceTrajAspectRatio = currentUtteranceTrajectories[ui_.cbAspectRatio->text()];
+  utteranceMtx.unlock();
+
   foreach (QString command, availableTrajectories) {
     clusterT = this->getClusterTrajectories(command, ui_.cbArea->text(), ui_.rbKmedoids->text());
     double localCost = INT_MAX;
@@ -771,7 +788,7 @@ void LipRec::calculateDTWCostSingle(QList<CommandWithCost>& areaCommandsWithCost
     double warpingCostTmpArea = 0.0;
     for (int i = 0; i < clusterT.size(); i++) {
 
-      dtw.seed(clusterT.at(i), currentUtteranceTrajectories[ui_.cbArea->text()], stepPattern, ui_.cbDtwSlopeWeights->isChecked());
+      dtw.seed(clusterT.at(i), currentUtteranceTrajArea, stepPattern, ui_.cbDtwSlopeWeights->isChecked());
 
       warpingCostTmpArea = dtw.calcWarpingCost(df, ui_.cbDtwWindowSizeActivate->isChecked(), windowSize, ui_.cbDtwWindowSizeAdaptable->isChecked());
 
@@ -814,7 +831,7 @@ void LipRec::calculateDTWCostSingle(QList<CommandWithCost>& areaCommandsWithCost
 
     double warpingCostTmpAspectRatio = 0.0;
     for (int i = 0; i < clusterT.size(); i++) {
-      dtw.seed(clusterT.at(i), currentUtteranceTrajectories[ui_.cbAspectRatio->text()], stepPattern, ui_.cbDtwSlopeWeights->isChecked());
+      dtw.seed(clusterT.at(i), currentUtteranceTrajAspectRatio, stepPattern, ui_.cbDtwSlopeWeights->isChecked());
 
       warpingCostTmpAspectRatio = dtw.calcWarpingCost(df, ui_.cbDtwWindowSizeActivate->isChecked(), windowSize, ui_.cbDtwWindowSizeAdaptable->isChecked());
 
@@ -861,6 +878,11 @@ void LipRec::calculateDTWCostFusion(QList<CommandWithCost>& fusionCommandsWithCo
   QList<QList<double> > clusterT;
   QList<QList<double> > clusterT2;
 
+  utteranceMtx.lock();
+  QList<double> currentUtteranceTrajArea = currentUtteranceTrajectories[ui_.cbArea->text()];
+  QList<double> currentUtteranceTrajAspectRatio = currentUtteranceTrajectories[ui_.cbAspectRatio->text()];
+  utteranceMtx.unlock();
+
   foreach (QString command, availableTrajectories) {
 
     clusterT = this->getClusterTrajectories(command, ui_.cbArea->text(), ui_.rbKmedoids->text());
@@ -871,7 +893,7 @@ void LipRec::calculateDTWCostFusion(QList<CommandWithCost>& fusionCommandsWithCo
     double warpingCostFusionTmp = 0.0;
 
     for (int i = 0; i < clusterT.size(); ++i) {
-      dtw.seed(clusterT.at(i), currentUtteranceTrajectories[ui_.cbArea->text()], stepPattern, ui_.cbDtwSlopeWeights->isChecked());
+      dtw.seed(clusterT.at(i), currentUtteranceTrajArea, stepPattern, ui_.cbDtwSlopeWeights->isChecked());
 
       double wpArea = dtw.calcWarpingCost(df, ui_.cbDtwWindowSizeActivate->isChecked(), windowSize, ui_.cbDtwWindowSizeAdaptable->isChecked());
 
@@ -890,7 +912,7 @@ void LipRec::calculateDTWCostFusion(QList<CommandWithCost>& fusionCommandsWithCo
     }
 
     for (int i = 0; i < clusterT2.size(); ++i) {
-      dtw.seed(clusterT2.at(i), currentUtteranceTrajectories[ui_.cbAspectRatio->text()], stepPattern, ui_.cbDtwSlopeWeights->isChecked());
+      dtw.seed(clusterT2.at(i), currentUtteranceTrajAspectRatio, stepPattern, ui_.cbDtwSlopeWeights->isChecked());
 
       double wpAspectRatio = 0.0;
 
@@ -943,6 +965,11 @@ void LipRec::calculateEuclideanCost(CommandWithCost& commandWithCost, QList<Comm
   QString currentCommandArea = "";
   QString currentCommandAspectRatio = "";
 
+  utteranceMtx.lock();
+  QList<double> currentUtteranceTrajArea = currentUtteranceTrajectories[ui_.cbArea->text()];
+  QList<double> currentUtteranceTrajAspectRatio = currentUtteranceTrajectories[ui_.cbAspectRatio->text()];
+  utteranceMtx.unlock();
+
   foreach (QString command, availableTrajectories) {
     double localCost = INT_MAX;
     clusterT = this->getClusterTrajectories(command, ui_.cbArea->text(), ui_.rbKmedoids->text());
@@ -951,18 +978,18 @@ void LipRec::calculateEuclideanCost(CommandWithCost& commandWithCost, QList<Comm
     for (int i = 0; i < clusterT.size(); i++) {
       QList<double> shortenTrajectory;
       QList<double> keptTrajectory;
-      if(currentUtteranceTrajectories[ui_.cbArea->text()].size() > clusterT.at(i).size()){
+      if(currentUtteranceTrajArea.size() > clusterT.at(i).size()){
         keptTrajectory = clusterT.at(i);
-        shortenTrajectory = currentUtteranceTrajectories[ui_.cbArea->text()].mid(0, clusterT.at(i).size());
+        shortenTrajectory = currentUtteranceTrajArea.mid(0, clusterT.at(i).size());
         //                    shortenTrajectory = currentUtteranceTrajectories[ui_.cbArea->text()].mid(
         //                          currentUtteranceTrajectories[ui_.cbArea->text()].size()-clusterT.at(i).size(), clusterT.at(i).size());
-      }else if(currentUtteranceTrajectories[ui_.cbArea->text()].size() < clusterT.at(i).size()){
-        keptTrajectory = currentUtteranceTrajectories[ui_.cbArea->text()];
-        shortenTrajectory = clusterT.at(i).mid(0, currentUtteranceTrajectories[ui_.cbArea->text()].size());
+      }else if(currentUtteranceTrajArea.size() < clusterT.at(i).size()){
+        keptTrajectory = currentUtteranceTrajArea;
+        shortenTrajectory = clusterT.at(i).mid(0, currentUtteranceTrajArea.size());
         //                    shortenTrajectory = clusterT.at(i).mid(
         //                          clusterT.at(i).size()-currentUtteranceTrajectories[ui_.cbArea->text()].size(), currentUtteranceTrajectories[ui_.cbArea->text()].size());
       }else{
-        shortenTrajectory = currentUtteranceTrajectories[ui_.cbArea->text()];
+        shortenTrajectory = currentUtteranceTrajArea;
         keptTrajectory = clusterT.at(i);
       }
 
@@ -1003,18 +1030,18 @@ void LipRec::calculateEuclideanCost(CommandWithCost& commandWithCost, QList<Comm
     for (int i = 0; i < clusterT.size(); i++) {
       QList<double> shortenTrajectory;
       QList<double> keptTrajectory;
-      if(currentUtteranceTrajectories[ui_.cbAspectRatio->text()].size() > clusterT.at(i).size()){
+      if(currentUtteranceTrajAspectRatio.size() > clusterT.at(i).size()){
         keptTrajectory = clusterT.at(i);
-        shortenTrajectory = currentUtteranceTrajectories[ui_.cbAspectRatio->text()].mid(0, clusterT.at(i).size());
+        shortenTrajectory = currentUtteranceTrajAspectRatio.mid(0, clusterT.at(i).size());
         //                    shortenTrajectory = currentUtteranceTrajectories[ui_.cbAspectRatio->text()].mid(
         //                          currentUtteranceTrajectories[ui_.cbAspectRatio->text()].size()-clusterT.at(i).size(), clusterT.at(i).size());
-      }else if(currentUtteranceTrajectories[ui_.cbAspectRatio->text()].size() < clusterT.at(i).size()){
-        keptTrajectory = currentUtteranceTrajectories[ui_.cbAspectRatio->text()];
-        shortenTrajectory = clusterT.at(i).mid(0, currentUtteranceTrajectories[ui_.cbAspectRatio->text()].size());
+      }else if(currentUtteranceTrajAspectRatio.size() < clusterT.at(i).size()){
+        keptTrajectory = currentUtteranceTrajAspectRatio;
+        shortenTrajectory = clusterT.at(i).mid(0, currentUtteranceTrajAspectRatio.size());
         //                    shortenTrajectory = clusterT.at(i).mid(
         //                          clusterT.at(i).size()-currentUtteranceTrajectories[ui_.cbAspectRatio->text()].size(), currentUtteranceTrajectories[ui_.cbAspectRatio->text()].size());
       }else{
-        shortenTrajectory = currentUtteranceTrajectories[ui_.cbAspectRatio->text()];
+        shortenTrajectory = currentUtteranceTrajAspectRatio;
         keptTrajectory = clusterT.at(i);
       }
 
@@ -1050,12 +1077,10 @@ void LipRec::calculateEuclideanCost(CommandWithCost& commandWithCost, QList<Comm
   }
 }
 
-void LipRec::showDTWwithPathOnGUI(QString currentCommandArea, int indexOfLowAreaCluster, QString currentCommandAspectRatio, int indexOfLowAspectRatioCluster,
+void LipRec::showDTWwithPathOnGUI(QPixmap& dtwPixMapArea, QPixmap& dtwPixMapAspectRatio,
+                                  QString currentCommandArea, int indexOfLowAreaCluster, QString currentCommandAspectRatio, int indexOfLowAspectRatioCluster,
                                   QString currentCommandFusion, int fusionAreaIndex, int fusionAspectRatioIndex, DistanceFunction df, DtwStepPattern stepPattern)
 {
-  QPixmap dtwPixMapArea;
-  QPixmap dtwPixMapAspectRatio;
-
 
   if(ui_.rbSingleFF->isChecked() || ui_.rbBothFF->isChecked()){
     dtwPixMapArea = this->drawDTWPixmap(currentCommandArea, ui_.cbArea->text(), indexOfLowAreaCluster, ui_.rbKmedoids->text(), df, stepPattern);
@@ -1071,8 +1096,6 @@ void LipRec::showDTWwithPathOnGUI(QString currentCommandArea, int indexOfLowArea
     dtwPixMapAspectRatio = this->drawDTWPixmap(currentCommandFusion, ui_.cbAspectRatio->text(), fusionAspectRatioIndex, ui_.rbKmedoids->text(), df, stepPattern);
     dtwPixMapAspectRatio = dtwPixMapAspectRatio.scaled(ui_.lblMouthDiff->maximumWidth(), ui_.lblMouthDiff->maximumHeight(), Qt::KeepAspectRatio, Qt::SmoothTransformation);
   }
-  ui_.lblDTW->setPixmap(dtwPixMapArea);
-  ui_.lblMouthDiff->setPixmap(dtwPixMapAspectRatio);
 }
 
 QPixmap LipRec::drawDTWPixmap(QString currentCommand, QString feature, int indexOfLowCluster, QString clusterMethod, DistanceFunction df, DtwStepPattern stepPattern){
@@ -1080,15 +1103,22 @@ QPixmap LipRec::drawDTWPixmap(QString currentCommand, QString feature, int index
   QPixmap dtwPixMap;
   clusterMtx.lock();
   QList<QList<double> > clusterT = this->getClusterTrajectories(currentCommand, feature, clusterMethod);
-  QList<double> currentUtteranceTraj = currentUtteranceTrajectories[feature];
   clusterMtx.unlock();
 
+  utteranceMtx.lock();
+  QList<double> currentUtteranceTraj = currentUtteranceTrajectories[feature];
+  utteranceMtx.unlock();
+
   int windowSize = ui_.sbDtwWindowSize->value();
+
   if(!clusterT.isEmpty()){
 
     utteranceMtx.lock();
-    dtw.seed(clusterT.at(indexOfLowCluster), currentUtteranceTraj, stepPattern, ui_.cbDtwSlopeWeights->isChecked());
+    if(indexOfLowCluster < clusterT.size()){
+      dtw.seed(clusterT.at(indexOfLowCluster), currentUtteranceTraj, stepPattern, ui_.cbDtwSlopeWeights->isChecked());
+    }
     utteranceMtx.unlock();
+
     dtw.calcWarpingCost(df, ui_.cbDtwWindowSizeActivate->isChecked(), windowSize, ui_.cbDtwWindowSizeAdaptable->isChecked());
 
     Mat dtwMat;
@@ -1768,7 +1798,9 @@ void LipRec::clickedSaveRecordRecognition(){
     ui_.pbRecordRecognition->setChecked(false);
 
     if(ui_.cbSaveUtterance->isChecked()){
+      utteranceMtx.lock();
       lipRecRecorder.writeUtteranceToTextFile(ui_.leFilenameRecord->text(), currentUtteranceTrajectories);
+      utteranceMtx.unlock();
     }
 
     if(ui_.cbContinueAppending->isChecked() || currentRecordRecognitionFilename == ui_.leFilenameRecord->text()){
@@ -1779,7 +1811,11 @@ void LipRec::clickedSaveRecordRecognition(){
       lipRecRecorder.writeToTextFile(ui_.leFilenameRecord->text(), recordRecognitionData);
     }
 
+    utteranceMtx.lock();
     currentUtteranceTrajectories.clear();
+    utteranceMtx.unlock();
+    ui_.leFilenameRecord->setFocus(Qt::OtherFocusReason);
+
 
     recordRecognitionState = RRNONE;
   }
@@ -1975,7 +2011,9 @@ void LipRec::changeRecordRecognitionStateToDecisionIfPossible()
     ui_.pbDeclineRecogntion->setEnabled(true);
     recordRecognitionState = RRDECISION;
 
+    utteranceMtx.lock();
     this->setLblMsgRecordRecognition(QString::number(currentUtteranceTrajectories[ui_.cbAspectRatio->text()].size()));
+    utteranceMtx.unlock();
 
     this->fillRecordRecognitionData();
   }
@@ -2030,7 +2068,9 @@ void LipRec::fillRecordRecognitionData()
 
   recordRecognitionData.clusterK = ui_.sbKMethod->value();
 
+  utteranceMtx.lock();
   recordRecognitionData.utteranceLength = currentUtteranceTrajectories[ui_.cbAspectRatio->text()].size();
+  utteranceMtx.unlock();
 }
 
 void LipRec::printTrajectory(QList<double> trajectory)

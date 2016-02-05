@@ -182,7 +182,7 @@ private:
                                 DtwStepPattern stepPattern, DistanceFunction df, int windowSize, int& indexOfLowAreaCluster, int& indexOfLowAspectRatioCluster,
                                 CommandWithCost &commandWithCost, QString &currentCommandFusion);
     void calculateEuclideanCost(CommandWithCost &commandWithCost, QList<CommandWithCost> &areaCommandsWithCost, QList<CommandWithCost> &aspectRatioCommandsWithCost);
-    void showDTWwithPathOnGUI(QString currentCommandArea, int indexOfLowAreaCluster,
+    void showDTWwithPathOnGUI(QPixmap &dtwPixMapArea, QPixmap &dtwPixMapAspectRatio, QString currentCommandArea, int indexOfLowAreaCluster,
                                QString currentCommandAspectRatio, int indexOfLowAspectRatioCluster,
                                QString currentCommandFusion, int fusionAreaIndex, int fusionAspectRatioIndex,
                                DistanceFunction df, DtwStepPattern stepPattern);
