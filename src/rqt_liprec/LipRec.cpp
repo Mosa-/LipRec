@@ -649,7 +649,10 @@ void LipRec::processImage(Mat img)
             }
           }
 
+          utteranceMtx.lock();
           int utteranceLength = currentUtteranceTrajectories[ui_.cbAspectRatio->text()].size();
+          utteranceMtx.unlock();
+
 
           if(updateRecognizedText){
             ui_.labelUtteranceLength->setText(QString::number(utteranceLength));
@@ -662,8 +665,10 @@ void LipRec::processImage(Mat img)
           applyUtteranceOfLoadedFile = false;
 
         }else if(utter && recordTrajectoryState != Recording){
+          utteranceMtx.lock();
           currentUtteranceTrajectories[ui_.cbArea->text()].append(relativeArea);
           currentUtteranceTrajectories[ui_.cbAspectRatio->text()].append(hw);
+          utteranceMtx.unlock();
         }
 
         double areaMean = 0.0;
@@ -1071,14 +1076,19 @@ void LipRec::showDTWwithPathOnGUI(QString currentCommandArea, int indexOfLowArea
 }
 
 QPixmap LipRec::drawDTWPixmap(QString currentCommand, QString feature, int indexOfLowCluster, QString clusterMethod, DistanceFunction df, DtwStepPattern stepPattern){
+
   QPixmap dtwPixMap;
+  clusterMtx.lock();
   QList<QList<double> > clusterT = this->getClusterTrajectories(currentCommand, feature, clusterMethod);
+  QList<double> currentUtteranceTraj = currentUtteranceTrajectories[feature];
+  clusterMtx.unlock();
 
   int windowSize = ui_.sbDtwWindowSize->value();
-
   if(!clusterT.isEmpty()){
-    dtw.seed(clusterT.at(indexOfLowCluster), currentUtteranceTrajectories[feature], stepPattern, ui_.cbDtwSlopeWeights->isChecked());
 
+    utteranceMtx.lock();
+    dtw.seed(clusterT.at(indexOfLowCluster), currentUtteranceTraj, stepPattern, ui_.cbDtwSlopeWeights->isChecked());
+    utteranceMtx.unlock();
     dtw.calcWarpingCost(df, ui_.cbDtwWindowSizeActivate->isChecked(), windowSize, ui_.cbDtwWindowSizeAdaptable->isChecked());
 
     Mat dtwMat;
@@ -1399,7 +1409,9 @@ QList<QList<double> > LipRec::getClusterTrajectories(QString command, QString fe
 
 void LipRec::setClusterTrajectories(QList<QList<double> > clusterT, QString command, QString feature, QString clusterMethod)
 {
+  clusterMtx.lock();
   clusterTrajectoriesOfCommand[QString("%1_%2_%3").arg(clusterMethod, command, feature)] = clusterT;
+  clusterMtx.unlock();
 }
 
 double LipRec::calculateEuclideanDistance(QList<double> &trj1, QList<double> &trj2)
@@ -1950,7 +1962,6 @@ void LipRec::updateClusterTrajectories(){
       if(clusterT.size() > 0){
         this->setClusterTrajectories(clusterT, command, feature, ui_.rbMosaCluster->text());
       }
-
 
     }
   }

@@ -143,6 +143,9 @@ private:
 
     bool updateRecognizedText;
 
+    QMutex clusterMtx;
+    QMutex utteranceMtx;
+
     RecordRecognitionState recordRecognitionState;
     RecordRecognitionData recordRecognitionData;
     QString currentRecordRecognitionFilename;
