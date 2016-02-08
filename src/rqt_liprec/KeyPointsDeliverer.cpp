@@ -213,6 +213,7 @@ void KeyPointsDeliverer::extractMouthCornerKeyPoints(Mat &mouthImg, int threshol
 
     Point kpTmp;
     kpTmp.x = 0;
+    kpTmp.y = 0;
     for (int i = 0; i < pKPoints.size(); ++i) {
         int diffY = 0;
 
