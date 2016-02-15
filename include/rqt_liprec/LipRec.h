@@ -40,6 +40,8 @@
 #include <QtAlgorithms>
 #include <QDateTime>
 
+#include <QKeyEvent>
+
 #include "KeyPointsDeliverer.h"
 #include "ImageProcessing.h"
 #include "Dtw.h"

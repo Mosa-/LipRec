@@ -214,6 +214,7 @@ void KeyPointsDeliverer::extractMouthCornerKeyPoints(Mat &mouthImg, int threshol
     Point kpTmp;
     kpTmp.x = 0;
     kpTmp.y = 0;
+    //ROS_INFO("pkPoint size %d", pKPoints.size());
     for (int i = 0; i < pKPoints.size(); ++i) {
         int diffY = 0;
 
@@ -231,7 +232,7 @@ void KeyPointsDeliverer::extractMouthCornerKeyPoints(Mat &mouthImg, int threshol
             keyPoint5.x = pKPoints.at(i).keyPoint.x;
             keyPoint5.y = pKPoints.at(i).keyPoint.y;
         }
-        //circle(rMidFinal, pKPoints.at(i).keyPoint, 2, Scalar(255,255,255));
+        circle(rMidFinal, pKPoints.at(i).keyPoint, 2, Scalar(255,255,255));
     }
 
 }

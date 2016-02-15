@@ -95,7 +95,6 @@ void LipRec::initPlugin(qt_gui_cpp::PluginContext& context)
 
   QObject::connect(ui_.pbUtter, SIGNAL(clicked()), this, SLOT(clickedUtter()));
 
-
   drawKeyPointState = 0;
   ui_.pbToggleKpLines->setToolTip("Show keypoint lines.");
   QPixmap pixmap("src/liprec/res/lips.png");
@@ -674,6 +673,9 @@ void LipRec::processImage(Mat img)
             utteranceMtx.unlock();
           }
           utter = false;
+          if(applyUtteranceOfLoadedFile){
+            ui_.pbSaveRecognition->setFocus(Qt::OtherFocusReason);
+          }
           applyUtteranceOfLoadedFile = false;
 
         }else if(utter && recordTrajectoryState != Recording){
@@ -1814,8 +1816,8 @@ void LipRec::clickedSaveRecordRecognition(){
     utteranceMtx.lock();
     currentUtteranceTrajectories.clear();
     utteranceMtx.unlock();
-    ui_.leFilenameRecord->setFocus(Qt::OtherFocusReason);
-
+    //ui_.leFilenameRecord->setFocus(Qt::OtherFocusReason);
+    ui_.leFilenameLoadRecord->setFocus(Qt::OtherFocusReason);
 
     recordRecognitionState = RRNONE;
   }
@@ -1921,6 +1923,7 @@ void LipRec::clickedRecordRecognized(bool checked)
     if(!ui_.leFilenameRecord->text().isEmpty()){
       recordRecognitionState = RRRECORDING;
       ui_.pbRecordRecognition->setText("Stop Recording");
+      ui_.pbUtter->setFocus(Qt::OtherFocusReason);
     }else{
       ui_.pbRecordRecognition->setChecked(false);
     }
@@ -2081,7 +2084,6 @@ void LipRec::printTrajectory(QList<double> trajectory)
   }
   ROS_INFO(">>>End printTrajectory");
 }
-
 
 void LipRec::updateTrajectoriesInfoGUIAndSetWeightsForDTW()
 {
