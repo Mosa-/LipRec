@@ -5502,7 +5502,20 @@ font: 8pt;
          <property name="bottomMargin">
           <number>0</number>
          </property>
-         <item row="1" column="0" colspan="2">
+         <item row="0" column="1" colspan="3">
+          <widget class="QLineEdit" name="leFilenameRecord">
+           <property name="minimumSize">
+            <size>
+             <width>0</width>
+             <height>23</height>
+            </size>
+           </property>
+           <property name="placeholderText">
+            <string>Filename (save)</string>
+           </property>
+          </widget>
+         </item>
+         <item row="1" column="1" colspan="2">
           <widget class="QCheckBox" name="cbSOLR">
            <property name="font">
             <font>
@@ -5520,7 +5533,7 @@ font: 8pt;
            </property>
           </widget>
          </item>
-         <item row="1" column="2">
+         <item row="1" column="3">
           <widget class="QCheckBox" name="cbSaveUtterance">
            <property name="font">
             <font>
@@ -5532,7 +5545,7 @@ font: 8pt;
            </property>
           </widget>
          </item>
-         <item row="2" column="0" colspan="3">
+         <item row="2" column="1" colspan="3">
           <widget class="QCheckBox" name="cbContinueAppending">
            <property name="font">
             <font>
@@ -5547,16 +5560,15 @@ font: 8pt;
            </property>
           </widget>
          </item>
-         <item row="0" column="0" colspan="3">
-          <widget class="QLineEdit" name="leFilenameRecord">
-           <property name="minimumSize">
-            <size>
-             <width>0</width>
-             <height>23</height>
-            </size>
+         <item row="0" column="0" rowspan="3">
+          <widget class="QPushButton" name="pbAutoRecord">
+           <property name="font">
+            <font>
+             <pointsize>9</pointsize>
+            </font>
            </property>
-           <property name="placeholderText">
-            <string>Filename (save)</string>
+           <property name="text">
+            <string>Auto Record</string>
            </property>
           </widget>
          </item>

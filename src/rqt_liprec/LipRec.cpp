@@ -95,6 +95,11 @@ void LipRec::initPlugin(qt_gui_cpp::PluginContext& context)
 
   QObject::connect(ui_.pbUtter, SIGNAL(clicked()), this, SLOT(clickedUtter()));
 
+  QObject::connect(ui_.pbAutoRecord, SIGNAL(clicked()), this, SLOT(clickedAutoRecord()));
+
+  autoRecordFileNameCounter = 1;
+  autoRecord = false;
+
   drawKeyPointState = 0;
   ui_.pbToggleKpLines->setToolTip("Show keypoint lines.");
   QPixmap pixmap("src/liprec/res/lips.png");
@@ -656,6 +661,29 @@ void LipRec::processImage(Mat img)
 
               this->changeRecordRecognitionStateToDecisionIfPossible();
             }
+          }
+
+          if(recordRecognitionState == RRDECISION && autoRecord){
+            if(autoRecordFileNameCounter < 50){
+              QString autoRecordFileName = "";
+
+              this->clickedSaveRecordRecognition();
+
+              autoRecordFileNameCounter++;
+
+              if(autoRecordFileNameCounter < 10){
+               autoRecordFileName  = "0";
+              }
+              autoRecordFileName += QString::number(autoRecordFileNameCounter);
+
+              autoRecordFileName = ui_.leFilenameLoadRecord->text().mid(0, ui_.leFilenameLoadRecord->text().size()-2) + autoRecordFileName;
+              ui_.leFilenameLoadRecord->setText(autoRecordFileName);
+            }else{
+              ROS_INFO(">>>>>>>>>>>50 reached!!!!!!!!");
+              this->clickedSaveRecordRecognition();
+              autoRecordFileNameCounter = 1;
+            }
+            autoRecord = false;
           }
 
           utteranceMtx.lock();
@@ -1915,6 +1943,18 @@ void LipRec::clickedWeightedDtw(bool checked)
           );
   }
   weightedDtwActive = !weightedDtwActive;
+}
+
+void LipRec::clickedAutoRecord()
+{
+  if(!autoRecord){
+    this->autoRecord = true;
+
+    this->clickedRecordRecognized(true);
+    this->ui_.pbRecordRecognition->setChecked(true);
+
+    this->clickedUtter();
+  }
 }
 
 void LipRec::clickedRecordRecognized(bool checked)

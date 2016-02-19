@@ -145,6 +145,9 @@ private:
 
     bool updateRecognizedText;
 
+    bool autoRecord;
+    int autoRecordFileNameCounter;
+
     QMutex clusterMtx;
     QMutex utteranceMtx;
 
@@ -271,6 +274,8 @@ private slots:
     void clickedUtter();
 
     void clickedWeightedDtw(bool checked);
+
+    void clickedAutoRecord();
 };
 } // namespace
 #endif

@@ -1,0 +1,39 @@
+from sys import argv
+import json
+
+script, filename, command = argv
+
+counter = -1
+foundUtterance = False
+
+topFive = {1:0, 2:0, 3:0, 4:0, 5:0}
+
+with open(filename, "r") as ins:
+	for line in ins:
+		if "Utterance" in line:
+			if counter > 0:
+				if counter > 5:
+					counter = 5
+				topFive[counter] += 1
+				counter = -1
+				foundUtterance = False
+		else:
+			if command in line:
+				if counter > 5:
+					counter = 5
+				foundUtterance = True
+		
+		if foundUtterance == False:
+			counter+=1
+if counter > 0:
+	if counter > 5:
+		counter = 5
+	topFive[counter] += 1
+	counter = -1
+	foundUtterance = False
+
+topFive[5] -= 1
+		
+print json.dumps(topFive, indent=1)
+
+quit(0)
