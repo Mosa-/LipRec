@@ -186,7 +186,9 @@ private:
     void calculateDTWCostFusion(QList<CommandWithCost>& fusionCommandsWithCost, int &fusionAreaIndex, int &fusionAspectRatioIndex,
                                 DtwStepPattern stepPattern, DistanceFunction df, int windowSize, int& indexOfLowAreaCluster, int& indexOfLowAspectRatioCluster,
                                 CommandWithCost &commandWithCost, QString &currentCommandFusion);
-    void calculateEuclideanCost(CommandWithCost &commandWithCost, QList<CommandWithCost> &areaCommandsWithCost, QList<CommandWithCost> &aspectRatioCommandsWithCost);
+    void calculateEuclideanCostSingle(CommandWithCost &commandWithCost, QList<CommandWithCost> &areaCommandsWithCost, QList<CommandWithCost> &aspectRatioCommandsWithCost);
+    void calculateEuclideanCostFusion(CommandWithCost &commandWithCost, QList<CommandWithCost> &fusionCommandsWithCost, int &indexOfLowAreaCluster, int &indexOfLowAspectRatioCluster,
+                                      int& fusionAreaIndex, int& fusionAspectRatioIndex, QString& currentCommandFusion);
     void showDTWwithPathOnGUI(QPixmap &dtwPixMapArea, QPixmap &dtwPixMapAspectRatio, QString currentCommandArea, int indexOfLowAreaCluster,
                                QString currentCommandAspectRatio, int indexOfLowAspectRatioCluster,
                                QString currentCommandFusion, int fusionAreaIndex, int fusionAspectRatioIndex,

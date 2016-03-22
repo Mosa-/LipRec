@@ -83,15 +83,22 @@ void KeyPointsDeliverer::extractMouthCornerKeyPoints(Mat &mouthImg, int threshol
                 possibleKeyPoint.differenceToAvg = currentDiffToAvg;
                 possibleKeyPoint.keyPoint.x  = i;
                 possibleKeyPoint.keyPoint.y  = j;
+
                 possibleKeyPoints.append(possibleKeyPoint);
             }
         }
     }
 
+
+
     Mat contourImg(rMidFinal.rows, rMidFinal.cols, CV_8UC1, Scalar(0,0,0));
     Point p;
     for (int i = 0; i < possibleKeyPoints.size(); ++i) {
         p = possibleKeyPoints.at(i).keyPoint;
+
+        if(i % 3 == 0)
+          circle(rMidFinal, p, 1, Scalar(255,255,255));
+
         contourImg.at<uchar>(p.y, p.x) = 255;
     }
     Mat _img;
@@ -232,7 +239,7 @@ void KeyPointsDeliverer::extractMouthCornerKeyPoints(Mat &mouthImg, int threshol
             keyPoint5.x = pKPoints.at(i).keyPoint.x;
             keyPoint5.y = pKPoints.at(i).keyPoint.y;
         }
-        circle(rMidFinal, pKPoints.at(i).keyPoint, 2, Scalar(255,255,255));
+        //circle(rMidFinal, pKPoints.at(i).keyPoint, 2, Scalar(255,255,255));
     }
 
 }
@@ -269,6 +276,10 @@ void KeyPointsDeliverer::extractCupidsBowKeyPoints(int thresholdDifferenceToAvg,
     Mat contourImg(rTopFinal.rows, rTopFinal.cols, CV_8UC1, Scalar(0,0,0));
     Point p;
     for (int i = 0; i < possibleKeyPoints.size(); ++i) {
+
+      if(i % 3 == 0)
+        circle(rTopFinal, p, 1, Scalar(255,255,255));
+
         p = possibleKeyPoints.at(i).keyPoint;
         contourImg.at<uchar>(p.y, p.x) = 255;
     }
@@ -334,22 +345,36 @@ void KeyPointsDeliverer::extractLowerLipKeyPoint(int thresholdDifferenceToAvg, i
     QList<PossibleKeyPoint> possibleKeyPoints;
     PossibleKeyPoint possibleKeyPoint;
 
+    QList<QList<int> > val;
+    int aPixelsumme;
+    int dPixeldurchschnitt;
+    int diffPixeldurchschnitt;
+    int rlow;
+
     for (int i = 0; i < rLowFinal.cols; ++i) {
         for (int j = rLowFinal.rows/2; j < rLowFinal.rows-totalLineCheck/2; ++j) {
 
+            QList<int> brabs;
             int currentDiffToAvg = 0;
 
             for (int k = 1; k < totalLineCheck/2 + 1; ++k) {
                 currentDiffToAvg += rLowFinal.at<uchar>(j-k,i) + rLowFinal.at<uchar>(j+k,i);
-
             }
+            aPixelsumme =  currentDiffToAvg;
             currentDiffToAvg = currentDiffToAvg / totalLineCheck;
+
+            dPixeldurchschnitt  = currentDiffToAvg;
 
             if(currentDiffToAvg > 0){
                 currentDiffToAvg = 100 - (rLowFinal.at<uchar>(j,i) * 100 / currentDiffToAvg);
             }
+            diffPixeldurchschnitt = currentDiffToAvg;
+            rlow = rLowFinal.at<uchar>(j,i);
 
             if(currentDiffToAvg > thresholdDifferenceToAvg){
+              brabs << aPixelsumme << dPixeldurchschnitt << diffPixeldurchschnitt << rlow;
+              val << brabs;
+
                 possibleKeyPoint.differenceToAvg = currentDiffToAvg;
                 possibleKeyPoint.keyPoint.x  = i;
                 possibleKeyPoint.keyPoint.y  = j;
@@ -358,9 +383,23 @@ void KeyPointsDeliverer::extractLowerLipKeyPoint(int thresholdDifferenceToAvg, i
         }
     }
 
+//    foreach (QList<int> v, val) {
+//      ROS_INFO("#################1##################");
+//      ROS_INFO("aPixelsumme %d", v.at(0));
+//      ROS_INFO("dPixeldurchschnitt %d", v.at(1));
+//      ROS_INFO("diffPixeldurchschnitt %d Rlow %d", v.at(2), v.at(3));
+
+
+//      ROS_INFO("#################2##################");
+//    }
+
     Mat contourImg(rLowFinal.rows, rLowFinal.cols, CV_8UC1, Scalar(0,0,0));
     Point p;
     for (int i = 0; i < possibleKeyPoints.size(); ++i) {
+
+      if(i % 3 == 0)
+        circle(rLowFinal, p, 1, Scalar(255,255,255));
+
         p = possibleKeyPoints.at(i).keyPoint;
         contourImg.at<uchar>(p.y, p.x) = 255;
     }

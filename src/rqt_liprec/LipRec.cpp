@@ -458,6 +458,137 @@ void LipRec::processImage(Mat img)
 
   int windowSize = ui_.sbDtwWindowSize->value();
 
+//  QList<double> traj1;
+//  traj1 << 891<<
+//           907<<
+//           969<<
+//           1032<<
+//           1050<<
+//           1033<<
+//           1014<<
+//           1000<<
+//           1062<<
+//           1088<<
+//           1005<<
+//           939<<
+//           912<<
+//           857<<
+//           797<<
+//           858<<
+//           801<<
+//           887<<
+//           872<<
+//           873<<
+//           915<<
+//           997<<
+//           1018<<
+//           1004<<
+//           1004<<
+//           1022<<
+//           1022<<
+//           1067<<
+//           1032<<
+//           993<<
+//           1005<<
+//           991<<
+//           963<<
+//           941<<
+//           931<<
+//           944<<
+//           955<<
+//           933<<
+//           889<<
+//           860<<
+//           841<<
+//           850<<
+//           844<<
+//           888<<
+//           868<<
+//           866<<
+//           866<<
+//           859<<
+//           859;
+
+
+
+
+//  QList<double> traj2;
+
+//  traj2 << 843<<
+//           809<<
+//           823<<
+//           893<<
+//           937<<
+//           971<<
+//           1007<<
+//           993<<
+//           1003<<
+//           1011<<
+//           1034<<
+//           1010<<
+//           1005<<
+//           932<<
+//           856<<
+//           813<<
+//           776<<
+//           805<<
+//           823<<
+//           821<<
+//           868<<
+//           860<<
+//           884<<
+//           904<<
+//           927<<
+//           958<<
+//           971<<
+//           943<<
+//           951<<
+//           775<<
+//           775<<
+//           759<<
+//           790<<
+//           772<<
+//           876<<
+//           894<<
+//           900<<
+//           887<<
+//           835<<
+//           864<<
+//           865<<
+//           873<<
+//           850<<
+//           879<<
+//           821<<
+//           808<<
+//           824<<
+//           834<<
+//           824<<
+//           820<<
+//           841<<
+//           828<<
+//           811<<
+//           820<<
+//           821<<
+//           811;
+
+
+
+
+//  DtwStepPattern dtwStp = TYPE1;
+//  dtw.seed(traj1, traj2, dtwStp, ui_.cbDtwSlopeWeights->isChecked());
+
+//  dtw.calcWarpingCost(ABS, ui_.cbDtwWindowSizeActivate->isChecked(), windowSize, ui_.cbDtwWindowSizeAdaptable->isChecked());
+
+//  ROS_INFO("###########################################################################1");
+//  dtw.printDtwDistanceMatric();
+//  dtw.printDistanceMatrix();
+//  ROS_INFO("++++++++++++++++++++++++++++++++++++++++1");
+//  for (int var = 0; var < dtw.getWarpingPath().size(); ++var) {
+//    ROS_INFO("%d %d", dtw.getWarpingPath().at(var).x, dtw.getWarpingPath().at(var).y);
+//  }
+//  ROS_INFO("++++++++++++++++++++++++++++++++++++++++2");
+//  ROS_INFO("###########################################################################2");
+
   if(!useMonoImage && !mouthImg.empty() && recordRecognitionState != RRDECISION){
     if(ui_.cbLipSeg->isChecked()){
       if(ui_.rbSaturation->isChecked()){
@@ -635,16 +766,28 @@ void LipRec::processImage(Mat img)
               QList<CommandWithCost> areaCommandsWithCost;
               QList<CommandWithCost> aspectRatioCommandsWithCost;
 
-              this->calculateEuclideanCost(commandWithCost, areaCommandsWithCost, aspectRatioCommandsWithCost);
+              this->calculateEuclideanCostSingle(commandWithCost, areaCommandsWithCost, aspectRatioCommandsWithCost);
+
+              QList<CommandWithCost> fusionCommandsWithCost;
+              int fusionAreaIndex = 0;
+              int fusionAspectRatioIndex = 0;
+              QString currentCommandFusion = "";
+              int indexOfLowAreaCluster = 0;
+              int indexOfLowAspectRatioCluster = 0;
+
+              this->calculateEuclideanCostFusion(commandWithCost, fusionCommandsWithCost, indexOfLowAreaCluster, indexOfLowAspectRatioCluster,
+                                                 fusionAreaIndex, fusionAspectRatioIndex, currentCommandFusion);
 
               if(updateRecognizedText){
                 ui_.lwArea->clear();
                 ui_.lwAspectRatio->clear();
+                ui_.lwFusion->clear();
                 ui_.labelArea->setText("Area");
                 ui_.labelAspectRatio->setText("Aspect ratio");
 
                 qSort(areaCommandsWithCost);
                 qSort(aspectRatioCommandsWithCost);
+                qSort(fusionCommandsWithCost);
 
                 for (int i = 0; i < areaCommandsWithCost.size(); ++i) {
                   commandWithCost.command = areaCommandsWithCost.at(i).command;
@@ -656,6 +799,12 @@ void LipRec::processImage(Mat img)
                   commandWithCost.command = aspectRatioCommandsWithCost.at(i).command;
                   commandWithCost.cost = aspectRatioCommandsWithCost.at(i).cost;
                   ui_.lwAspectRatio->addItem(QString("%1 : %2").arg(commandWithCost.command, -14).arg(commandWithCost.cost, 8));
+                }
+
+                for (int i = 0; i < fusionCommandsWithCost.size(); ++i) {
+                  commandWithCost.command = fusionCommandsWithCost.at(i).command;
+                  commandWithCost.cost = fusionCommandsWithCost.at(i).cost;
+                  ui_.lwFusion->addItem(QString("%1: %2").arg(commandWithCost.command, -14).arg(commandWithCost.cost, 7));
                 }
               }
 
@@ -983,7 +1132,7 @@ void LipRec::calculateDTWCostFusion(QList<CommandWithCost>& fusionCommandsWithCo
   }
 }
 
-void LipRec::calculateEuclideanCost(CommandWithCost& commandWithCost, QList<CommandWithCost>& areaCommandsWithCost, QList<CommandWithCost>& aspectRatioCommandsWithCost)
+void LipRec::calculateEuclideanCostSingle(CommandWithCost& commandWithCost, QList<CommandWithCost>& areaCommandsWithCost, QList<CommandWithCost>& aspectRatioCommandsWithCost)
 {
   double bestEuclideanDistanceArea = INT_MAX;
   double bestEuclideanDistanceAspectRatio = INT_MAX;
@@ -1103,6 +1252,107 @@ void LipRec::calculateEuclideanCost(CommandWithCost& commandWithCost, QList<Comm
         recordRecognitionData.commandAspectRatio[commandWithCost.command].append(commandWithCost.cost);
       }
       commandWithCost.command = "";
+    }
+  }
+}
+
+void LipRec::calculateEuclideanCostFusion(CommandWithCost &commandWithCost, QList<CommandWithCost> &fusionCommandsWithCost, int &indexOfLowAreaCluster, int &indexOfLowAspectRatioCluster,
+                                          int& fusionAreaIndex, int& fusionAspectRatioIndex, QString& currentCommandFusion)
+{
+
+  double bestEuclideanDistanceFusion = INT_MAX;
+  QList<QList<double> > clusterT;
+  QList<QList<double> > clusterT2;
+
+//  int indexOfLowAreaCluster = 0;
+//  int indexOfLowAspectRatioCluster = 0;
+
+  QString currentCommandArea = "";
+  QString currentCommandAspectRatio = "";
+
+  utteranceMtx.lock();
+  QList<double> currentUtteranceTrajArea = currentUtteranceTrajectories[ui_.cbArea->text()];
+  QList<double> currentUtteranceTrajAspectRatio = currentUtteranceTrajectories[ui_.cbAspectRatio->text()];
+  utteranceMtx.unlock();
+
+  foreach (QString command, availableTrajectories) {
+
+    clusterT = this->getClusterTrajectories(command, ui_.cbArea->text(), ui_.rbKmedoids->text());
+    clusterT2 = this->getClusterTrajectories(command, ui_.cbAspectRatio->text(), ui_.rbKmedoids->text());
+
+    double euclideanDistanceAreaTmp = INT_MAX;
+    double euclideanDistanceAspectRatioTmp = INT_MAX;
+    double euclideanDistanceFusionTmp = 0.0;
+
+    for (int i = 0; i < clusterT.size(); i++) {
+      QList<double> shortenTrajectory;
+      QList<double> keptTrajectory;
+      if(currentUtteranceTrajArea.size() > clusterT.at(i).size()){
+        keptTrajectory = clusterT.at(i);
+        shortenTrajectory = currentUtteranceTrajArea.mid(0, clusterT.at(i).size());
+        //                    shortenTrajectory = currentUtteranceTrajectories[ui_.cbArea->text()].mid(
+        //                          currentUtteranceTrajectories[ui_.cbArea->text()].size()-clusterT.at(i).size(), clusterT.at(i).size());
+      }else if(currentUtteranceTrajArea.size() < clusterT.at(i).size()){
+        keptTrajectory = currentUtteranceTrajArea;
+        shortenTrajectory = clusterT.at(i).mid(0, currentUtteranceTrajArea.size());
+        //                    shortenTrajectory = clusterT.at(i).mid(
+        //                          clusterT.at(i).size()-currentUtteranceTrajectories[ui_.cbArea->text()].size(), currentUtteranceTrajectories[ui_.cbArea->text()].size());
+      }else{
+        shortenTrajectory = currentUtteranceTrajArea;
+        keptTrajectory = clusterT.at(i);
+      }
+
+      double edArea = calculateEuclideanDistance(keptTrajectory, shortenTrajectory);
+
+      if(edArea < euclideanDistanceAreaTmp){
+        indexOfLowAreaCluster = i;
+        euclideanDistanceAreaTmp = edArea;
+      }
+    }
+
+    for (int i = 0; i < clusterT2.size(); i++) {
+      QList<double> shortenTrajectory;
+      QList<double> keptTrajectory;
+      if(currentUtteranceTrajAspectRatio.size() > clusterT2.at(i).size()){
+        keptTrajectory = clusterT2.at(i);
+        shortenTrajectory = currentUtteranceTrajAspectRatio.mid(0, clusterT2.at(i).size());
+        //                    shortenTrajectory = currentUtteranceTrajectories[ui_.cbAspectRatio->text()].mid(
+        //                          currentUtteranceTrajectories[ui_.cbAspectRatio->text()].size()-clusterT2.at(i).size(), clusterT2.at(i).size());
+      }else if(currentUtteranceTrajAspectRatio.size() < clusterT2.at(i).size()){
+        keptTrajectory = currentUtteranceTrajAspectRatio;
+        shortenTrajectory = clusterT2.at(i).mid(0, currentUtteranceTrajAspectRatio.size());
+        //                    shortenTrajectory = clusterT2.at(i).mid(
+        //                          clusterT2.at(i).size()-currentUtteranceTrajectories[ui_.cbAspectRatio->text()].size(), currentUtteranceTrajectories[ui_.cbAspectRatio->text()].size());
+      }else{
+        shortenTrajectory = currentUtteranceTrajAspectRatio;
+        keptTrajectory = clusterT2.at(i);
+      }
+
+      double edAspectRatio = calculateEuclideanDistance(keptTrajectory, shortenTrajectory);
+
+      if(edAspectRatio < euclideanDistanceAspectRatioTmp){
+        indexOfLowAspectRatioCluster = i;
+        euclideanDistanceAspectRatioTmp = edAspectRatio;
+      }
+    }
+
+    euclideanDistanceFusionTmp = euclideanDistanceAreaTmp + euclideanDistanceAspectRatioTmp;
+
+    if(command != "all"){
+      commandWithCost.command = command;
+      commandWithCost.cost = euclideanDistanceFusionTmp;
+      fusionCommandsWithCost.append(commandWithCost);
+    }
+
+    if(commandWithCost.command != ""){
+      recordRecognitionData.commandFusion[commandWithCost.command].append(commandWithCost.cost);
+    }
+
+    if(euclideanDistanceFusionTmp < bestEuclideanDistanceFusion){
+      bestEuclideanDistanceFusion = euclideanDistanceFusionTmp;
+      fusionAreaIndex = indexOfLowAreaCluster;
+      fusionAspectRatioIndex = indexOfLowAspectRatioCluster;
+      currentCommandFusion = command;
     }
   }
 }
@@ -1476,6 +1726,29 @@ void LipRec::setClusterTrajectories(QList<QList<double> > clusterT, QString comm
 
 double LipRec::calculateEuclideanDistance(QList<double> &trj1, QList<double> &trj2)
 {
+
+
+  double min1 = *std::min_element(trj1.begin(), trj1.end());
+  double min2 = *std::min_element(trj2.begin(), trj2.end());
+  double max1 = *std::max_element(trj1.begin(), trj1.end());
+  double max2 = *std::max_element(trj2.begin(), trj2.end());
+
+  double minFinal = qMin(min1, min2);
+  double maxFinal = qMax(max1, max2);
+
+  double newVal = 0.0;
+  for (int i = 0; i < trj1.size(); ++i) {
+    newVal = (trj1[i] - minFinal) / (maxFinal - minFinal);
+    //ROS_INFO("val: %f, newVal: %f, min: %f, max: %f", this->trajectory1[i], newVal, minFinal, maxFinal);
+    trj1[i] = newVal;
+  }
+
+  for (int i = 0; i < trj2.size(); ++i) {
+    newVal = (trj2[i] - minFinal) / (maxFinal - minFinal);
+    trj2[i] = newVal;
+  }
+
+
 
   double euclideanDistance = 0.0;
   for (int i = 0; i < trj1.size(); ++i) {
@@ -2260,9 +2533,9 @@ void LipRec::lipsActivation(int currentFrame)
 
     if(!imageAbsDiff.empty()){
       this->changeLipActivationState(activation, imageAbsDiff, currentFrame);
-      //    pixMap = imageProcessing.getPixmap(imageAbsDiff, true);
-      //    pixMap = pixMap.scaled(ui_.lblMouthDiff->maximumWidth(), ui_.lblMouthDiff->maximumHeight(), Qt::KeepAspectRatio, Qt::SmoothTransformation);
-      //    ui_.lblMouthDiff->setPixmap(pixMap);
+          pixMap = imageProcessing.getPixmap(imageAbsDiff, true);
+          pixMap = pixMap.scaled(ui_.lblMouthDiff->maximumWidth(), ui_.lblMouthDiff->maximumHeight(), Qt::KeepAspectRatio, Qt::SmoothTransformation);
+          //ui_.lblMouthDiff->setPixmap(pixMap);
     }
 
   }
@@ -2317,7 +2590,7 @@ Mat LipRec::drawMouthFeaturesOnGUI(Mat &mouthImg, Mat &rLowFinal, Mat &rMidFinal
     showMouthImg = mouthImg;
   }else if(ui_.rbRLow->isChecked()){
 
-    circle(rLowFinal, keyPoint6, 1, Scalar(255,255,255));
+//    circle(rLowFinal, keyPoint6, 1, Scalar(255,255,255));
 
     if(drawSupportLines){
       line(rLowFinal, upLinePoint, bottomLinePoint, Scalar(255,255,255));
@@ -2326,8 +2599,8 @@ Mat LipRec::drawMouthFeaturesOnGUI(Mat &mouthImg, Mat &rLowFinal, Mat &rMidFinal
     showMouthImg = rLowFinal;
   }else if(ui_.rbRMid->isChecked()){
 
-    circle(rMidFinal, keyPoint1, 1, Scalar(255,255,255));
-    circle(rMidFinal, keyPoint5, 1, Scalar(255,255,255));
+//    circle(rMidFinal, keyPoint1, 1, Scalar(255,255,255));
+//    circle(rMidFinal, keyPoint5, 1, Scalar(255,255,255));
 
     if(drawSupportLines){
       line(rMidFinal, upLinePoint, bottomLinePoint, Scalar(255,255,255));
@@ -2335,9 +2608,9 @@ Mat LipRec::drawMouthFeaturesOnGUI(Mat &mouthImg, Mat &rLowFinal, Mat &rMidFinal
     }
     showMouthImg = rMidFinal;
   }else{
-    circle(rTopFinal, keyPoint2, 1, Scalar(255,255,255));
-    circle(rTopFinal, keyPoint4, 1, Scalar(255,255,255));
-    circle(rTopFinal, keyPoint3, 1, Scalar(255,255,255));
+//    circle(rTopFinal, keyPoint2, 1, Scalar(255,255,255));
+//    circle(rTopFinal, keyPoint4, 1, Scalar(255,255,255));
+//    circle(rTopFinal, keyPoint3, 1, Scalar(255,255,255));
 
     if(drawSupportLines){
       line(rTopFinal, upLinePoint, bottomLinePoint, Scalar(255,255,255));
